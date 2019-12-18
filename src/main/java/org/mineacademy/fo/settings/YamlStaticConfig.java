@@ -112,6 +112,13 @@ public abstract class YamlStaticConfig {
 	 */
 	protected abstract void load() throws Exception;
 
+
+	/**
+	 * Called after reflection loading finished
+	 */
+	protected void onLoadFinished() {
+	}
+
 	/**
 	 * Loads the class via reflection, scanning for "private static void init()" methods to run
 	 */
@@ -133,6 +140,7 @@ public abstract class YamlStaticConfig {
 			// The class itself.
 			invokeAll(getClass());
 
+			onLoadFinished();
 		} catch (Throwable t) {
 			if (t instanceof InvocationTargetException && t.getCause() != null)
 				t = t.getCause();
