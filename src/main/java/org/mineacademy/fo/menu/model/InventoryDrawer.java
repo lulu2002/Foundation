@@ -134,9 +134,9 @@ public final class InventoryDrawer {
 
 		inv.setContents(content);
 
-		// Before opening make sure we close his old inventory if exist
-		if (player.getOpenInventory() != null)
-			player.closeInventory();
+//		// Before opening make sure we close his old inventory if exist
+//		if (player.getOpenInventory() != null)
+//			player.closeInventory();
 
 		player.openInventory(inv);
 	}
