@@ -124,7 +124,7 @@ public abstract class MenuPagged<T> extends Menu {
     }
 
     // Render the next/prev buttons
-    private final void setButtons() {
+    private final void setButtons(){
         // Set previous button
         this.prevButton = new Button() {
             final boolean canGo = currentPage > 1;
@@ -168,10 +168,12 @@ public abstract class MenuPagged<T> extends Menu {
         ItemStack item = buttonItem;
         String newName = buttonItem.getItemMeta().getDisplayName().replace("{page}", toTogglePage + "");
 
-        boolean hasPage = toTogglePage >= 1 && toTogglePage <= pages.size();
+        boolean moreThanOnePage = pages.size() > 1;
+        boolean hasToTogglePage = toTogglePage >= 1 && toTogglePage <= pages.size();
 
-        return hasPage ? ItemCreator.of(item).name(newName).build().make()
-                : noMorePageItem;
+        return moreThanOnePage ?
+                hasToTogglePage ? ItemCreator.of(item).name(newName).build().make() : noMorePageItem
+                : CompMaterial.AIR.toItem();
     }
 
     // Reinits the menu and plays the anvil sound
