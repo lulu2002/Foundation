@@ -140,12 +140,12 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 		/**
 		 * The message at "Reload_Fail" key shown when the plugin has failed to reload.
 		 */
-		public static String RELOAD_FAIL = "&4哇糟糕，&c插件在載入過程中發生了錯誤，請查看後台獲取詳細資訊，錯誤類型為: {error}";
+		public static String RELOAD_FAIL = "&4&l哇糟糕！&c插件在載入過程中發生了錯誤，請查看後台獲取詳細資訊，錯誤類型為: {error}";
 
 		/**
 		 * The message shown when there is a fatal error running this command
 		 */
-		public static Replacer ERROR = Replacer.of("&4&l哇糟糕，&c指令在運作時發生了錯誤，請查看後台獲取詳細錯誤訊息。");
+		public static Replacer ERROR = Replacer.of("&4&l哇糟糕！&c指令在運作時發生了錯誤，請查看後台獲取詳細錯誤訊息。");
 
 		/**
 		 * Load the values -- this method is called automatically by reflection in the {@link YamlStaticConfig} class!

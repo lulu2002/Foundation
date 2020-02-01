@@ -193,7 +193,7 @@ public abstract class SimpleCommandGroup {
 	 * @return
 	 */
 	protected String getCredits() {
-		return "&7Visit &fmineacademy.org &7for more information.";
+		return "&7Plugin made by lulu2002";
 	}
 
 	/**
