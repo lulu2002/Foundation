@@ -5,8 +5,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -23,6 +26,7 @@ import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.Remain;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 
 public class SimpleScoreboard {
@@ -54,7 +58,7 @@ public class SimpleScoreboard {
 	 *
 	 * @param player
 	 */
-	public static final void clearBoardsFor(Player player) {
+	public static final void clearBoardsFor(final Player player) {
 		for (final SimpleScoreboard scoreboard : registeredBoards)
 			if (scoreboard.isViewing(player))
 				scoreboard.hide(player);
@@ -77,12 +81,23 @@ public class SimpleScoreboard {
 	private final StrictList<String> viewingPlayers = new StrictList<>();
 
 	/**
+	 * The color theme for key: value pairs such as
+	 *
+	 * Players: 12
+	 * Mode: playing
+	 */
+	private final String[] theme = new String[2];
+
+	/**
 	 * The title of this scoreboard
 	 */
 	@Getter
 	@Setter
 	private String title;
 
+	/**
+	 * The update tick delay
+	 */
 	@Getter
 	@Setter
 	private int updateDelayTicks;
@@ -124,7 +139,7 @@ public class SimpleScoreboard {
 	 *
 	 * @param entries
 	 */
-	public final void addRows(String... entries) {
+	public final void addRows(final String... entries) {
 		addRows(Arrays.asList(entries));
 	}
 
@@ -133,8 +148,38 @@ public class SimpleScoreboard {
 	 *
 	 * @param entries
 	 */
-	public final void addRows(List<String> entries) {
+	public final void addRows(final List<String> entries) {
 		rows.addAll(entries);
+	}
+
+	/**
+	 * Remove all rows
+	 */
+	public final void clearRows() {
+		rows.clear();
+	}
+
+	/**
+	 * Remove row at the given index
+	 *
+	 * @param index
+	 */
+	public final void removeRow(final int index) {
+		rows.remove(index);
+	}
+
+	/**
+	 * Remove row that contains the given text
+	 *
+	 * @param thatContains
+	 */
+	public final void removeRow(final String thatContains) {
+		for (final Iterator<String> it = rows.iterator(); it.hasNext();) {
+			final String row = it.next();
+
+			if (row.contains(thatContains))
+				it.remove();
+		}
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -199,7 +244,7 @@ public class SimpleScoreboard {
 
 		for (int i = rows.size(); i > 0; i--) {
 			final String sidebarEntry = rows.get(rows.size() - i);
-			final String entry = replaceVariables(sidebarEntry);
+			final String entry = replaceVariables(replaceTheme(sidebarEntry));
 
 			String line = fixDuplicates(duplicates, entry);
 
@@ -211,13 +256,53 @@ public class SimpleScoreboard {
 	}
 
 	/**
+	 * Adds theme colors to the row if applicable
+	 *
+	 * @param row
+	 * @return
+	 */
+	private final String replaceTheme(final String row) {
+		if (theme != null && row.contains(":")) {
+			if (theme.length == 1)
+				return theme[0] + row;
+
+			else if (theme[0] != null) {
+				final String[] split = row.split("\\:");
+
+				if (split.length > 1)
+					return theme[0] + split[0] + ":" + theme[1] + split[1];
+			}
+		}
+
+		return row;
+	}
+
+	/**
+	 * Set the coloring theme for rows having : such as
+	 *
+	 * Players: 12
+	 * Mode: playing
+	 *
+	 * To use simply put color codes
+	 *
+	 * @param theme the theme to set
+	 */
+	public final void setTheme(@NonNull final ChatColor primary, @Nullable final ChatColor secondary) {
+		if (secondary != null) {
+			this.theme[0] = "&" + primary.getChar();
+			this.theme[1] = "&" + secondary.getChar();
+		} else
+			this.theme[0] = "&" + primary.getChar();
+	}
+
+	/**
 	 * Fixes color and empty lines colliding into one by adding random colors
 	 *
 	 * @param duplicates
 	 * @param message
 	 * @return
 	 */
-	private final String fixDuplicates(StrictList<String> duplicates, String message) {
+	private final String fixDuplicates(final StrictList<String> duplicates, String message) {
 		message = StringUtils.substring(message, 0, 40);
 
 		final boolean cut = MinecraftVersion.olderThan(V.v1_8);
@@ -242,7 +327,7 @@ public class SimpleScoreboard {
 	 * @param message
 	 * @return
 	 */
-	protected String replaceVariables(String message) {
+	protected String replaceVariables(final String message) {
 		return message;
 	}
 
@@ -264,7 +349,8 @@ public class SimpleScoreboard {
 			iterator.remove();
 		}
 
-		cancelUpdateTask();
+		if (updateTask != null)
+			cancelUpdateTask();
 	}
 
 	/**
@@ -277,6 +363,15 @@ public class SimpleScoreboard {
 		updateTask = null;
 	}
 
+	/**
+	 * Return true if the scoreboard is running and rendering?
+	 *
+	 * @return
+	 */
+	public final boolean isRunning() {
+		return updateTask != null;
+	}
+
 	// ------------------------------------------------------------------------------------------------------------
 	// Rendering
 	// ------------------------------------------------------------------------------------------------------------
@@ -286,7 +381,7 @@ public class SimpleScoreboard {
 	 *
 	 * @param player
 	 */
-	public final void show(Player player) {
+	public final void show(final Player player) {
 		Valid.checkBoolean(!isViewing(player), "Player " + player.getName() + " is already viewing scoreboard: " + getTitle());
 
 		if (updateTask == null)
@@ -301,7 +396,7 @@ public class SimpleScoreboard {
 	 *
 	 * @param player
 	 */
-	public final void hide(Player player) {
+	public final void hide(final Player player) {
 		Valid.checkBoolean(isViewing(player), "Player " + player.getName() + " is not viewing scoreboard: " + getTitle());
 
 		player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -317,7 +412,7 @@ public class SimpleScoreboard {
 	 * @param player
 	 * @return
 	 */
-	public final boolean isViewing(Player player) {
+	public final boolean isViewing(final Player player) {
 		return viewingPlayers.contains(player.getName());
 	}
 

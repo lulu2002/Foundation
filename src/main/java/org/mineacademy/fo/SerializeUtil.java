@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -24,8 +25,10 @@ import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.exception.InvalidWorldException;
 import org.mineacademy.fo.menu.model.ItemCreator;
 import org.mineacademy.fo.model.ConfigSerializable;
+import org.mineacademy.fo.model.IsInList;
 import org.mineacademy.fo.remain.CompMaterial;
 import org.mineacademy.fo.settings.YamlConfig;
+import org.mineacademy.fo.settings.YamlConfig.TimeHelper;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -36,6 +39,11 @@ import lombok.NonNull;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SerializeUtil {
+
+	/**
+	 * When serializing unknown objects throw an error if strict mode is enabled
+	 */
+	public static boolean STRICT_MODE = true;
 
 	/**
 	 * Special case: Support for GameAPI's ConfigSerializable interface
@@ -78,7 +86,7 @@ public final class SerializeUtil {
 	 * @param obj
 	 * @return
 	 */
-	public static Object serialize(Object obj) {
+	public static Object serialize(final Object obj) {
 		if (obj == null)
 			return null;
 
@@ -125,13 +133,16 @@ public final class SerializeUtil {
 		else if (obj instanceof ItemCreator)
 			return ((ItemCreator) obj).make();
 
-		else if (obj instanceof Iterable || obj.getClass().isArray()) {
+		else if (obj instanceof TimeHelper)
+			return ((TimeHelper) obj).getRaw();
+
+		else if (obj instanceof Iterable || obj.getClass().isArray() || obj instanceof IsInList) {
 			final List<Object> serialized = new ArrayList<>();
 
-			if (obj instanceof Iterable)
-				for (final Object element : (Iterable<?>) obj)
+			if (obj instanceof Iterable || obj instanceof IsInList) {
+				for (final Object element : obj instanceof IsInList ? ((IsInList<?>) obj).getList() : (Iterable<?>) obj)
 					serialized.add(serialize(element));
-			else
+			} else
 				for (final Object element : (Object[]) obj)
 					serialized.add(serialize(element));
 
@@ -164,13 +175,16 @@ public final class SerializeUtil {
 		else if (obj instanceof Integer || obj instanceof Double || obj instanceof Float || obj instanceof Long
 				|| obj instanceof String || obj instanceof Boolean || obj instanceof Map
 				|| obj instanceof ItemStack
-				/*|| obj instanceof MemorySection*/)
+		/*|| obj instanceof MemorySection*/)
 			return obj;
 
 		else if (obj instanceof ConfigurationSerializable)
 			return ((ConfigurationSerializable) obj).serialize();
 
-		throw new FoException("Does not know how to serialize " + obj.getClass().getSimpleName() + "! Does it extends ConfigSerializable? Data: " + obj);
+		if (STRICT_MODE)
+			throw new FoException("Does not know how to serialize " + obj.getClass().getSimpleName() + "! Does it extends ConfigSerializable? Data: " + obj);
+		else
+			return Objects.toString(obj);
 	}
 
 	/**
@@ -179,8 +193,8 @@ public final class SerializeUtil {
 	 * @param loc
 	 * @return
 	 */
-	public static String serializeLoc(Location loc) {
-		return loc.getWorld().getName() + " " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + (loc.getPitch() != 0F || loc.getYaw() != 0F ? " " + loc.getYaw() + " " + loc.getPitch() : "");
+	public static String serializeLoc(final Location loc) {
+		return loc.getWorld().getName() + " " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + (loc.getPitch() != 0F || loc.getYaw() != 0F ? " " + Math.round(loc.getYaw()) + " " + Math.round(loc.getPitch()) : "");
 	}
 
 	/**
@@ -189,7 +203,7 @@ public final class SerializeUtil {
 	 * @param effect
 	 * @return
 	 */
-	private static String serializePotionEffect(PotionEffect effect) {
+	private static String serializePotionEffect(final PotionEffect effect) {
 		return effect.getType().getName() + " " + effect.getDuration() + " " + effect.getAmplifier();
 	}
 
@@ -202,7 +216,7 @@ public final class SerializeUtil {
 	 * @param array
 	 * @return
 	 */
-	public static List<Object> serializeList(Iterable<?> array) {
+	public static List<Object> serializeList(final Iterable<?> array) {
 		final List<Object> list = new ArrayList<>();
 
 		for (final Object t : array)
@@ -225,7 +239,7 @@ public final class SerializeUtil {
 	 * @param object
 	 * @return
 	 */
-	public static <T> T deserialize(@NonNull Class<T> classOf, @NonNull Object object) {
+	public static <T> T deserialize(@NonNull final Class<T> classOf, @NonNull final Object object) {
 		return deserialize(classOf, object, (Object[]) null);
 	}
 
@@ -239,7 +253,8 @@ public final class SerializeUtil {
 	 * @param deserializeParameters, use more variables in the deserialize method
 	 * @return
 	 */
-	public static <T> T deserialize(@NonNull Class<T> classOf, @NonNull Object object, Object... deserializeParameters) {
+	@SuppressWarnings("rawtypes")
+	public static <T> T deserialize(@NonNull final Class<T> classOf, @NonNull Object object, final Object... deserializeParameters) {
 		final SerializedMap map = SerializedMap.of(object);
 
 		// Step 1 - Search for basic deserialize(SerializedMap) method
@@ -327,6 +342,9 @@ public final class SerializeUtil {
 			} else if (Map.class.isAssignableFrom(classOf) && object instanceof Map) {
 				// Good
 
+			} else if (ConfigurationSerializable.class.isAssignableFrom(classOf) && object instanceof ConfigurationSerializable) {
+				// Good
+
 			} else if (classOf == Object.class) {
 				// pass through
 
@@ -335,6 +353,7 @@ public final class SerializeUtil {
 		}
 
 		return (T) object;
+
 	}
 
 	/**
@@ -343,7 +362,7 @@ public final class SerializeUtil {
 	 * @param raw
 	 * @return
 	 */
-	public static Location deserializeLocation(Object raw) {
+	public static Location deserializeLocation(final Object raw) {
 		if (raw == null)
 			return null;
 
@@ -370,7 +389,7 @@ public final class SerializeUtil {
 	 * @param raw
 	 * @return
 	 */
-	private static PotionEffect deserializePotionEffect(Object raw) {
+	private static PotionEffect deserializePotionEffect(final Object raw) {
 		if (raw == null)
 			return null;
 
@@ -397,7 +416,7 @@ public final class SerializeUtil {
 	 * @param asWhat
 	 * @return
 	 */
-	public static <T extends ConfigSerializable> List<T> deserializeMapList(Object listOfObjects, Class<T> asWhat) {
+	public static <T extends ConfigSerializable> List<T> deserializeMapList(final Object listOfObjects, final Class<T> asWhat) {
 		if (listOfObjects == null)
 			return null;
 
@@ -422,7 +441,7 @@ public final class SerializeUtil {
 	 * @param asWhat
 	 * @return
 	 */
-	public static <T extends ConfigSerializable> T deserializeMap(Object rawMap, Class<T> asWhat) {
+	public static <T extends ConfigSerializable> T deserializeMap(final Object rawMap, final Class<T> asWhat) {
 		if (rawMap == null)
 			return null;
 

@@ -5,6 +5,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.plugin.SimplePlugin;
+import org.mineacademy.fo.settings.YamlConfig.TimeHelper;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -45,6 +46,20 @@ public abstract class Countdown implements Runnable {
 	 */
 	private int taskId = -1;
 
+	/**
+	 * Create new countdown from the given time
+	 *
+	 * @param time
+	 */
+	protected Countdown(TimeHelper time) {
+		this(time.getTimeSeconds());
+	}
+
+	/**
+	 * Create new countdown
+	 *
+	 * @param countdownSeconds
+	 */
 	protected Countdown(int countdownSeconds) {
 		this.countdownSeconds = countdownSeconds;
 	}
@@ -59,6 +74,12 @@ public abstract class Countdown implements Runnable {
 				onTick();
 
 			} catch (final Throwable t) {
+				try {
+					onTickError(t);
+				} catch (final Throwable tt) {
+					Common.log("Unable to handle onTickError, got " + t + ": " + tt.getMessage());
+				}
+
 				Common.error(t,
 						"Error in countdown!",
 						"Seconds since start: " + secondsSinceStart,
@@ -73,6 +94,12 @@ public abstract class Countdown implements Runnable {
 	}
 
 	/**
+	 * Called when this countdown is launched
+	 */
+	protected void onStart() {
+	}
+
+	/**
 	 * Called on each tick (by default each second) till we count down to 0
 	 */
 	protected abstract void onTick();
@@ -81,6 +108,14 @@ public abstract class Countdown implements Runnable {
 	 * Called when the clock hits the final 0 and stops.
 	 */
 	protected abstract void onEnd();
+
+	/**
+	 * Called when the {@link #onTick()} method throws an error (we already log the error)
+	 *
+	 * @param t
+	 */
+	protected void onTickError(Throwable t) {
+	}
 
 	/**
 	 * Return the time left in seconds
@@ -99,6 +134,8 @@ public abstract class Countdown implements Runnable {
 
 		final BukkitTask task = Bukkit.getScheduler().runTaskTimer(SimplePlugin.getInstance(), this, START_DELAY, TICK_PERIOD);
 		taskId = task.getTaskId();
+
+		onStart();
 	}
 
 	/**
