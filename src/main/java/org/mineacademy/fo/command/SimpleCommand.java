@@ -726,7 +726,6 @@ public abstract class SimpleCommand extends Command {
 	protected final void tellError(String message) {
 		if (message != null) {
 			message = replacePlaceholders(message);
-
 			Messenger.error(sender, message);
 		}
 	}
