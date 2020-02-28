@@ -3,6 +3,7 @@ package org.mineacademy.fo.menu;
 import java.util.List;
 import java.util.Map;
 
+import lombok.Setter;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
@@ -43,52 +44,52 @@ public abstract class MenuPagged<T> extends Menu {
 	 * The next button automatically generated
 	 */
 	private Button nextButton;
+	@Setter
+	private static ItemStack nextPageItemModel = ItemCreator
+			.of(CompMaterial.LIME_DYE)
+			.name("Page {page} &8>>")
+			.build().make();
+
+	@Setter
+	private static ItemStack lastPageItemModel = ItemCreator
+			.of(CompMaterial.GRAY_DYE)
+			.name("&7Last Page")
+			.build().make();
+	;
 
 	/**
 	 * The "go to previous page" button automatically generated
 	 */
 	private Button prevButton;
+	@Setter
+	private static ItemStack prevPageItemModel = ItemCreator
+			.of(CompMaterial.LIME_DYE)
+			.name("&8<< &fPage {page}")
+			.build().make();
+
+	@Setter
+	private static ItemStack firstPageItemModel = ItemCreator
+			.of(CompMaterial.GRAY_DYE)
+			.name("&7First Page")
+			.build().make();
+
 
 	/**
 	 * Create a new paged menu where each page has 3 rows + 1 bottom bar
 	 *
 	 * @param pages the pages
 	 */
-	protected MenuPagged(final Iterable<T> pages) {
-		this(null, pages);
-	}
-
-	/**
-	 * Create a new paged menu
-	 *
-	 * @param parent the parent menu
-	 * @param pages the pages the pages
-	 */
-	protected MenuPagged(final Menu parent, final Iterable<T> pages) {
-		this(null, parent, pages, false);
-	}
-
-	/**
-	 * Create a new paged menu
-	 *
-	 * @param parent
-	 * @param pages
-	 * @param returnMakesNewInstance
-	 */
-	protected MenuPagged(final Menu parent, final Iterable<T> pages, final boolean returnMakesNewInstance) {
-		this(null, parent, pages, returnMakesNewInstance);
+	protected MenuPagged(Iterable<T> pages) {
+		this(9 * 3, pages);
 	}
 
 	/**
 	 * Create a new paged menu
 	 *
 	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add 1 row there)
-	 * @param pages the pages
-	 *
-	 * @deprecated we recommend you don't set the page size for the menu to autocalculate
+	 * @param pages    the pages
 	 */
-	@Deprecated
-	protected MenuPagged(final int pageSize, final Iterable<T> pages) {
+	protected MenuPagged(int pageSize, Iterable<T> pages) {
 		this(pageSize, null, pages);
 	}
 
@@ -96,27 +97,11 @@ public abstract class MenuPagged<T> extends Menu {
 	 * Create a new paged menu
 	 *
 	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add 1 row there)
-	 * @param parent the parent menu
-	 * @param pages the pages the pages
-	 * @deprecated we recommend you don't set the page size for the menu to autocalculate
+	 * @param parent   the parent menu
+	 * @param pages    the pages the pages
 	 */
-	@Deprecated
-	protected MenuPagged(final int pageSize, final Menu parent, final Iterable<T> pages) {
+	protected MenuPagged(int pageSize, Menu parent, Iterable<T> pages) {
 		this(pageSize, parent, pages, false);
-	}
-
-	/**
-	 * Create a new paged menu
-	 *
-	 * @param pageSize
-	 * @param parent
-	 * @param pages
-	 * @param returnMakesNewInstance	 *
-	 * @deprecated we recommend you don't set the page size for the menu to autocalculate
-	 */
-	@Deprecated
-	protected MenuPagged(final int pageSize, final Menu parent, final Iterable<T> pages, final boolean returnMakesNewInstance) {
-		this((Integer) pageSize, parent, pages, returnMakesNewInstance);
 	}
 
 	/**
@@ -152,15 +137,13 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	// Render the next/prev buttons
-	private final void setButtons() {
-		final boolean hasPages = pages.size() > 1;
-
+	private final void setButtons(){
 		// Set previous button
-		this.prevButton = hasPages ? new Button() {
+		this.prevButton = new Button() {
 			final boolean canGo = currentPage > 1;
 
 			@Override
-			public void onClickedInMenu(final Player pl, final Menu menu, final ClickType click) {
+			public void onClickedInMenu(Player pl, Menu menu, ClickType click) {
 				if (canGo) {
 					MenuPagged.this.currentPage = MathUtil.range(currentPage - 1, 1, pages.size());
 
@@ -170,18 +153,16 @@ public abstract class MenuPagged<T> extends Menu {
 
 			@Override
 			public ItemStack getItem() {
-				final int str = currentPage - 1;
-
-				return ItemCreator.of(canGo ? CompMaterial.LIME_DYE : CompMaterial.GRAY_DYE).name(str == 0 ? "&7First Page" : "&8<< &fPage " + str).build().make();
+				return getPageToggleItem(prevPageItemModel, firstPageItemModel, currentPage - 1);
 			}
-		} : Button.makeEmpty();
+		};
 
 		// Set next page button
-		this.nextButton = hasPages ? new Button() {
+		this.nextButton = new Button() {
 			final boolean canGo = currentPage < pages.size();
 
 			@Override
-			public void onClickedInMenu(final Player pl, final Menu menu, final ClickType click) {
+			public void onClickedInMenu(Player pl, Menu menu, ClickType click) {
 				if (canGo) {
 					MenuPagged.this.currentPage = MathUtil.range(currentPage + 1, 1, pages.size());
 
@@ -191,11 +172,21 @@ public abstract class MenuPagged<T> extends Menu {
 
 			@Override
 			public ItemStack getItem() {
-				final boolean last = currentPage == pages.size();
-
-				return ItemCreator.of(canGo ? CompMaterial.LIME_DYE : CompMaterial.GRAY_DYE).name(last ? "&7Last Page" : "Page " + (currentPage + 1) + " &8>>").build().make();
+				return getPageToggleItem(nextPageItemModel, lastPageItemModel, currentPage + 1);
 			}
-		} : Button.makeEmpty();
+		};
+	}
+
+	private ItemStack getPageToggleItem(ItemStack buttonItem, ItemStack noMorePageItem, int toTogglePage) {
+		ItemStack item = buttonItem;
+		String newName = buttonItem.getItemMeta().getDisplayName().replace("{page}", toTogglePage + "");
+
+		boolean moreThanOnePage = pages.size() > 1;
+		boolean hasToTogglePage = toTogglePage >= 1 && toTogglePage <= pages.size();
+
+		return moreThanOnePage ?
+				hasToTogglePage ? ItemCreator.of(item).name(newName).build().make() : noMorePageItem
+				: CompMaterial.AIR.toItem();
 	}
 
 	// Reinits the menu and plays the anvil sound
@@ -221,7 +212,7 @@ public abstract class MenuPagged<T> extends Menu {
 	 * @param
 	 */
 	@Override
-	protected final void onDisplay(final InventoryDrawer drawer) {
+	protected final void onDisplay(InventoryDrawer drawer) {
 		drawer.setTitle(compileTitle0());
 		onDisplayAndTitleSet(drawer);
 	}
@@ -232,7 +223,7 @@ public abstract class MenuPagged<T> extends Menu {
 
 	/**
 	 * Return the {@link ItemStack} representation of an item on a certain page
-	 *
+	 * <p>
 	 * Use {@link ItemCreator} for easy creation.
 	 *
 	 * @param item the given object, for example Arena
@@ -244,8 +235,8 @@ public abstract class MenuPagged<T> extends Menu {
 	 * Called automatically when an item is clicked
 	 *
 	 * @param player the player who clicked
-	 * @param item the clicked item
-	 * @param click the click type
+	 * @param item   the clicked item
+	 * @param click  the click type
 	 */
 	protected abstract void onPageClick(Player player, T item, ClickType click);
 
@@ -269,22 +260,13 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	/**
-	 * Return if there are no items at all
-	 *
-	 * @return
-	 */
-	protected boolean isEmpty() {
-		return pages.isEmpty() || pages.get(0).isEmpty();
-	}
-
-	/**
 	 * Automatically get the correct item from the actual page, including prev/next buttons
 	 *
 	 * @param slot the slot
 	 * @return the item, or null
 	 */
 	@Override
-	public ItemStack getItemAt(final int slot) {
+	public ItemStack getItemAt(int slot) {
 		if (slot < getCurrentPageItems().size()) {
 			final T object = getCurrentPageItems().get(slot);
 
@@ -305,7 +287,7 @@ public abstract class MenuPagged<T> extends Menu {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final void onMenuClick(final Player player, final int slot, final InventoryAction action, final ClickType click, final ItemStack cursor, final ItemStack clicked, final boolean cancelled) {
+	public final void onMenuClick(Player player, int slot, InventoryAction action, ClickType click, ItemStack cursor, ItemStack clicked, boolean cancelled) {
 		if (slot < getCurrentPageItems().size()) {
 			final T obj = getCurrentPageItems().get(slot);
 
@@ -321,13 +303,13 @@ public abstract class MenuPagged<T> extends Menu {
 
 	// Do not allow override
 	@Override
-	public final void onButtonClick(final Player player, final int slot, final InventoryAction action, final ClickType click, final Button button) {
+	public final void onButtonClick(Player player, int slot, InventoryAction action, ClickType click, Button button) {
 		super.onButtonClick(player, slot, action, click, button);
 	}
 
 	// Do not allow override
 	@Override
-	public final void onMenuClick(final Player player, final int slot, final ItemStack clicked) {
+	public final void onMenuClick(Player player, int slot, ItemStack clicked) {
 		throw new FoException("Simplest click unsupported");
 	}
 
