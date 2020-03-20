@@ -79,17 +79,41 @@ public abstract class MenuPagged<T> extends Menu {
 	 *
 	 * @param pages the pages
 	 */
-	protected MenuPagged(Iterable<T> pages) {
-		this(9 * 3, pages);
+	protected MenuPagged(final Iterable<T> pages) {
+		this(null, pages);
+	}
+
+	/**
+	 * Create a new paged menu
+	 *
+	 * @param parent the parent menu
+	 * @param pages the pages the pages
+	 */
+	protected MenuPagged(final Menu parent, final Iterable<T> pages) {
+		this(null, parent, pages, false);
+	}
+
+	/**
+	 * Create a new paged menu
+	 *
+	 * @param parent
+	 * @param pages
+	 * @param returnMakesNewInstance
+	 */
+	protected MenuPagged(final Menu parent, final Iterable<T> pages, final boolean returnMakesNewInstance) {
+		this(null, parent, pages, returnMakesNewInstance);
 	}
 
 	/**
 	 * Create a new paged menu
 	 *
 	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add 1 row there)
-	 * @param pages    the pages
+	 * @param pages the pages
+	 *
+	 * @deprecated we recommend you don't set the page size for the menu to autocalculate
 	 */
-	protected MenuPagged(int pageSize, Iterable<T> pages) {
+	@Deprecated
+	protected MenuPagged(final int pageSize, final Iterable<T> pages) {
 		this(pageSize, null, pages);
 	}
 
@@ -97,11 +121,27 @@ public abstract class MenuPagged<T> extends Menu {
 	 * Create a new paged menu
 	 *
 	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add 1 row there)
-	 * @param parent   the parent menu
-	 * @param pages    the pages the pages
+	 * @param parent the parent menu
+	 * @param pages the pages the pages
+	 * @deprecated we recommend you don't set the page size for the menu to autocalculate
 	 */
-	protected MenuPagged(int pageSize, Menu parent, Iterable<T> pages) {
+	@Deprecated
+	protected MenuPagged(final int pageSize, final Menu parent, final Iterable<T> pages) {
 		this(pageSize, parent, pages, false);
+	}
+
+	/**
+	 * Create a new paged menu
+	 *
+	 * @param pageSize
+	 * @param parent
+	 * @param pages
+	 * @param returnMakesNewInstance	 *
+	 * @deprecated we recommend you don't set the page size for the menu to autocalculate
+	 */
+	@Deprecated
+	protected MenuPagged(final int pageSize, final Menu parent, final Iterable<T> pages, final boolean returnMakesNewInstance) {
+		this((Integer) pageSize, parent, pages, returnMakesNewInstance);
 	}
 
 	/**
@@ -137,13 +177,15 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	// Render the next/prev buttons
-	private final void setButtons(){
+	private final void setButtons() {
+		final boolean hasPages = pages.size() > 1;
+
 		// Set previous button
-		this.prevButton = new Button() {
+		this.prevButton = hasPages ? new Button() {
 			final boolean canGo = currentPage > 1;
 
 			@Override
-			public void onClickedInMenu(Player pl, Menu menu, ClickType click) {
+			public void onClickedInMenu(final Player pl, final Menu menu, final ClickType click) {
 				if (canGo) {
 					MenuPagged.this.currentPage = MathUtil.range(currentPage - 1, 1, pages.size());
 
@@ -153,9 +195,11 @@ public abstract class MenuPagged<T> extends Menu {
 
 			@Override
 			public ItemStack getItem() {
-				return getPageToggleItem(prevPageItemModel, firstPageItemModel, currentPage - 1);
+				final int str = currentPage - 1;
+
+				return ItemCreator.of(canGo ? CompMaterial.LIME_DYE : CompMaterial.GRAY_DYE).name(str == 0 ? "&7First Page" : "&8<< &fPage " + str).build().make();
 			}
-		};
+		} : Button.makeEmpty();
 
 		// Set next page button
 		this.nextButton = new Button() {
@@ -212,7 +256,7 @@ public abstract class MenuPagged<T> extends Menu {
 	 * @param
 	 */
 	@Override
-	protected final void onDisplay(InventoryDrawer drawer) {
+	protected final void onDisplay(final InventoryDrawer drawer) {
 		drawer.setTitle(compileTitle0());
 		onDisplayAndTitleSet(drawer);
 	}
@@ -223,7 +267,7 @@ public abstract class MenuPagged<T> extends Menu {
 
 	/**
 	 * Return the {@link ItemStack} representation of an item on a certain page
-	 * <p>
+	 *
 	 * Use {@link ItemCreator} for easy creation.
 	 *
 	 * @param item the given object, for example Arena
@@ -235,8 +279,8 @@ public abstract class MenuPagged<T> extends Menu {
 	 * Called automatically when an item is clicked
 	 *
 	 * @param player the player who clicked
-	 * @param item   the clicked item
-	 * @param click  the click type
+	 * @param item the clicked item
+	 * @param click the click type
 	 */
 	protected abstract void onPageClick(Player player, T item, ClickType click);
 
@@ -260,13 +304,22 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	/**
+	 * Return if there are no items at all
+	 *
+	 * @return
+	 */
+	protected boolean isEmpty() {
+		return pages.isEmpty() || pages.get(0).isEmpty();
+	}
+
+	/**
 	 * Automatically get the correct item from the actual page, including prev/next buttons
 	 *
 	 * @param slot the slot
 	 * @return the item, or null
 	 */
 	@Override
-	public ItemStack getItemAt(int slot) {
+	public ItemStack getItemAt(final int slot) {
 		if (slot < getCurrentPageItems().size()) {
 			final T object = getCurrentPageItems().get(slot);
 
@@ -287,7 +340,7 @@ public abstract class MenuPagged<T> extends Menu {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final void onMenuClick(Player player, int slot, InventoryAction action, ClickType click, ItemStack cursor, ItemStack clicked, boolean cancelled) {
+	public final void onMenuClick(final Player player, final int slot, final InventoryAction action, final ClickType click, final ItemStack cursor, final ItemStack clicked, final boolean cancelled) {
 		if (slot < getCurrentPageItems().size()) {
 			final T obj = getCurrentPageItems().get(slot);
 
@@ -303,13 +356,13 @@ public abstract class MenuPagged<T> extends Menu {
 
 	// Do not allow override
 	@Override
-	public final void onButtonClick(Player player, int slot, InventoryAction action, ClickType click, Button button) {
+	public final void onButtonClick(final Player player, final int slot, final InventoryAction action, final ClickType click, final Button button) {
 		super.onButtonClick(player, slot, action, click, button);
 	}
 
 	// Do not allow override
 	@Override
-	public final void onMenuClick(Player player, int slot, ItemStack clicked) {
+	public final void onMenuClick(final Player player, final int slot, final ItemStack clicked) {
 		throw new FoException("Simplest click unsupported");
 	}
 
