@@ -181,7 +181,7 @@ public abstract class MenuPagged<T> extends Menu {
 		final boolean hasPages = pages.size() > 1;
 
 		// Set previous button
-		this.prevButton = hasPages ? new Button() {
+		this.prevButton = new Button() {
 			final boolean canGo = currentPage > 1;
 
 			@Override
@@ -195,11 +195,9 @@ public abstract class MenuPagged<T> extends Menu {
 
 			@Override
 			public ItemStack getItem() {
-				final int str = currentPage - 1;
-
-				return ItemCreator.of(canGo ? CompMaterial.LIME_DYE : CompMaterial.GRAY_DYE).name(str == 0 ? "&7First Page" : "&8<< &fPage " + str).build().make();
+				return getPageToggleItem(prevPageItemModel, firstPageItemModel, currentPage - 1);
 			}
-		} : Button.makeEmpty();
+		};
 
 		// Set next page button
 		this.nextButton = new Button() {
