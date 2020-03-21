@@ -182,7 +182,7 @@ public abstract class SimpleCommand extends Command {
 			setAliases(aliases);
 
 		// Set a default permission for this command
-		setPermission(DEFAULT_PERMISSION_SYNTAX);
+		setPermission(DEFAULT_PERMISSION_SYNTAX.replace("{label}", label));
 	}
 
 	/*
