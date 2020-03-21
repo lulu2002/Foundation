@@ -275,7 +275,6 @@ public abstract class SimpleCommand extends Command {
 
 		// Set variables to re-use later
 		this.sender = sender;
-		this.label = label;
 		this.args = args;
 
 		// Set tell prefix only if the parent setting was on
@@ -978,7 +977,6 @@ public abstract class SimpleCommand extends Command {
 	@Override
 	public final List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
 		this.sender = sender;
-		this.label = alias;
 		this.args = args;
 
 		if (hasPerm(getPermission())) {
