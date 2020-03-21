@@ -275,7 +275,6 @@ public abstract class SimpleCommand extends Command {
 
 		// Set variables to re-use later
 		this.sender = sender;
-		this.label = label;
 		this.args = args;
 
 		// Set tell prefix only if the parent setting was on
@@ -326,6 +325,7 @@ public abstract class SimpleCommand extends Command {
 			if (cooldownSeconds > 0)
 				handleCooldown();
 
+			initialVariables();
 			onCommand();
 
 		} catch (final InvalidCommandArgException ex) {
@@ -353,6 +353,7 @@ public abstract class SimpleCommand extends Command {
 		return true;
 	}
 
+
 	private void dynamicTellError(String... messages) {
 		if (USE_MESSENGER)
 			for (final String message : messages)
@@ -378,6 +379,13 @@ public abstract class SimpleCommand extends Command {
 			// Update the last try with the current time
 			cooldownMap.put(player.getUniqueId(), System.currentTimeMillis());
 		}
+	}
+
+	/**
+	 * For subclass to init their variables
+	 */
+	protected void initialVariables() {
+
 	}
 
 	/**
@@ -726,7 +734,6 @@ public abstract class SimpleCommand extends Command {
 	protected final void tellError(String message) {
 		if (message != null) {
 			message = replacePlaceholders(message);
-
 			Messenger.error(sender, message);
 		}
 	}
@@ -970,7 +977,6 @@ public abstract class SimpleCommand extends Command {
 	@Override
 	public final List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
 		this.sender = sender;
-		this.label = alias;
 		this.args = args;
 
 		if (hasPerm(getPermission())) {
