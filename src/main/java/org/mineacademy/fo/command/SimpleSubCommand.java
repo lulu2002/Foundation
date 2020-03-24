@@ -88,6 +88,10 @@ public abstract class SimpleSubCommand extends SimpleCommand {
 		return super.replacePlaceholders(message).replace("{sublabel}", getSublabel());
 	}
 
+	protected final String getFullLabels() {
+		return "/" + getLabel() + " " + getSublabel();
+	}
+
 	@Override
 	public final boolean equals(Object obj) {
 		return obj instanceof SimpleSubCommand ? Arrays.equals(((SimpleSubCommand) obj).sublabels, this.sublabels) : false;
