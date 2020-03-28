@@ -70,10 +70,13 @@ public abstract class SimpleConversation implements ConversationAbandonedListene
 		// Setup
 		final CustomConversation conversation = new CustomConversation(player);
 
-		final InactivityConversationCanceller inactivityCanceller = new InactivityConversationCanceller(SimplePlugin.getInstance(), getTimeout());
-		inactivityCanceller.setConversation(conversation);
+		if (getTimeout() >= 0) {
+			final InactivityConversationCanceller inactivityCanceller = new InactivityConversationCanceller(SimplePlugin.getInstance(), getTimeout());
+			inactivityCanceller.setConversation(conversation);
 
-		conversation.getCancellers().add(inactivityCanceller);
+			conversation.getCancellers().add(inactivityCanceller);
+		}
+
 		conversation.getCancellers().add(getCanceller());
 
 		conversation.addConversationAbandonedListener(this);
