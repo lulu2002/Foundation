@@ -162,7 +162,7 @@ public abstract class MenuPagged<T> extends Menu {
 		this.currentPage = 1;
 		this.pages = PageManager.populate(autoPageSize, pages);
 
-		setSize(9 + autoPageSize);
+		setSize(this.pages.size() > 1 ? 9 + autoPageSize : autoPageSize);
 		setButtons();
 	}
 

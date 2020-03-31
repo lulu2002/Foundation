@@ -199,7 +199,7 @@ public abstract class SimplePrompt extends ValidatingPrompt implements Cloneable
 			}
 
 			@Override
-			protected Integer getTimeout() {
+			protected int getTimeout() {
 				return timeout;
 			}
 
