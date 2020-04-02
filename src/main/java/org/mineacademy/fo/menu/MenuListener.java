@@ -90,7 +90,7 @@ public final class MenuListener implements Listener {
 									!allowed);
 
 					} catch (final Throwable t) {
-						Common.tell(player, SimpleLocalization.Commands.ERROR);
+						Common.tell(player, SimpleLocalization.ERROR);
 						player.closeInventory();
 
 						Common.error(t, "Error clicking in menu " + menu);

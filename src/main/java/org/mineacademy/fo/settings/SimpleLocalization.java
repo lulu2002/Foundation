@@ -139,11 +139,6 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
         public static String RELOAD_FAIL = "&4&l哇糟糕！&c插件在載入過程中發生了錯誤，請查看後台獲取詳細資訊，錯誤類型為: {error}";
 
         /**
-         * The message shown when there is a fatal error running this command
-         */
-        public static String ERROR = "&4&l哇糟糕！&c操作在執行時發生了錯誤，請查看後台獲取詳細錯誤訊息。";
-
-        /**
          * Load the values -- this method is called automatically by reflection in the {@link YamlStaticConfig} class!
          */
         private static void init() {
@@ -178,9 +173,6 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 
             if (isSetDefault("Reload_Fail"))
                 RELOAD_FAIL = getString("Reload_Fail");
-
-            if (isSetDefault("Error"))
-                ERROR = getReplacer("Error");
         }
     }
 
@@ -272,6 +264,11 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
     public static String NO_PERMISSION = "&c抱歉，你沒有權限使用這項功能 ({permission})。";
 
     /**
+     * The message shown when there is a fatal error running things.
+     */
+    public static String ERROR = "&4&l哇糟糕！&c操作在執行時發生了錯誤，請查看後台獲取詳細錯誤訊息。";
+
+    /**
      * The server prefix. Example: you have to use it manually if you are sending messages
      * from the console to players
      */
@@ -302,6 +299,9 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 
         if (isSetDefault("No_Permission"))
             NO_PERMISSION = getString("No_Permission");
+
+        if (isSetDefault("Error"))
+            ERROR = getString("Error");
 
         if (isSetDefault("Server_Prefix"))
             SERVER_PREFIX = getString("Server_Prefix");

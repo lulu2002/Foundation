@@ -83,7 +83,7 @@ public final class ToolsListener implements Listener {
 			} catch (final Throwable t) {
 				event.setCancelled(true);
 
-				Common.tell(player, SimpleLocalization.Commands.ERROR);
+				Common.tell(player, SimpleLocalization.ERROR);
 				Common.error(t, "Failed to handle " + event.getAction() + " using Tool: " + tool.getClass());
 			}
 	}
@@ -195,7 +195,7 @@ public final class ToolsListener implements Listener {
 			} catch (final Throwable t) {
 				event.setCancelled(true);
 
-				Common.tell(player, SimpleLocalization.Commands.ERROR);
+				Common.tell(player, SimpleLocalization.ERROR);
 				Common.error(t, "Failed to shoot Rocket " + tool.getClass());
 			}
 	}
@@ -228,7 +228,7 @@ public final class ToolsListener implements Listener {
 				} else
 					projectile.remove();
 			} catch (final Throwable t) {
-				Common.tell(shooter, SimpleLocalization.Commands.ERROR);
+				Common.tell(shooter, SimpleLocalization.ERROR);
 				Common.error(t, "Failed to handle impact by Rocket " + shot.getRocket().getClass());
 			}
 		}
