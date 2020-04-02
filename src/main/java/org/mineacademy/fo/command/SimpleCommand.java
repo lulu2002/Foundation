@@ -342,7 +342,7 @@ public abstract class SimpleCommand extends Command {
                 dynamicTellError(ex.getMessages());
 
         } catch (final Throwable t) {
-            dynamicTellError(SimpleLocalization.Commands.ERROR.find("error").replace(t.toString()).getReplacedMessage());
+            dynamicTellError(SimpleLocalization.Commands.ERROR);
 
             Common.error(t, "Failed to execute command /" + getLabel() + " " + String.join(" ", args));
 

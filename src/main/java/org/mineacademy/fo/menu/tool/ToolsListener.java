@@ -23,6 +23,7 @@ import org.mineacademy.fo.event.RocketExplosionEvent;
 import org.mineacademy.fo.remain.Remain;
 
 import lombok.Data;
+import org.mineacademy.fo.settings.SimpleLocalization;
 
 /**
  * The event listener class responsible for firing events in tools
@@ -82,7 +83,7 @@ public final class ToolsListener implements Listener {
 			} catch (final Throwable t) {
 				event.setCancelled(true);
 
-				Common.tell(player, "&cOups! There was a problem with this tool! Please contact the administrator to review the console for details.");
+				Common.tell(player, SimpleLocalization.Commands.ERROR);
 				Common.error(t, "Failed to handle " + event.getAction() + " using Tool: " + tool.getClass());
 			}
 	}
@@ -194,7 +195,7 @@ public final class ToolsListener implements Listener {
 			} catch (final Throwable t) {
 				event.setCancelled(true);
 
-				Common.tell(player, "&cOups! There was a problem with this projectile! Please contact the administrator to review the console for details.");
+				Common.tell(player, SimpleLocalization.Commands.ERROR);
 				Common.error(t, "Failed to shoot Rocket " + tool.getClass());
 			}
 	}
@@ -227,7 +228,7 @@ public final class ToolsListener implements Listener {
 				} else
 					projectile.remove();
 			} catch (final Throwable t) {
-				Common.tell(shooter, "&cOups! There was a problem with this rocket! Please contact the administrator to review the console for details.");
+				Common.tell(shooter, SimpleLocalization.Commands.ERROR);
 				Common.error(t, "Failed to handle impact by Rocket " + shot.getRocket().getClass());
 			}
 		}

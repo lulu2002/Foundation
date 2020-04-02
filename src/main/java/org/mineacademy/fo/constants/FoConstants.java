@@ -101,7 +101,7 @@ public final class FoConstants {
 				"",
 				" If you'd like to view the default file, you can either:",
 				" a) Open the " + SimplePlugin.getSource().getName() + " with a WinRar or similar",
-				" b) or, visit: https://github.com/kangarko/" + SimplePlugin.getNamed() + "/wiki",
+				" b) or, visit: https://github.com/lulu2002/" + SimplePlugin.getNamed() + "/wiki",
 				"",
 				Common.configLine(),
 				""

@@ -1,9 +1,8 @@
 package org.mineacademy.fo.menu;
 
-import java.util.List;
-import java.util.Map;
-
+import lombok.Getter;
 import lombok.Setter;
+import lombok.val;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
@@ -18,8 +17,8 @@ import org.mineacademy.fo.menu.model.ItemCreator;
 import org.mineacademy.fo.menu.model.PageManager;
 import org.mineacademy.fo.remain.CompMaterial;
 
-import lombok.Getter;
-import lombok.val;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An advanced menu listing items with automatic page support
@@ -160,10 +159,10 @@ public abstract class MenuPagged<T> extends Menu {
 		final int autoPageSize = pageSize != null ? pageSize : items <= 9 ? 9 * 1 : items <= 9 * 2 ? 9 * 2 : items <= 9 * 3 ? 9 * 3 : items <= 9 * 4 ? 9 * 4 : 9 * 5;
 
 		this.currentPage = 1;
-		this.pages = PageManager.populate(autoPageSize, pages);
+		this.pages = PageManager.populate(pageSize, pages);
 
-		setSize(this.pages.size() > 1 ? 9 + autoPageSize : autoPageSize);
 		setButtons();
+		setSize(9 + pageSize);
 	}
 
 	@SuppressWarnings("unused")
