@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.util.Vector;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.model.RangedValue;
+import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.settings.SimpleLocalization;
 
 import lombok.AccessLevel;
@@ -99,7 +100,9 @@ public final class Valid {
 	 */
 	public static boolean checkPermission(CommandSender sender, String permission) {
 		if (!PlayerUtil.hasPerm(sender, permission)) {
-			Common.tell(sender, SimpleLocalization.NO_PERMISSION.replace("{permission}", permission));
+			Common.tell(sender, SimpleLocalization.NO_PERMISSION
+					.replace("{permission}", permission)
+					.replace("{plugin.name}", SimplePlugin.getNamed().toLowerCase()));
 
 			return false;
 		}
