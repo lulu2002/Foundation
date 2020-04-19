@@ -70,9 +70,8 @@ public abstract class YamlStaticConfig {
 	 * @throws Exception
 	 */
 	public static final void load(final List<Class<? extends YamlStaticConfig>> classes) throws Exception {
-		if (classes == null) {
+		if (classes == null)
 			return;
-		}
 
 		for (final Class<? extends YamlStaticConfig> clazz : classes) {
 			final YamlStaticConfig config = clazz.newInstance();
@@ -143,9 +142,8 @@ public abstract class YamlStaticConfig {
 
 			onLoadFinished();
 		} catch (Throwable t) {
-			if (t instanceof InvocationTargetException && t.getCause() != null) {
+			if (t instanceof InvocationTargetException && t.getCause() != null)
 				t = t.getCause();
-			}
 
 			Remain.sneaky(t);
 		}
@@ -166,9 +164,8 @@ public abstract class YamlStaticConfig {
 			invokeMethodsIn(subClazz);
 
 			// And classes in sub-classes in superclass.
-			for (final Class<?> subSubClazz : subClazz.getDeclaredClasses()) {
+			for (final Class<?> subSubClazz : subClazz.getDeclaredClasses())
 				invokeMethodsIn(subSubClazz);
-			}
 		}
 	}
 
@@ -181,10 +178,8 @@ public abstract class YamlStaticConfig {
 	private void invokeMethodsIn(final Class<?> clazz) throws Exception {
 		for (final Method m : clazz.getDeclaredMethods()) {
 
-			if (!SimplePlugin.getInstance().isEnabled()) // Disable if plugin got shutdown for an error
-			{
+			if (!SimplePlugin.getInstance().isEnabled())
 				return;
-			}
 
 			final int mod = m.getModifiers();
 
@@ -210,9 +205,8 @@ public abstract class YamlStaticConfig {
 		for (final Field f : clazz.getDeclaredFields()) {
 			f.setAccessible(true);
 
-			if (Modifier.isPublic(f.getModifiers())) {
+			if (Modifier.isPublic(f.getModifiers()))
 				Valid.checkBoolean(!f.getType().isPrimitive(), "Field '" + f.getName() + "' in " + clazz + " must not be primitive!");
-			}
 
 			Object result = null;
 			try {

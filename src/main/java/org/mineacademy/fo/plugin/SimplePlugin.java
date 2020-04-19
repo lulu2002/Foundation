@@ -91,13 +91,12 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	 *
 	 * It is recommended to override this in your own {@link SimplePlugin}
 	 * implementation so you will get the instance of that, directly.
-	 * @param <T>
 	 *
 	 * @return this instance
 	 */
 	public static SimplePlugin getInstance() {
 		if (instance == null) {
-			instance = SimplePlugin.getPlugin(SimplePlugin.class);
+			instance = JavaPlugin.getPlugin(SimplePlugin.class);
 
 			Objects.requireNonNull(instance, "Cannot get a new instance! Have you reloaded?");
 		}
@@ -338,8 +337,6 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 	/**
 	 * Convenience method for registering channels to BungeeCord
-	 *
-	 * @param channel
 	 */
 	private final void registerBungeeCord() {
 		final Messenger messenger = getServer().getMessenger();
@@ -363,7 +360,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	private static void checkSingletons() {
 
 		try (final JarFile file = new JarFile(SimplePlugin.getSource())) {
-			for (final Enumeration<JarEntry> entry = file.entries(); entry.hasMoreElements();) {
+			for (final Enumeration<JarEntry> entry = file.entries(); entry.hasMoreElements(); ) {
 				final JarEntry jar = entry.nextElement();
 				final String name = jar.getName().replace("/", ".");
 
@@ -394,11 +391,10 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 							try {
 								Field instanceField = null;
 
-								for (final Field field : clazz.getDeclaredFields()) {
+								for (final Field field : clazz.getDeclaredFields())
 									if ((Tool.class.isAssignableFrom(field.getType()) || Enchantment.class.isAssignableFrom(field.getType()))
 											&& Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers()))
 										instanceField = field;
-								}
 
 								if (SimpleEnchantment.class.isAssignableFrom(clazz))
 									Valid.checkNotNull(instanceField, "Your enchant class " + clazz.getSimpleName() + " must be a singleton and have static 'instance' field and private constructors!");
@@ -1098,7 +1094,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	}
 
 	/**
-	 * @deprecated 	DO NOT USE
+	 * @deprecated DO NOT USE
 	 * 				Use {@link SimpleCommand#register()} instead for your commands
 	 */
 	@Deprecated
