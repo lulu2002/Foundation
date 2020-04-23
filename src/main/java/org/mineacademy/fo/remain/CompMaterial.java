@@ -690,7 +690,7 @@ public enum CompMaterial {
 	REDSTONE("REDSTONE"),
 	REDSTONE_BLOCK("REDSTONE_BLOCK"),
 	REDSTONE_LAMP("REDSTONE_LAMP_OFF"),
-	REDSTONE_ORE("REDSTONE_ORE"),
+	REDSTONE_ORE("REDSTONE_ORE","GLOWING_REDSTONE_ORE",0),
 	REDSTONE_TORCH("REDSTONE_TORCH_ON"),
 	REDSTONE_WALL_TORCH("REDSTONE_TORCH_ON", 1),
 	REDSTONE_WIRE("REDSTONE_WIRE"),
@@ -1567,7 +1567,7 @@ public enum CompMaterial {
 
 		} catch (final IllegalArgumentException e) {
 			for (final CompMaterial compMat : CompMaterial.values())
-				if (compMat.legacyName.equals(mat.toString()))
+				if (compMat.legacyName.equals(mat.toString()) || compMat.alternativeName.equals(mat.toString()))
 					return compMat;
 		}
 		return null;

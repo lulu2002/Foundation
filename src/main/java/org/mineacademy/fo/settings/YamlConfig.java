@@ -209,7 +209,7 @@ public class YamlConfig implements ConfigSerializable {
 			loading = false;
 		}
 
-		saveIfNecessary0();
+		saveIfNecessary();
 	}
 
 	/**
@@ -295,11 +295,11 @@ public class YamlConfig implements ConfigSerializable {
 			loading = false;
 		}
 
-		saveIfNecessary0();
+		saveIfNecessary();
 	}
 
 	/** Saves the file if changes have been made */
-	private void saveIfNecessary0() {
+	protected void saveIfNecessary() {
 
 		// We want to save the file if the save is pending or if there are no defaults
 		if (save || getDefaults() == null) {
@@ -430,7 +430,7 @@ public class YamlConfig implements ConfigSerializable {
 			instance.reload();
 
 			onLoadFinish();
-			saveIfNecessary0();
+			saveIfNecessary();
 
 		} catch (final Exception e) {
 			Common.error(e, "Failed to reload " + getFileName());
