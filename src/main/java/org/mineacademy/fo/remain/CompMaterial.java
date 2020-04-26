@@ -1567,7 +1567,8 @@ public enum CompMaterial {
 
 		} catch (final IllegalArgumentException e) {
 			for (final CompMaterial compMat : CompMaterial.values())
-				if (compMat.legacyName.equals(mat.toString()) || compMat.alternativeName.equals(mat.toString()))
+				if (compMat.legacyName.equals(mat.toString())
+						|| (compMat.alternativeName != null && compMat.alternativeName.equals(mat.toString())))
 					return compMat;
 		}
 		return null;

@@ -208,7 +208,7 @@ public final class ItemCreator {
 		//
 
 		Valid.checkBoolean(material != null || item != null, "Material or item must be set!");
-		ItemStack is = item != null ? item.clone() : new ItemStack(material.getMaterial(), amount);
+		ItemStack is = item != null ? item.clone() : material.toItem(amount);
 		final ItemMeta itemMeta = meta != null ? meta.clone() : is.getItemMeta();
 
 		// Skip if air
