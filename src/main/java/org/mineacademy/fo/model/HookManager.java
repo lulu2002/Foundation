@@ -1595,11 +1595,11 @@ class TownyHook {
 
 	String getTownyChannel(final Player pl) {
 		try {
-			// towny chat doesn't have a nice channel manager
-
+			// Towny chat doesn't have a nice channel manager
 			// this is used for sending directly to a channel, and it calls the async chat event
 			if (townyChat.getTownyPlayerListener().directedChat.containsKey(pl)) {
 				final com.palmergames.bukkit.TownyChat.channels.Channel channel = townyChat.getChannelsHandler().getChannel(pl, townyChat.getTownyPlayerListener().directedChat.get(pl));
+
 				if (channel != null)
 					return channel.getName();
 			}
@@ -1614,6 +1614,7 @@ class TownyHook {
 
 		} catch (final Throwable ex) {
 		}
+
 		return null;
 	}
 
@@ -1763,29 +1764,29 @@ class VaultHook {
 	// Prefix / Suffix
 	// ------------------------------------------------------------------------------
 
-	String getPlayerPrefix(final Player pl) {
-		return lookupVault(pl, Chcem.PREFIX);
+	String getPlayerPrefix(final Player player) {
+		return lookupVault(player, VaultPart.PREFIX);
 	}
 
-	String getPlayerSuffix(final Player pl) {
-		return lookupVault(pl, Chcem.SUFFIX);
+	String getPlayerSuffix(final Player player) {
+		return lookupVault(player, VaultPart.SUFFIX);
 	}
 
-	String getPlayerGroup(final Player pl) {
-		return lookupVault(pl, Chcem.GROUP);
+	String getPlayerGroup(final Player player) {
+		return lookupVault(player, VaultPart.GROUP);
 	}
 
-	private String lookupVault(final Player pl, final Chcem co) {
+	private String lookupVault(final Player player, final VaultPart vaultPart) {
 		if (chat == null)
 			return "";
 
-		final String[] skupiny = chat.getPlayerGroups(pl);
-		String fallback = co == Chcem.PREFIX ? chat.getPlayerPrefix(pl) : co == Chcem.SUFFIX ? chat.getPlayerSuffix(pl) : skupiny != null && skupiny.length > 0 ? skupiny[0] : "";
+		final String[] groups = chat.getPlayerGroups(player);
+		String fallback = vaultPart == VaultPart.PREFIX ? chat.getPlayerPrefix(player) : vaultPart == VaultPart.SUFFIX ? chat.getPlayerSuffix(player) : groups != null && groups.length > 0 ? groups[0] : "";
 
 		if (fallback == null)
 			fallback = "";
 
-		if (co == Chcem.PREFIX && !SimplePlugin.getInstance().vaultMultiPrefix() || co == Chcem.SUFFIX && !SimplePlugin.getInstance().vaultMultiSuffix())
+		if (vaultPart == VaultPart.PREFIX /*&& !SimplePlugin.getInstance().vaultMultiPrefix()*/ || vaultPart == VaultPart.SUFFIX /*&& !SimplePlugin.getInstance().vaultMultiSuffix()*/)
 			return fallback;
 
 		final List<String> list = new ArrayList<>();
@@ -1793,18 +1794,18 @@ class VaultHook {
 		if (!fallback.isEmpty())
 			list.add(fallback);
 
-		if (skupiny != null)
-			for (final String group : skupiny) {
-				final String part = co == Chcem.PREFIX ? chat.getGroupPrefix(pl.getWorld(), group) : co == Chcem.SUFFIX ? chat.getGroupSuffix(pl.getWorld(), group) : group;
+		if (groups != null)
+			for (final String group : groups) {
+				final String part = vaultPart == VaultPart.PREFIX ? chat.getGroupPrefix(player.getWorld(), group) : vaultPart == VaultPart.SUFFIX ? chat.getGroupSuffix(player.getWorld(), group) : group;
 
 				if (part != null && !part.isEmpty() && !list.contains(part))
 					list.add(part);
 			}
 
-		return StringUtils.join(list, co == Chcem.GROUP ? ", " : "");
+		return StringUtils.join(list, vaultPart == VaultPart.GROUP ? ", " : "");
 	}
 
-	enum Chcem {
+	enum VaultPart {
 		PREFIX,
 		SUFFIX,
 		GROUP,
@@ -2260,14 +2261,14 @@ class WorldGuardHook {
 			else
 				((com.sk89q.worldguard.protection.managers.RegionManager) rm)
 						.getRegions().values().forEach(reg -> {
-					if (reg == null || reg.getId() == null)
-						return;
+							if (reg == null || reg.getId() == null)
+								return;
 
-					final String name = Common.stripColors(reg.getId());
+							final String name = Common.stripColors(reg.getId());
 
-					if (!name.startsWith("__"))
-						list.add(name);
-				});
+							if (!name.startsWith("__"))
+								list.add(name);
+						});
 		}
 
 		return list;

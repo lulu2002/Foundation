@@ -50,6 +50,10 @@ public abstract class YamlStaticConfig {
 	protected YamlStaticConfig() {
 		TEMPORARY_INSTANCE = new YamlConfig() {
 
+			{
+				beforeLoad();
+			}
+
 			@Override
 			protected void onLoadFinish() {
 				loadViaReflection();
@@ -98,9 +102,18 @@ public abstract class YamlStaticConfig {
 	}
 
 	/**
-	 * Invoke code before this class is being scanned and invoked using reflection
+	 * Call this method if you need to make and changes to the settings file
+	 * BEFORE it is actually loaded.
 	 */
 	protected void beforeLoad() {
+	}
+
+	/**
+	 * Invoke code before this class is being scanned and invoked using reflection
+	 *
+	 * This method if called AFTER we load our file
+	 */
+	protected void preLoad() {
 	}
 
 	/**
@@ -122,13 +135,13 @@ public abstract class YamlStaticConfig {
 	 * Loads the class via reflection, scanning for "private static void init()"
 	 * methods to run
 	 */
-	protected final void loadViaReflection() {
+	private final void loadViaReflection() {
 		Valid.checkNotNull(TEMPORARY_INSTANCE, "Instance cannot be null " + getFileName());
 		Valid.checkNotNull(TEMPORARY_INSTANCE.getConfig(), "Config cannot be null for " + getFileName());
 		Valid.checkNotNull(TEMPORARY_INSTANCE.getDefaults(), "Default config cannot be null for " + getFileName());
 
 		try {
-			beforeLoad();
+			preLoad();
 
 			// Parent class if applicable.
 			if (YamlStaticConfig.class.isAssignableFrom(getClass().getSuperclass())) {
@@ -309,8 +322,12 @@ public abstract class YamlStaticConfig {
 		return TEMPORARY_INSTANCE.getStringList(path);
 	}
 
-	protected static final <E extends Enum<E>> StrictList<E> getEnumList(final String path, final Class<E> listType) {
-		return TEMPORARY_INSTANCE.getEnumList_OLD(path, listType);
+	protected static final <E> List<E> getList(final String path, final Class<E> listType) {
+		return TEMPORARY_INSTANCE.getList(path, listType);
+	}
+
+	protected static final <E extends Enum<E>> List<E> getCompatibleEnumList(final String path, final Class<E> listType) {
+		return TEMPORARY_INSTANCE.getCompatibleEnumList(path, listType);
 	}
 
 	protected static final boolean getBoolean(final String path) {
@@ -367,6 +384,10 @@ public abstract class YamlStaticConfig {
 
 	protected static final <E> E get(final String path, final Class<E> typeOf) {
 		return TEMPORARY_INSTANCE.get(path, typeOf);
+	}
+
+	protected static final <E> E getWithData(final String path, final Class<E> typeOf, Object... deserializeArguments) {
+		return TEMPORARY_INSTANCE.getWithData(path, typeOf, deserializeArguments);
 	}
 
 	protected static final Object getObject(final String path) {
