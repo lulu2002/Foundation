@@ -2,6 +2,7 @@ package org.mineacademy.fo.settings;
 
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.command.SimpleCommand;
+import org.mineacademy.fo.model.Replacer;
 import org.mineacademy.fo.plugin.SimplePlugin;
 
 /**
@@ -15,8 +16,8 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 
     /**
      * A flag indicating that this class has been loaded
-     * <p>
-     * You can place this class to {@link SimplePlugin#getSettingsClasses()} to make
+     *
+     * You can place this class to {@link SimplePlugin#getSettings()} to make
      * it load automatically
      */
     private static boolean localizationClassCalled;
@@ -27,9 +28,9 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 
     /**
      * Create and load the localization/messages_LOCALEPREFIX.yml file.
-     * <p>
+     *
      * See {@link SimpleSettings#LOCALE_PREFIX} for the locale prefix.
-     * <p>
+     *
      * The locale file is extracted from your plugins jar to the localization/ folder
      * if it does not exists, or updated if it is out of date.
      */
@@ -43,6 +44,11 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
     // --------------------------------------------------------------------
 
     /**
+     * The message shown when there is a fatal error running this command
+     */
+    public static String ERROR = "&4&lOups! &cThe command failed :( Check the console and report the error.";
+
+    /**
      * The configuration version number, found in the "Version" key in the file.,
      */
     protected static Integer VERSION;
@@ -51,11 +57,11 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
      * Set and update the config version automatically, however the {@link #VERSION} will
      * contain the older version used in the file on the disk so you can use
      * it for comparing in the init() methods
-     * <p>
+     *
      * Please call this as a super method when overloading this!
      */
     @Override
-    protected void beforeLoad() {
+    protected void preLoad() {
         // Load version first so we can use it later
         pathPrefix(null);
 
@@ -65,7 +71,7 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 
     /**
      * Return the very latest config version
-     * <p>
+     *
      * Any changes here must also be made to the "Version" key in your settings file.
      *
      * @return
@@ -87,56 +93,98 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
         /**
          * The message at "No_Console" key shown when console is denied executing a command.
          */
-        public static String NO_CONSOLE = "&c不好意思，只有玩家才能執行此指令。";
+        public static String NO_CONSOLE = "&cYou may only use this command as a player";
 
         /**
          * The message shown when there is a fatal error running this command
          */
-        public static String COOLDOWN_WAIT = "&c請稍等 {duration} 秒後再使用這個指令。";
+        public static String COOLDOWN_WAIT = "&cWait {duration} second(s) before using this command again.";
 
         /**
          * The message shown when the player tries a command but inputs an
          * invalid first argument parameter. We suggest he types /{label} ? for help so make
          * sure you implement some help there as well.
+         *
          */
-        public static String INVALID_ARGUMENT = "&c無法辨識的指令參數，請輸入 &6/{label} ? &c來獲得指令參數列表。";
+        public static String INVALID_ARGUMENT = "&cInvalid argument. Run &6/{label} ? &cfor help.";
 
         /**
          * The message shown when the player tries a command but inputs an
          * invalid second argument parameter. We so suggest he types /{label} {0} for help
+         *
          */
-        public static String INVALID_SUB_ARGUMENT = "&c無法辨識的指令參數，請輸入 '/{label} {0}' 來獲得參數使用方次。";
+        public static String INVALID_SUB_ARGUMENT = "&cInvalid argument. Run '/{label} {0}' for help.";
 
         /**
          * The message shown on the same occasion as {@link #INVALID_ARGUMENT} however
-         * this is shows when the command overrides {@link SimpleCommand#getMultilineUsageMessage()} ()}
+         * this is shows when the command overrides {@link SimpleCommand#getMultilineUsageMessage()}
+         *
          */
-        public static String INVALID_ARGUMENT_MULTILINE = "&c無法辨識的指令參數，以下為協助資訊:";
+        public static String INVALID_ARGUMENT_MULTILINE = "&cInvalid argument. Usage:";
+
+        /**
+         * The authors label
+         */
+        public static String LABEL_AUTHORS = "Made by";
 
         /**
          * The description label
          */
-        public static String LABEL_DESCRIPTION = "&c說明: {description}";
+        public static String LABEL_DESCRIPTION = "&cDescription: {description}";
+
+        /**
+         * The optional arguments label
+         */
+        public static String LABEL_OPTIONAL_ARGS = "optional arguments";
+
+        /**
+         * The required arguments label
+         */
+        public static String LABEL_REQUIRED_ARGS = "required arguments";
 
         /**
          * The multiline usages label, see {@link SimpleCommand#getMultilineUsageMessage()}
          */
-        public static String LABEL_USAGES = "&c使用方式:";
+        public static String LABEL_USAGES = "&cUsages:";
 
         /**
          * The usage label
          */
-        public static String LABEL_USAGE = "&c使用方式:";
+        public static String LABEL_USAGE = "&cUsage:";
 
         /**
          * The message at "Reload_Success" key shown when the plugin has been reloaded successfully.
          */
-        public static String RELOAD_SUCCESS = "&6{plugin_name} {plugin_version} 已重新載入。";
+        public static String RELOAD_SUCCESS = "&6{plugin_name} {plugin_version} has been reloaded.";
 
         /**
          * The message at "Reload_Fail" key shown when the plugin has failed to reload.
          */
-        public static String RELOAD_FAIL = "&4&l哇糟糕！&c插件在載入過程中發生了錯誤，請查看後台獲取詳細資訊，錯誤類型為: {error}";
+        public static String RELOAD_FAIL = "&4Oups, &creloading failed! See the console for more information. Error: {error}";
+        /**
+         * The message shown when there is a fatal error running this command
+         */
+        public static Replacer ERROR = Replacer.of("&4&lOups! &cThe command failed :( Check the console and report the error.");
+
+        /**
+         * The message shown when player has no permissions to view ANY subcommands in group command.
+         */
+        public static String HELP_HEADER_NO_SUBCOMMANDS = "&cYou don't have permissions to view any subcommands.";
+
+        /**
+         * Key for when plugin is reloading {@link org.mineacademy.fo.plugin.SimplePlugin}
+         */
+        public static String RELOADING = "reloading";
+
+        /**
+         * Key for when plugin is disabled {@link org.mineacademy.fo.plugin.SimplePlugin}
+         */
+
+        public static String DISABLED = "disabled";
+        /**
+         * The message shown when plugin is reloading or was disabled and player attempts to run command
+         */
+        public static String USE_WHILE_NULL = "&cCannot use this command while the plugin is {state}.";
 
         /**
          * Load the values -- this method is called automatically by reflection in the {@link YamlStaticConfig} class!
@@ -159,8 +207,17 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
             if (isSetDefault("Invalid_Argument_Multiline"))
                 INVALID_ARGUMENT_MULTILINE = getString("Invalid_Argument_Multiline");
 
+            if (isSetDefault("Label_Authors"))
+                LABEL_AUTHORS = getString("Label_Authors");
+
             if (isSetDefault("Label_Description"))
                 LABEL_DESCRIPTION = getString("Label_Description");
+
+            if (isSetDefault("Label_Optional_Args"))
+                LABEL_OPTIONAL_ARGS = getString("Label_Optional_Args");
+
+            if (isSetDefault("Label_Required_Args"))
+                LABEL_REQUIRED_ARGS = getString("Label_Required_Args");
 
             if (isSetDefault("Label_Usage"))
                 LABEL_USAGE = getString("Label_Usage");
@@ -173,6 +230,22 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 
             if (isSetDefault("Reload_Fail"))
                 RELOAD_FAIL = getString("Reload_Fail");
+
+            if (isSetDefault("Error"))
+                ERROR = getReplacer("Error");
+
+            if (isSetDefault("Header_No_Subcommands"))
+                HELP_HEADER_NO_SUBCOMMANDS = getString("Header_No_Subcommands");
+
+            if (isSet("Reloading"))
+                RELOADING = getString("Reloading");
+
+            if (isSet("Disabled"))
+                DISABLED = getString("Disabled");
+
+            if (isSet("Use_While_Null"))
+                USE_WHILE_NULL = getString("Use_While_Null").replace("{state}", SimplePlugin.isReloading() ? RELOADING : DISABLED);
+
         }
     }
 
@@ -184,7 +257,7 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
         /**
          * Message shown when the player is not online on this server
          */
-        public static String NOT_ONLINE = "&c名為 {player} &c的玩家並不在線。";
+        public static String NOT_ONLINE = "&cPlayer {player} &cis not online on this server.";
 
         /**
          * Load the values -- this method is called automatically by reflection in the {@link YamlStaticConfig} class!
@@ -205,7 +278,7 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
         /**
          * Message shown when the player is not online on this server
          */
-        public static String ITEM_DELETED = "&2{item} 已刪除完成。";
+        public static String ITEM_DELETED = "&2The {item} has been deleted.";
 
         /**
          * Load the values -- this method is called automatically by reflection in the {@link YamlStaticConfig} class!
@@ -226,16 +299,16 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
         /**
          * The message if a new version is found but not downloaded
          */
-        public static String AVAILABLE = "&3{plugin_name}&2 已有新版本可供下載。\n"
-                + "&2您目前使用的版本: &f{current}&2; 新版本: &f{new}\n"
-                + "&2下載網址: &7https://www.spigotmc.org/resources/{resource_id}/.";
+        public static String AVAILABLE = "&2A new version of &3{plugin_name}&2 is available.\n"
+                + "&2Current version: &f{current}&2; New version: &f{new}\n"
+                + "&2URL: &7https://www.spigotmc.org/resources/{resource_id}/.";
 
         /**
          * The message if a new version is found and downloaded
          */
-        public static String DOWNLOADED = "&3{plugin_name}&2 的版本已從 {current} 更新至 {new}。\n"
-                + "&2請重新啟動伺服器讓新版本得以套用。"
-                + "&2同時，若想得知詳細更新內容，歡迎前往 &7https://www.spigotmc.org/resources/{resource_id} &2獲得相關資訊。\n";
+        public static String DOWNLOADED = "&3{plugin_name}&2 has been upgraded from {current} to {new}.\n"
+                + "&2Visit &7https://www.spigotmc.org/resources/{resource_id} &2for more information.\n"
+                + "&2Please restart the server to load the new version.";
 
         /**
          * Load the values -- this method is called automatically by reflection in the {@link YamlStaticConfig} class!
@@ -261,23 +334,18 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
     /**
      * The message for player if they lack a permission.
      */
-    public static String NO_PERMISSION = "&c抱歉，你沒有權限使用這項功能 ({permission})。";
-
-    /**
-     * The message shown when there is a fatal error running things.
-     */
-    public static String ERROR = "&4&l哇糟糕！&c操作在執行時發生了錯誤，請查看後台獲取詳細錯誤訊息。";
+    public static String NO_PERMISSION = "&cInsufficient permission ({permission}).";
 
     /**
      * The server prefix. Example: you have to use it manually if you are sending messages
      * from the console to players
      */
-    public static String SERVER_PREFIX = "[伺服器]";
+    public static String SERVER_PREFIX = "[Server]";
 
     /**
      * The console localized name. Example: Console
      */
-    public static String CONSOLE_NAME = "後台";
+    public static String CONSOLE_NAME = "Console";
 
     /**
      * The message when a section is missing from data.db file (typically we use
@@ -288,20 +356,17 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
     /**
      * The message when the console attempts to start a server conversation which is prevented.
      */
-    public static String CONVERSATION_REQUIRES_PLAYER = "不好意思，只有玩家才能使用對話功能。";
+    public static String CONVERSATION_REQUIRES_PLAYER = "Only players may enter this conversation.";
 
     /**
      * Load the values -- this method is called automatically by reflection in the {@link YamlStaticConfig} class!
      */
     private static void init() {
         pathPrefix(null);
-        Valid.checkBoolean(!localizationClassCalled, "語言文件已經載入完成！");
+        Valid.checkBoolean(!localizationClassCalled, "Localization class already loaded!");
 
         if (isSetDefault("No_Permission"))
             NO_PERMISSION = getString("No_Permission");
-
-        if (isSetDefault("Error"))
-            ERROR = getString("Error");
 
         if (isSetDefault("Server_Prefix"))
             SERVER_PREFIX = getString("Server_Prefix");

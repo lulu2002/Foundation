@@ -362,6 +362,10 @@ public abstract class YamlStaticConfig {
 		return TEMPORARY_INSTANCE.getSound(path);
 	}
 
+	protected static final SimpleSound getSimpleSound(final String path) {
+		return getSound(path);
+	}
+
 	protected static final CasusHelper getCasus(final String path) {
 		return TEMPORARY_INSTANCE.getCasus(path);
 	}
