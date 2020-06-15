@@ -38,13 +38,11 @@ import org.mineacademy.fo.PlayerUtil;
 import org.mineacademy.fo.ReflectionUtil;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.debug.Debugger;
-import org.mineacademy.fo.debug.LagCatcher;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.model.HookManager.PAPIPlaceholder;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.region.Region;
 import org.mineacademy.fo.remain.Remain;
-import org.mineacademy.fo.settings.SimpleSettings;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
@@ -608,7 +606,7 @@ public final class HookManager {
 	 * @param who
 	 * @param ignore
 	 */
-	public static void setIgnore(final String player, final String who, final boolean ignore) {
+	public static void setIgnore(final UUID player, final UUID who, final boolean ignore) {
 		if (isEssentialsXLoaded())
 			essentialsxHook.setIgnore(player, who, ignore);
 
@@ -623,9 +621,9 @@ public final class HookManager {
 	 * @param who
 	 * @return
 	 */
-	public static boolean isIgnoring(final String player, final String who) {
-		Valid.checkBoolean(player != null && !player.isEmpty(), "Player to check ignore from cannot be null/empty");
-		Valid.checkBoolean(who != null && !who.isEmpty(), "Player to check ignore to cannot be null/empty");
+	public static boolean isIgnoring(final UUID player, final UUID who) {
+		Valid.checkBoolean(player != null, "Player to check ignore from cannot be null/empty");
+		Valid.checkBoolean(who != null, "Player to check ignore to cannot be null/empty");
 
 		return isEssentialsXLoaded() ? essentialsxHook.isIgnoring(player, who) : isCMILoaded() ? CMIHook.isIgnoring(player, who) : false;
 	}
@@ -1328,7 +1326,7 @@ public final class HookManager {
 	 * @return see above, or true if lands plugin not installed
 	 */
 	public static boolean hasLandsMonsterSpawn(final Location location) {
-		return isLandsLoaded() ? landsHook.hasMonsterSpawn(location) : true;
+		return isLandsLoaded() && landsHook.hasMonsterSpawn(location);
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -1386,7 +1384,7 @@ class EssentialsHook {
 			user.setGodModeEnabled(godMode);
 	}
 
-	void setIgnore(final String player, final String toIgnore, final boolean ignore) {
+	void setIgnore(final UUID player, final UUID toIgnore, final boolean ignore) {
 		try {
 			final com.earth2me.essentials.User user = ess.getUser(player);
 			final com.earth2me.essentials.User toIgnoreUser = ess.getUser(toIgnore);
@@ -1400,7 +1398,7 @@ class EssentialsHook {
 		}
 	}
 
-	boolean isIgnoring(final String player, final String ignoringPlayer) {
+	boolean isIgnoring(final UUID player, final UUID ignoringPlayer) {
 		try {
 			final com.earth2me.essentials.User user = ess.getUser(player);
 			final com.earth2me.essentials.User ignored = ess.getUser(ignoringPlayer);
@@ -2560,23 +2558,21 @@ class CMIHook {
 		user.setLastTeleportLocation(location);
 	}
 
-	void setIgnore(final String player, final String who, final boolean ignore) {
+	void setIgnore(final UUID player, final UUID who, final boolean ignore) {
 		final CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-		final OfflinePlayer ignoredPlayer = Bukkit.getOfflinePlayer(who);
 
-		if (ignoredPlayer != null)
-			if (ignore)
-				user.addIgnore(ignoredPlayer.getUniqueId(), true /* save now (?) */);
-			else
-				user.removeIgnore(ignoredPlayer.getUniqueId());
+		if (ignore)
+			user.addIgnore(who, true /* save now */);
+		else
+			user.removeIgnore(who);
 	}
 
-	boolean isIgnoring(final String player, final String who) {
+	boolean isIgnoring(final UUID player, final UUID who) {
 		try {
 			final CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-			final OfflinePlayer ignoredPlayer = Bukkit.getOfflinePlayer(who);
 
-			return user.isIgnoring(ignoredPlayer.getUniqueId());
+			return user.isIgnoring(who);
+
 		} catch (final NullPointerException ex) {
 			return false;
 		}
@@ -2613,15 +2609,12 @@ class DiscordSRVHook implements Listener {
 	}
 
 	boolean sendMessage(final CommandSender sender, final String channel, final String message) {
-		LagCatcher.start("Minecraft to Discord");
-
 		final TextChannel textChannel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName(channel);
 
 		// Channel not configured in DiscordSRV config.yml, ignore
 		if (textChannel == null) {
 			Debugger.debug("discord", "[MC->Discord] Could not find Discord channel '" + channel + "'. Available: " + String.join(", ", getChannels()) + ". Not sending: " + message);
 
-			LagCatcher.end("Minecraft to Discord", Debugger.isDebugged("discord") ? 0 : SimpleSettings.LAG_THRESHOLD_MILLIS, "Minecraft > Discord sending ended due to no channel. Took {time} ms");
 			return false;
 		}
 
@@ -2630,8 +2623,7 @@ class DiscordSRVHook implements Listener {
 
 			final DiscordSRV instance = JavaPlugin.getPlugin(DiscordSRV.class);
 
-			// Dirty: We have to temporarily unset value in DiscordSRV to enable the processChatMessage
-			// method to function
+			// Dirty: We have to temporarily unset value in DiscordSRV to enable the processChatMessage method to function
 			final File file = new File(SimplePlugin.getData().getParent(), "DiscordSRV/config.yml");
 
 			if (file.exists()) {
@@ -2656,24 +2648,41 @@ class DiscordSRVHook implements Listener {
 
 			DiscordUtil.sendMessage(textChannel, message);
 		}
-
-		LagCatcher.end("Minecraft to Discord", Debugger.isDebugged("discord") ? 0 : SimpleSettings.LAG_THRESHOLD_MILLIS, "Minecraft > Discord sending took {time} ms");
 		return true;
 	}
 }
 
 class LandsHook {
 
-	private final LandsIntegration api;
+	private LandsIntegration api;
 
 	public LandsHook() {
-		api = new LandsIntegration(SimplePlugin.getInstance(), true);
+		try {
+			api = new LandsIntegration(SimplePlugin.getInstance(), true);
+		} catch (final Throwable throwable) {
+			api = null;
+			// Try it again in 10 seconds, maybe the plugin wasn't yet loaded
+			Common.runLater(20 * 10, () -> {
+				try {
+					api = new LandsIntegration(SimplePlugin.getInstance(), true);
+				} catch (Throwable ignored) {
+				}
+			});
+		}
 	}
 
 	public boolean hasMonsterSpawn(final Location location) {
-		final LandArea landArea = api.getArea(location);
-		final Land land = api.getLand(location);
+		try {
+			if (api == null)
+				return false;
 
-		return land != null && land.hasLandSetting(LandSetting.MONSTER_SPAWN) || landArea != null && landArea.hasLandSetting(LandSetting.MONSTER_SPAWN);
+			final Land land = api.getLand(location);
+			final LandArea landArea = api.getArea(location);
+
+			return land != null && land.hasLandSetting(LandSetting.MONSTER_SPAWN) || landArea != null && landArea.hasLandSetting(LandSetting.MONSTER_SPAWN);
+		} catch (final Throwable throwable) {
+			Common.log("[Warn] couldn't hook into Lands!");
+		}
+		return false;
 	}
 }

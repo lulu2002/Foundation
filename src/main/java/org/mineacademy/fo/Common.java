@@ -30,7 +30,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.conversations.Conversable;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -207,13 +206,11 @@ public final class Common {
 	 */
 	public static void broadcast(final String message, final boolean log) {
 		if (message != null && !message.equals("none")) {
-			for (final Player online : Remain.getOnlinePlayers()) {
+			for (final Player online : Remain.getOnlinePlayers())
 				tellJson(online, message);
-			}
 
-			if (log) {
+			if (log)
 				log(message);
-			}
 		}
 	}
 
@@ -223,9 +220,8 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void broadcast(final Collection<String> messages) {
-		for (final String message : messages) {
+		for (final String message : messages)
 			broadcast(message, true);
-		}
 	}
 
 	/**
@@ -235,9 +231,8 @@ public final class Common {
 	 * @param log
 	 */
 	public static void broadcast(final Collection<String> messages, final boolean log) {
-		for (final String message : messages) {
+		for (final String message : messages)
 			broadcast(message, log);
-		}
 	}
 
 	/**
@@ -249,15 +244,12 @@ public final class Common {
 	 */
 	public static void broadcastWithPerm(final String permission, final String message, final boolean log) {
 		if (message != null && !message.equals("none")) {
-			for (final Player online : Remain.getOnlinePlayers()) {
-				if (PlayerUtil.hasPerm(online, permission)) {
+			for (final Player online : Remain.getOnlinePlayers())
+				if (PlayerUtil.hasPerm(online, permission))
 					tellJson(online, message);
-				}
-			}
 
-			if (log) {
+			if (log)
 				log(message);
-			}
 		}
 	}
 
@@ -271,11 +263,9 @@ public final class Common {
 		final String legacy = message.toLegacyText();
 
 		if (!legacy.equals("none")) {
-			for (final Player online : Remain.getOnlinePlayers()) {
-				if (PlayerUtil.hasPerm(online, permission)) {
+			for (final Player online : Remain.getOnlinePlayers())
+				if (PlayerUtil.hasPerm(online, permission))
 					Remain.sendComponent(online, message);
-				}
-			}
 
 			log(legacy);
 		}
@@ -288,9 +278,8 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void broadcastTo(final Iterable<? extends CommandSender> recipients, final String... messages) {
-		for (final CommandSender sender : recipients) {
+		for (final CommandSender sender : recipients)
 			tell(sender, messages);
-		}
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -433,11 +422,9 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void tell(final CommandSender sender, final String... messages) {
-		for (final String message : messages) {
-			if (message != null && !"none".equals(message)) {
+		for (final String message : messages)
+			if (message != null && !"none".equals(message))
 				tellJson(sender, message);
-			}
-		}
 	}
 
 	/**
@@ -452,9 +439,8 @@ public final class Common {
 	 * @param message
 	 */
 	public static void tellJson(@NonNull final CommandSender sender, String message) {
-		if (message.isEmpty() || "none".equals(message)) {
+		if (message.isEmpty() || "none".equals(message))
 			return;
-		}
 
 		// Has prefix already? This is replaced when colorizing
 		final boolean hasPrefix = message.contains("{prefix}");
@@ -469,25 +455,21 @@ public final class Common {
 		if (message.startsWith("[JSON]")) {
 			String stripped = message.substring(6);
 
-			if (stripped.startsWith(" ")) {
+			if (stripped.startsWith(" "))
 				stripped = stripped.substring(1);
-			}
 
-			if (!stripped.isEmpty()) {
+			if (!stripped.isEmpty())
 				Remain.sendJson(sender, stripped);
-			}
 
-		} else {
+		} else
 			for (final String part : splitNewline(message)) {
 				final String toSend = (ADD_TELL_PREFIX && !hasPrefix ? removeSurroundingSpaces(tellPrefix) + " " : "") + part;
 
-				if (SEND_TELL_TO_CONVERSING && sender instanceof Conversable && ((Conversable) sender).isConversing()) {
+				if (SEND_TELL_TO_CONVERSING && sender instanceof Conversable && ((Conversable) sender).isConversing())
 					((Conversable) sender).sendRawMessage(toSend);
-				} else {
+				else
 					sender.sendMessage(toSend);
-				}
 			}
-		}
 	}
 
 	/**
@@ -504,9 +486,8 @@ public final class Common {
 	private static String removeFirstSpaces(String message) {
 		message = Common.getOrEmpty(message);
 
-		while (message.startsWith(" ")) {
+		while (message.startsWith(" "))
 			message = message.substring(1);
-		}
 
 		return message;
 	}
@@ -529,9 +510,8 @@ public final class Common {
 		for (int i = 0; i < copy.size(); i++) {
 			final String message = copy.get(i);
 
-			if (message != null) {
+			if (message != null)
 				copy.set(i, colorize(message));
-			}
 		}
 
 		return copy;
@@ -567,9 +547,8 @@ public final class Common {
 	private static String removeSurroundingSpaces(String message) {
 		message = getOrEmpty(message);
 
-		while (message.endsWith(" ")) {
+		while (message.endsWith(" "))
 			message = message.substring(0, message.length() - 1);
-		}
 
 		return removeFirstSpaces(message);
 	}
@@ -581,9 +560,8 @@ public final class Common {
 	 * @return
 	 */
 	public static String[] revertColorizing(final String[] messages) {
-		for (int i = 0; i < messages.length; i++) {
+		for (int i = 0; i < messages.length; i++)
 			messages[i] = revertColorizing(messages[i]);
-		}
 
 		return messages;
 	}
@@ -658,11 +636,9 @@ public final class Common {
 		if (c != -1) {
 
 			// Contains a character after color character
-			if (msg.length() > c + 1) {
-				if (msg.substring(c + 1, c + 2).matches("([0-9a-fk-or])")) {
+			if (msg.length() > c + 1)
+				if (msg.substring(c + 1, c + 2).matches("([0-9a-fk-or])"))
 					return msg.substring(c, c + 2).trim();
-				}
-			}
 
 			// Search after colors before that invalid character
 			return lastColor(msg.substring(0, c), colorChar);
@@ -729,9 +705,8 @@ public final class Common {
 	public static String scoreboardLine(final int length) {
 		String fill = "";
 
-		for (int i = 0; i < length; i++) {
+		for (int i = 0; i < length; i++)
 			fill += "-";
-		}
 
 		return "&m|" + fill + "|";
 	}
@@ -747,9 +722,8 @@ public final class Common {
 		if (msg.startsWith("[JSON]")) {
 			final String stripped = msg.replaceFirst("\\[JSON\\]", "").trim();
 
-			if (!stripped.isEmpty()) {
+			if (!stripped.isEmpty())
 				finalText = "&8[&6json&8] &r" + StringUtils.join(splitNewline(Remain.toLegacyText(stripped, false)));
-			}
 		}
 
 		return finalText.length() <= 60 ? finalText : finalText.substring(0, 60) + "...";
@@ -866,15 +840,13 @@ public final class Common {
 	public static String fancyBar(final int min, final char minChar, final int max, final char maxChar, final ChatColor delimiterColor) {
 		String formatted = "";
 
-		for (int i = 0; i < min; i++) {
+		for (int i = 0; i < min; i++)
 			formatted += minChar;
-		}
 
 		formatted += delimiterColor;
 
-		for (int i = 0; i < max - min; i++) {
+		for (int i = 0; i < max - min; i++)
 			formatted += maxChar;
-		}
 
 		return formatted;
 	}
@@ -896,13 +868,11 @@ public final class Common {
 	 * @return
 	 */
 	public static String shortLocation(final Location loc) {
-		if (loc == null) {
+		if (loc == null)
 			return "Location(null)";
-		}
 
-		if (loc.equals(new Location(null, 0, 0, 0))) {
+		if (loc.equals(new Location(null, 0, 0, 0)))
 			return "Location(null, 0, 0, 0)";
-		}
 
 		Valid.checkNotNull(loc.getWorld(), "Cannot shorten a location with null world!");
 
@@ -923,9 +893,8 @@ public final class Common {
 	public static boolean doesPluginExist(final String plugin) {
 		final boolean hooked = doesPluginExistSilently(plugin);
 
-		if (hooked) {
+		if (hooked)
 			log("&3Hooked into&8: &f" + plugin);
-		}
 
 		return hooked;
 	}
@@ -942,23 +911,20 @@ public final class Common {
 	public static boolean doesPluginExistSilently(final String pluginName) {
 		Plugin lookup = null;
 
-		for (final Plugin otherPlugin : Bukkit.getPluginManager().getPlugins()) {
+		for (final Plugin otherPlugin : Bukkit.getPluginManager().getPlugins())
 			if (otherPlugin.getName().equals(pluginName)) {
 				lookup = otherPlugin;
 				break;
 			}
-		}
 
 		final Plugin found = lookup;
 
-		if (found == null) {
+		if (found == null)
 			return false;
-		}
 
-		if (!found.isEnabled()) {
+		if (!found.isEnabled())
 			runLaterAsync(0, () -> Valid.checkBoolean(found.isEnabled(), SimplePlugin.getNamed() + " could not hook into " + pluginName + " as the plugin is disabled! (DO NOT REPORT THIS TO "
 					+ SimplePlugin.getNamed() + ", look for errors above and contact support " + pluginName + ")"));
-		}
 
 		return true;
 	}
@@ -974,9 +940,8 @@ public final class Common {
 	 * @param command
 	 */
 	public static void dispatchCommand(@Nullable final CommandSender playerReplacement, @NonNull final String command) {
-		if (command.isEmpty() || command.equalsIgnoreCase("none")) {
+		if (command.isEmpty() || command.equalsIgnoreCase("none"))
 			return;
-		}
 
 		Common.runLater(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), Common.colorize(command.replace("{player}", playerReplacement == null ? "" : Common.resolveSenderName(playerReplacement)))));
 	}
@@ -988,9 +953,8 @@ public final class Common {
 	 * @param command
 	 */
 	public static void dispatchCommandAsPlayer(@NonNull final Player playerSender, @NonNull final String command) {
-		if (command.isEmpty() || command.equalsIgnoreCase("none")) {
+		if (command.isEmpty() || command.equalsIgnoreCase("none"))
 			return;
-		}
 
 		Common.runLater(() -> playerSender.performCommand(Common.colorize(command.replace("{player}", Common.resolveSenderName(playerSender)))));
 	}
@@ -1061,21 +1025,8 @@ public final class Common {
 		for (int i = 0; i < args.length; i++) {
 			final Object arg = args[i];
 
-			if (arg != null) {
-				if (arg instanceof Entity) {
-					args[i] = Remain.getName((Entity) arg);
-				} else if (arg instanceof CommandSender) {
-					args[i] = ((CommandSender) arg).getName();
-				} else if (arg instanceof World) {
-					args[i] = ((World) arg).getName();
-				} else if (arg instanceof Location) {
-					args[i] = shortLocation((Location) arg);
-				} else if (arg instanceof Collection) {
-					final String string = arg.toString();
-
-					args[i] = string.substring(1, string.length() - 1);
-				}
-			}
+			if (arg != null)
+				args[i] = Replacer.simplify(arg);
 		}
 
 		return String.format(format, args);
@@ -1117,21 +1068,18 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void log(final boolean addLogPrefix, final String... messages) {
-		if (messages == null) {
+		if (messages == null)
 			return;
-		}
 
 		for (String message : messages) {
-			if (message.equals("none")) {
+			if (message.equals("none") || message.isEmpty())
 				continue;
-			}
 
 			if (stripColors(message).replace(" ", "").isEmpty()) {
-				if (CONSOLE_SENDER == null) {
+				if (CONSOLE_SENDER == null)
 					System.out.println(" ");
-				} else {
+				else
 					CONSOLE_SENDER.sendMessage("  ");
-				}
 
 				continue;
 			}
@@ -1142,22 +1090,18 @@ public final class Common {
 			if (message.startsWith("[JSON]")) {
 				final String stripped = message.replaceFirst("\\[JSON\\]", "").trim();
 
-				if (!stripped.isEmpty()) {
+				if (!stripped.isEmpty())
 					log(Remain.toLegacyText(stripped, false));
-				}
 
-			} else {
+			} else
 				for (final String part : splitNewline(message)) {
 					final String log = ((addLogPrefix && ADD_LOG_PREFIX ? removeSurroundingSpaces(logPrefix) + " " : "") + Common.getOrEmpty(part).replace("\n", colorize("\n&r"))).trim();
 
-					if (CONSOLE_SENDER != null) {
+					if (CONSOLE_SENDER != null)
 						CONSOLE_SENDER.sendMessage(log);
-					} else {
-						System.out.println(
-								"[" + SimplePlugin.getNamed() + "] " + stripColors(log));
-					}
+					else
+						System.out.println("[" + SimplePlugin.getNamed() + "] " + stripColors(log));
 				}
-			}
 		}
 
 	}
@@ -1182,20 +1126,17 @@ public final class Common {
 	public static void logFramed(final boolean disablePlugin, final String... messages) {
 		if (messages != null && !Valid.isNullOrEmpty(messages)) {
 			log("&7" + consoleLine());
-			for (final String msg : messages) {
+			for (final String msg : messages)
 				log(" &c" + msg);
-			}
 
-			if (disablePlugin) {
+			if (disablePlugin)
 				log(" &cPlugin is now disabled.");
-			}
 
 			log("&7" + consoleLine());
 		}
 
-		if (disablePlugin) {
+		if (disablePlugin)
 			Bukkit.getPluginManager().disablePlugin(SimplePlugin.getInstance());
-		}
 	}
 
 	/**
@@ -1218,9 +1159,8 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void error(final boolean disablePlugin, final Throwable t, final String... messages) {
-		if (!(t instanceof FoException)) {
+		if (!(t instanceof FoException))
 			Debugger.saveError(t, messages);
-		}
 
 		Debugger.printStackTrace(t);
 		logFramed(disablePlugin, replaceErrorVariable(t, messages));
@@ -1256,9 +1196,8 @@ public final class Common {
 	 * @return
 	 */
 	private static String[] replaceErrorVariable(Throwable throwable, final String... msgs) {
-		while (throwable.getCause() != null) {
+		while (throwable.getCause() != null)
 			throwable = throwable.getCause();
-		}
 
 		final String throwableName = throwable == null ? "Unknown error." : throwable.getClass().getSimpleName();
 		final String throwableMessage = throwable == null || throwable.getMessage() == null || throwable.getMessage().isEmpty() ? "" : ": " + throwable.getMessage();
@@ -1401,11 +1340,9 @@ public final class Common {
 	public static <T> List<T> joinArrays(final Iterable<T>... arrays) {
 		final List<T> all = new ArrayList<>();
 
-		for (final Iterable<T> array : arrays) {
-			for (final T element : array) {
+		for (final Iterable<T> array : arrays)
+			for (final T element : array)
 				all.add(element);
-			}
-		}
 
 		return all;
 	}
@@ -1420,9 +1357,8 @@ public final class Common {
 	public static <T> StrictList<T> join(final StrictList<T>... lists) {
 		final StrictList<T> joined = new StrictList<>();
 
-		for (final StrictList<T> list : lists) {
+		for (final StrictList<T> list : lists)
 			joined.addAll(list);
-		}
 
 		return joined;
 	}
@@ -1462,9 +1398,8 @@ public final class Common {
 	public static String joinRange(final int start, final int stop, final String[] array, final String delimiter) {
 		String joined = "";
 
-		for (int i = start; i < MathUtil.range(stop, 0, array.length); i++) {
+		for (int i = start; i < MathUtil.range(stop, 0, array.length); i++)
 			joined += (joined.isEmpty() ? "" : delimiter) + array[i];
-		}
 
 		return joined;
 	}
@@ -1519,7 +1454,7 @@ public final class Common {
 	 * @return
 	 */
 	public static <T> String joinToString(final Iterable<T> array, final String delimiter) {
-		return join(array, delimiter, object -> object == null ? "" : object.toString());
+		return join(array, delimiter, object -> object == null ? "" : Replacer.simplify(object));
 	}
 
 	/**
@@ -1549,9 +1484,8 @@ public final class Common {
 		while (it.hasNext()) {
 			final T next = it.next();
 
-			if (!next.getName().equals(nameToIgnore)) {
+			if (!next.getName().equals(nameToIgnore))
 				message += next.getName() + (it.hasNext() ? ", " : "");
-			}
 		}
 
 		return message.endsWith(", ") ? message.substring(0, message.length() - 2) : message;
@@ -1574,9 +1508,8 @@ public final class Common {
 		while (it.hasNext()) {
 			final T next = it.next();
 
-			if (next != null) {
+			if (next != null)
 				message += stringer.toString(next) + (it.hasNext() ? delimiter : "");
-			}
 		}
 
 		return message;
@@ -1614,9 +1547,8 @@ public final class Common {
 		final List<String> found = new ArrayList<>();
 
 		for (final Player online : Remain.getOnlinePlayers()) {
-			if (PlayerUtil.isVanished(online) && !includeVanished) {
+			if (PlayerUtil.isVanished(online) && !includeVanished)
 				continue;
-			}
 
 			found.add(online.getName());
 		}
@@ -1634,11 +1566,9 @@ public final class Common {
 	public static List<String> getPlayerNames(final Player sender) {
 		final List<String> found = new ArrayList<>();
 
-		for (final Player online : Remain.getOnlinePlayers()) {
-			if (!PlayerUtil.isVanished(online, sender)) {
+		for (final Player online : Remain.getOnlinePlayers())
+			if (!PlayerUtil.isVanished(online, sender))
 				found.add(online.getName());
-			}
-		}
 
 		return found;
 	}
@@ -1655,9 +1585,8 @@ public final class Common {
 
 		for (final OLD old : list) {
 			final NEW result = converter.convert(old);
-			if (result != null) {
+			if (result != null)
 				copy.add(converter.convert(old));
-			}
 		}
 
 		return copy;
@@ -1675,9 +1604,8 @@ public final class Common {
 	public static <OLD, NEW> Set<NEW> convertSet(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
 		final Set<NEW> copy = new HashSet<>();
 
-		for (final OLD old : list) {
+		for (final OLD old : list)
 			copy.add(converter.convert(old));
-		}
 
 		return copy;
 	}
@@ -1692,9 +1620,8 @@ public final class Common {
 	public static <OLD, NEW> StrictList<NEW> convertStrict(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
 		final StrictList<NEW> copy = new StrictList<>();
 
-		for (final OLD old : list) {
+		for (final OLD old : list)
 			copy.add(converter.convert(old));
-		}
 
 		return copy;
 	}
@@ -1748,9 +1675,8 @@ public final class Common {
 	public static <LIST_KEY, OLD_KEY, OLD_VALUE> StrictList<LIST_KEY> convertToList(final Map<OLD_KEY, OLD_VALUE> map, final MapToListConverter<LIST_KEY, OLD_KEY, OLD_VALUE> converter) {
 		final StrictList<LIST_KEY> list = new StrictList<>();
 
-		for (final Entry<OLD_KEY, OLD_VALUE> e : map.entrySet()) {
+		for (final Entry<OLD_KEY, OLD_VALUE> e : map.entrySet())
 			list.add(converter.convert(e.getKey(), e.getValue()));
-		}
 
 		return list;
 	}
@@ -1767,9 +1693,8 @@ public final class Common {
 	public static <OLD_TYPE, NEW_TYPE> List<NEW_TYPE> convert(final OLD_TYPE[] oldArray, final TypeConverter<OLD_TYPE, NEW_TYPE> converter) {
 		final List<NEW_TYPE> newList = new ArrayList<>();
 
-		for (final OLD_TYPE old : oldArray) {
+		for (final OLD_TYPE old : oldArray)
 			newList.add(converter.convert(old));
-		}
 
 		return newList;
 	}
@@ -1785,9 +1710,8 @@ public final class Common {
 	 */
 	@Deprecated
 	public static String[] splitNewline(final String message) {
-		if (!SimplePlugin.getInstance().enforeNewLine()) {
+		if (!SimplePlugin.getInstance().enforeNewLine())
 			return message.split("\n");
-		}
 
 		final String delimiter = "KANGARKOJESUUPER";
 
@@ -1797,16 +1721,14 @@ public final class Common {
 		for (int i = 0; i < chars.length; i++) {
 			final char c = chars[i];
 
-			if ('\\' == c) {
-				if (i + 1 < chars.length) {
+			if ('\\' == c)
+				if (i + 1 < chars.length)
 					if ('n' == chars[i + 1]) {
 						i++;
 
 						parts += delimiter;
 						continue;
 					}
-				}
-			}
 			parts += c;
 		}
 
@@ -1822,9 +1744,8 @@ public final class Common {
 	 * @return
 	 */
 	public static String[] replace(final String what, final String byWhat, final String... messages) {
-		for (int i = 0; i < messages.length; i++) {
+		for (int i = 0; i < messages.length; i++)
 			messages[i] = messages[i].replace(what, byWhat);
-		}
 
 		return messages;
 	}
@@ -1838,9 +1759,8 @@ public final class Common {
 	 * @return
 	 */
 	public static List<String> replace(final String what, final String byWhat, final List<String> messages) {
-		for (int i = 0; i < messages.size(); i++) {
+		for (int i = 0; i < messages.size(); i++)
 			messages.set(i, messages.get(i).replace(what, byWhat));
-		}
 
 		return messages;
 	}
@@ -1852,11 +1772,9 @@ public final class Common {
 	 * @return
 	 */
 	public static String[] replaceNuls(final String[] list) {
-		for (int i = 0; i < list.length; i++) {
-			if (list[i] == null) {
+		for (int i = 0; i < list.length; i++)
+			if (list[i] == null)
 				list[i] = "";
-			}
-		}
 
 		return list;
 	}
@@ -1886,17 +1804,13 @@ public final class Common {
 	public static <T> List<T> removeNulsAndEmpties(final List<T> list) {
 		final List<T> copy = new ArrayList<>();
 
-		for (final T key : list) {
-			if (key != null) {
+		for (final T key : list)
+			if (key != null)
 				if (key instanceof String) {
-					if (!((String) key).isEmpty()) {
+					if (!((String) key).isEmpty())
 						copy.add(key);
-					}
-				} else {
+				} else
 					copy.add(key);
-				}
-			}
-		}
 
 		return copy;
 	}
@@ -1988,15 +1902,13 @@ public final class Common {
 	 * @return
 	 */
 	public static <T> T getNext(final T given, final List<T> list, final boolean forward) {
-		if (given == null && list.isEmpty()) {
+		if (given == null && list.isEmpty())
 			return null;
-		}
 
 		final T[] array = (T[]) Array.newInstance((given != null ? given : list.get(0)).getClass(), list.size());
 
-		for (int i = 0; i < list.size(); i++) {
+		for (int i = 0; i < list.size(); i++)
 			Array.set(array, i, list.get(i));
-		}
 
 		return getNext(given, array, forward);
 	}
@@ -2012,9 +1924,8 @@ public final class Common {
 	 * @return
 	 */
 	public static <T> T getNext(final T given, final T[] array, final boolean forward) {
-		if (array.length == 0) {
+		if (array.length == 0)
 			return null;
-		}
 
 		int index = 0;
 
@@ -2049,12 +1960,12 @@ public final class Common {
 	}
 
 	/**
-	 * Creates a new modifiable array list from string array
+	 * Creates a new modifiable array list from array
 	 *
 	 * @param array
 	 * @return
 	 */
-	public static ArrayList<String> toList(final String... array) {
+	public static <T> ArrayList<T> toList(final T... array) {
 		return new ArrayList<>(Arrays.asList(array));
 	}
 
@@ -2079,9 +1990,8 @@ public final class Common {
 	 * @return
 	 */
 	public static <T> T[] reverse(final T[] array) {
-		if (array == null) {
+		if (array == null)
 			return null;
-		}
 
 		int i = 0;
 		int j = array.length - 1;
@@ -2104,9 +2014,8 @@ public final class Common {
 	 * @return
 	 */
 	public static String[] toLowerCase(final String... list) {
-		for (int i = 0; i < list.length; i++) {
+		for (int i = 0; i < list.length; i++)
 			list[i] = list[i].toLowerCase();
-		}
 
 		return list;
 	}
@@ -2134,11 +2043,10 @@ public final class Common {
 	 * @param task
 	 */
 	public static void runLaterIf(final boolean condition, final Runnable task) {
-		if (condition) {
+		if (condition)
 			runLater(1, task);
-		} else {
+		else
 			task.run();
-		}
 	}
 
 	/**
@@ -2468,9 +2376,8 @@ final class TimedCharSequence implements CharSequence {
 	 */
 	@Override
 	public char charAt(final int index) {
-		if (System.currentTimeMillis() > System.currentTimeMillis() + timeoutLimit) {
+		if (System.currentTimeMillis() > System.currentTimeMillis() + timeoutLimit)
 			throw new RegexTimeoutException(message, timeoutLimit);
-		}
 
 		return message.charAt(index);
 	}

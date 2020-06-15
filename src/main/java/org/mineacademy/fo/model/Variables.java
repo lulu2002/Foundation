@@ -250,6 +250,10 @@ public final class Variables {
 		final String original = message;
 		final boolean senderIsPlayer = sender instanceof Player;
 
+		// Replace custom variables first
+		if (replacements != null && !replacements.isEmpty())
+			message = Replacer.replaceArray(message, replacements);
+
 		if (senderIsPlayer) {
 			// Already cached ? Return.
 			final Map<String, String> cached = customCache.get(sender.getName());
@@ -263,19 +267,8 @@ public final class Variables {
 			// PlaceholderAPI and MvdvPlaceholderAPI
 			message = HookManager.replacePlaceholders((Player) sender, message);
 
-			if (replacements != null && !replacements.isEmpty())
-				for (String replacement : replacements.keySet()) {
-					if (message.contains(replacement) && !replacement.isEmpty()) {
-						// get the replacement
-						String toReplace = (String) replacements.get(replacement);
-
-						replacement = replacement.indexOf(0) != '{' ? "{" + replacement : replacement;
-						replacement = replacement.indexOf(replacement.length() - 1) != '}' ? "}" + replacement : replacement;
-
-						message = message.replace(replacement, toReplace);
-					}
-				}
 		}
+
 		// Default
 		message = replaceHardVariables0(sender, message);
 
@@ -310,7 +303,7 @@ public final class Variables {
 			if (variable.getScope() != scope)
 				continue;
 
-			if (message.contains(key)) {
+			if (message.contains(key))
 				try {
 					message = message.replace(key, variable.getValue(sender));
 
@@ -321,7 +314,6 @@ public final class Variables {
 							"Variable: " + key,
 							"%error");
 				}
-			}
 		}
 
 		return message;

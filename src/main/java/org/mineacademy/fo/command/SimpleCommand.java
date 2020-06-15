@@ -1,9 +1,9 @@
 package org.mineacademy.fo.command;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -288,7 +288,7 @@ public abstract class SimpleCommand extends Command {
 	public final boolean execute(final CommandSender sender, final String label, final String[] args) {
 
 		if (SimplePlugin.isReloading() || !SimplePlugin.getInstance().isEnabled()) {
-			Common.tell(sender, SimpleLocalization.Commands.USE_WHILE_NULL);
+			Common.tell(sender, SimpleLocalization.Commands.USE_WHILE_NULL.replace("{state}", (SimplePlugin.isReloading() ? SimpleLocalization.Commands.RELOADING : SimpleLocalization.Commands.DISABLED)));
 
 			return false;
 		}
@@ -324,16 +324,14 @@ public abstract class SimpleCommand extends Command {
 					tellNoPrefix(SimpleLocalization.Commands.LABEL_USAGES);
 					tellNoPrefix(getMultilineUsageMessage());
 
+				} else if (getMultilineUsageMessage() != null) {
+					tellNoPrefix(SimpleLocalization.Commands.LABEL_USAGES);
+					tellNoPrefix(getMultilineUsageMessage());
+
 				} else {
-					if (getMultilineUsageMessage() != null) {
-						tellNoPrefix(SimpleLocalization.Commands.LABEL_USAGES);
-						tellNoPrefix(getMultilineUsageMessage());
+					final String sublabel = this instanceof SimpleSubCommand ? " " + ((SimpleSubCommand) this).getSublabel() : "";
 
-					} else {
-						final String sublabel = this instanceof SimpleSubCommand ? " " + ((SimpleSubCommand) this).getSublabel() : "";
-
-						tellNoPrefix(SimpleLocalization.Commands.LABEL_USAGE + " /" + label + sublabel + (!getUsage().startsWith("/") ? " " + Common.stripColors(getUsage()) : ""));
-					}
+					tellNoPrefix(SimpleLocalization.Commands.LABEL_USAGE + " /" + label + sublabel + (!getUsage().startsWith("/") ? " " + Common.stripColors(getUsage()) : ""));
 				}
 
 				return true;
@@ -343,7 +341,6 @@ public abstract class SimpleCommand extends Command {
 			if (cooldownSeconds > 0)
 				handleCooldown();
 
-			initialVariables();
 			onCommand();
 
 		} catch (final InvalidCommandArgException ex) {
@@ -359,7 +356,7 @@ public abstract class SimpleCommand extends Command {
 				dynamicTellError(ex.getMessages());
 
 		} catch (final Throwable t) {
-			dynamicTellError(SimpleLocalization.ERROR);
+			dynamicTellError(SimpleLocalization.Commands.ERROR.find("error").replace(t.toString()).getReplacedMessage());
 			final String sublabel = this instanceof SimpleSubCommand ? " " + ((SimpleSubCommand) this).getSublabel() : "";
 
 			Common.error(t, "Failed to execute command /" + getLabel() + sublabel + " " + String.join(" ", args));
@@ -396,13 +393,6 @@ public abstract class SimpleCommand extends Command {
 			// Update the last try with the current time
 			cooldownMap.put(player.getUniqueId(), System.currentTimeMillis());
 		}
-	}
-
-	/**
-	 * For subclass to init their variables
-	 */
-	protected void initialVariables() {
-
 	}
 
 	/**
@@ -758,7 +748,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Sends a no prefix message to the player
 	 *
-	 * @param message
+	 * @param messages
 	 */
 	protected final void tellSuccess(String message) {
 		if (message != null) {
@@ -771,7 +761,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Sends a no prefix message to the player
 	 *
-	 * @param message
+	 * @param messages
 	 */
 	protected final void tellInfo(String message) {
 		if (message != null) {
@@ -784,7 +774,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Sends a no prefix message to the player
 	 *
-	 * @param message
+	 * @param messages
 	 */
 	protected final void tellWarn(String message) {
 		if (message != null) {
@@ -797,7 +787,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Sends a no prefix message to the player
 	 *
-	 * @param message
+	 * @param messages
 	 */
 	protected final void tellError(String message) {
 		if (message != null) {
@@ -810,7 +800,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Sends a no prefix message to the player
 	 *
-	 * @param message
+	 * @param messages
 	 */
 	protected final void tellQuestion(String message) {
 		if (message != null) {

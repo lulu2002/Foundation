@@ -15,14 +15,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.configuration.MemorySection;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -35,7 +34,6 @@ import org.mineacademy.fo.MinecraftVersion.V;
 import org.mineacademy.fo.ReflectionUtil;
 import org.mineacademy.fo.ReflectionUtil.MissingEnumException;
 import org.mineacademy.fo.SerializeUtil;
-import org.mineacademy.fo.TimeUtil;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.SerializedMap;
 import org.mineacademy.fo.collection.StrictList;
@@ -46,6 +44,7 @@ import org.mineacademy.fo.model.BoxedMessage;
 import org.mineacademy.fo.model.ConfigSerializable;
 import org.mineacademy.fo.model.Replacer;
 import org.mineacademy.fo.model.SimpleSound;
+import org.mineacademy.fo.model.SimpleTime;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.CompMaterial;
 import org.mineacademy.fo.remain.Remain;
@@ -122,7 +121,7 @@ public class YamlConfig implements ConfigSerializable {
 	/**
 	 * Should we check for validity of the config key-value pair?
 	 */
-	private boolean checkAssignables = true;
+	private final boolean checkAssignables = true;
 
 	protected YamlConfig() {
 	}
@@ -419,6 +418,7 @@ public class YamlConfig implements ConfigSerializable {
 
 	/** Saves the content of this config into the file */
 	public final void save() {
+
 		if (loading) {
 			// If we are loading only set the flag to save to save it later together
 			if (!save)
@@ -566,16 +566,7 @@ public class YamlConfig implements ConfigSerializable {
 	 * @return
 	 */
 	protected final <T> T get(final String path, final Class<T> type, final T def) {
-
-		// Special case: If there is no key at your config and neither at the default
-		// config,
-		// and we should deserialize non-existing values, we just return false instead
-		// of throwing
-		// an error at the below getT method
-		// if (usingDefaults && !isSet(path) && !isSetDefault(path) && def == null)
-		// return null;
-
-		final Object object = convertIfNull(type, getT(path, Object.class));
+		final Object object = getT(path, Object.class);
 
 		return object != null ? SerializeUtil.deserialize(type, object) : def;
 	}
@@ -592,26 +583,9 @@ public class YamlConfig implements ConfigSerializable {
 	 * @return
 	 */
 	protected final <T> T getWithData(final String path, final Class<T> type, final Object... deserializeArguments) {
-		final Object object = convertIfNull(type, getT(path, Object.class));
+		final Object object = getT(path, Object.class);
 
 		return object != null ? SerializeUtil.deserialize(type, object, deserializeArguments) : null;
-	}
-
-	//
-	// If there is no object set at a path, we convert it into an empty map,
-	// allowing
-	// you to invoke deserialize for empty map to use default values instead
-	//
-	private Object convertIfNull(final Class<?> type, final Object object) {
-		/*
-		 * if (ALLOW_NULL_IN_DEFAULTS) { if (object == null &&
-		 * ConfigSerializable.class.isAssignableFrom(type)) object = new
-		 * SerializedMap();
-		 *
-		 * if ("".equals(object) && Enum.class.isAssignableFrom(type)) object = null; }
-		 */
-
-		return object;
 	}
 
 	/**
@@ -913,10 +887,10 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param def
 	 * @return
 	 */
-	protected final TimeHelper getTime(final String path, final String def) {
+	protected final SimpleTime getTime(final String path, final String def) {
 		forceSingleDefaults(path);
 
-		return isSet(path) ? getTime(path) : new TimeHelper(def);
+		return isSet(path) ? getTime(path) : SimpleTime.from(def);
 	}
 
 	/**
@@ -925,11 +899,11 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param path
 	 * @return
 	 */
-	protected final TimeHelper getTime(final String path) {
+	protected final SimpleTime getTime(final String path) {
 		final Object obj = getObject(path);
 		Valid.checkNotNull(obj, "No time specified at the path '" + path + "' in " + getFileName());
 
-		return new TimeHelper(obj);
+		return SimpleTime.from(obj.toString());
 	}
 
 	/**
@@ -1241,16 +1215,19 @@ public class YamlConfig implements ConfigSerializable {
 		}
 
 		// Load key-value pairs from config to our map
-		for (final Map.Entry<String, Object> entry : config.getConfigurationSection(path).getValues(false).entrySet()) {
-			final Key key = SerializeUtil.deserialize(keyType, entry.getKey());
-			final Value value = SerializeUtil.deserialize(valueType, entry.getValue());
+		final ConfigurationSection configSection = config.getConfigurationSection(path);
 
-			// Ensure the pair values are valid for the given paramenters
-			checkAssignable(false, path, key, keyType);
-			checkAssignable(false, path, value, valueType);
+		if (configSection != null)
+			for (final Map.Entry<String, Object> entry : configSection.getValues(false).entrySet()) {
+				final Key key = SerializeUtil.deserialize(keyType, entry.getKey());
+				final Value value = SerializeUtil.deserialize(valueType, entry.getValue());
 
-			map.put(key, value);
-		}
+				// Ensure the pair values are valid for the given paramenters
+				checkAssignable(false, path, key, keyType);
+				checkAssignable(false, path, value, valueType);
+
+				map.put(key, value);
+			}
 
 		return map;
 	}
@@ -1293,124 +1270,6 @@ public class YamlConfig implements ConfigSerializable {
 			}
 
 		return list;
-	}
-
-	/**
-	 * Get a map of values and keys
-	 *
-	 * @param <Key>
-	 * @param <Value>
-	 * @param path
-	 * @param keyType
-	 * @param valueType
-	 * @return
-	 *
-	 * @deprecated target for removal
-	 */
-	@Deprecated
-	public final <Key, Value> LinkedHashMap<Key, Value> getMap_OLD(final String path, final Class<Key> keyType, final Class<Value> valueType) {
-		return getMap_OLD(path, keyType, valueType, null);
-	}
-
-	/**
-	 * Get a map of values and keys
-	 *
-	 * @param <Key>
-	 * @param <Value>
-	 * @param path
-	 * @param keyType
-	 * @param valueType
-	 * @param def
-	 * @return
-	 *
-	 * @deprecated target for removal
-	 */
-	@Deprecated
-	private <Key, Value> LinkedHashMap<Key, Value> getMap_OLD(String path, final Class<Key> keyType, final Class<Value> valueType, final Map<Key, Value> def) {
-		Valid.checkNotNull(path, "Path cannot be null");
-
-		if (pathPrefix != null)
-			if (!path.startsWith(pathPrefix))
-				path = formPathPrefix(path);
-
-		// add default
-		try {
-			checkAssignables = false;
-
-			if (getDefaults() != null && !getConfig().isSet(path)) {
-				Valid.checkBoolean(getDefaults().isSet(path), "Default '" + getFileName() + "' lacks a map at " + path);
-
-				for (final String key : getDefaults().getConfigurationSection(path).getKeys(false))
-					addDefaultIfNotExist(path + "." + key, valueType);
-			}
-		} finally {
-			checkAssignables = true;
-		}
-
-		final LinkedHashMap<Key, Value> keys = new LinkedHashMap<>();
-		final Object pathObject = getConfig().get(path);
-
-		if (pathObject == null)
-			if (def != null)
-				return new LinkedHashMap<>(def);
-			else
-				throw new FoException("Map not found at " + path + " in " + getFileName());
-
-		Valid.checkBoolean(getConfig().isConfigurationSection(path), "Must be section at '" + path + "', got " + pathObject);
-
-		for (final Map.Entry<String, Object> entry : getConfig().getConfigurationSection(path).getValues(false).entrySet()) {
-			final Object key = entry.getKey();
-			final Object val = entry.getValue();
-
-			Valid.checkBoolean(!keys.containsKey(key), "Duplicate key " + key + " in " + path);
-
-			if (!(val instanceof MemorySection))
-				checkAssignable(false, path, val, valueType);
-
-			final Key parsed = SerializeUtil.deserialize(keyType, key);
-			final Value parsedValue = SerializeUtil.deserialize(valueType, val);
-
-			keys.put(parsed, parsedValue);
-		}
-
-		return keys;
-	}
-
-	/**
-	 * Get a map assuming each key contains a map of string and objects
-	 *
-	 * @param path
-	 * @return
-	 *
-	 * @deprecated target for removal
-	 */
-	@Deprecated
-	protected final LinkedHashMap<String, LinkedHashMap<String, Object>> getValuesAndKeys_OLD(String path) {
-		Valid.checkNotNull(path, "Path cannot be null");
-		path = formPathPrefix(path);
-
-		// add default
-		if (getDefaults() != null && !getConfig().isSet(path)) {
-			Valid.checkBoolean(getDefaults().isSet(path), "Default '" + getFileName() + "' lacks a section at " + path);
-
-			for (final String name : getDefaults().getConfigurationSection(path).getKeys(false))
-				for (final String setting : getDefaults().getConfigurationSection(path + "." + name).getKeys(false))
-					addDefaultIfNotExist(path + "." + name + "." + setting, Object.class);
-		}
-
-		Valid.checkBoolean(getConfig().isSet(path), "Malfunction copying default section to " + path);
-
-		// key, values assigned to the key
-		final TreeMap<String, LinkedHashMap<String, Object>> groups = new TreeMap<>();
-
-		for (final String name : getConfig().getConfigurationSection(path).getKeys(false)) {
-			// type, value (UNPARSED)
-			final LinkedHashMap<String, Object> valuesRaw = getMap_OLD(path + "." + name, String.class, Object.class);
-
-			groups.put(name, valuesRaw);
-		}
-
-		return new LinkedHashMap<>(groups);
 	}
 
 	// ------------------------------------------------------------------------------------
@@ -1754,66 +1613,12 @@ public class YamlConfig implements ConfigSerializable {
 	// Classes helpers
 	// ------------------------------------------------------------------------------------
 
-	/** A simple helper class for storing time */
-	@Getter
+	/**
+	 * @deprecated use {@link SimpleTime} instead
+	 */
+	@Deprecated
 	public static final class TimeHelper {
-		private final String raw;
-		private final int timeTicks;
-
-		private TimeHelper(final Object obj) {
-			final String str = obj.toString().equals("0") ? "0" : obj.toString();
-
-			raw = str;
-			timeTicks = (int) TimeUtil.toTicks(raw);
-		}
-
-		private TimeHelper(final String time) {
-			raw = time;
-			timeTicks = (int) TimeUtil.toTicks(time);
-		}
-
-		/**
-		 * Generate new time from the given seconds
-		 *
-		 * @param seconds
-		 * @return
-		 */
-		public static TimeHelper fromSeconds(final int seconds) {
-			return from(seconds + " seconds");
-		}
-
-		/**
-		 * Generate new time. Valid examples: 15 ticks 1 second 25 minutes 3 hours etc.
-		 *
-		 * @param time
-		 * @return
-		 */
-		public static TimeHelper from(final String time) {
-			return new TimeHelper(time);
-		}
-
-		/**
-		 * Get the time specified in seconds (ticks / 20)
-		 *
-		 * @return
-		 */
-		public int getTimeSeconds() {
-			return timeTicks / 20;
-		}
-
-		/**
-		 * Get the time specified in ticks
-		 *
-		 * @return
-		 */
-		public int getTimeTicks() {
-			return timeTicks;
-		}
-
-		@Override
-		public String toString() {
-			return raw;
-		}
+		// Dead class
 	}
 
 	/** Represents a list of locations in the config */

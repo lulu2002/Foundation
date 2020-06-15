@@ -13,6 +13,7 @@ import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.StrictList;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.plugin.SimplePlugin;
+import org.mineacademy.fo.settings.SimpleLocalization;
 
 import lombok.Getter;
 
@@ -168,7 +169,7 @@ public abstract class SimpleCommandGroup {
 			final String authors = String.join(", ", SimplePlugin.getInstance().getDescription().getAuthors());
 
 			if (!authors.isEmpty())
-				messages.add("   &7Made by &f" + authors + (foundedYear != -1 ? " &7\u00A9 " + foundedYear + (yearNow != foundedYear ? " - " + yearNow : "") : ""));
+				messages.add("   &7" + SimpleLocalization.Commands.LABEL_AUTHORS + " &f" + authors + (foundedYear != -1 ? " &7\u00A9 " + foundedYear + (yearNow != foundedYear ? " - " + yearNow : "") : ""));
 		}
 
 		{
@@ -193,7 +194,7 @@ public abstract class SimpleCommandGroup {
 	}
 
 	// Return the TM symbol in case we have it for kangarko's plugins
-	private final String getTrademark() {
+	private String getTrademark() {
 		return SimplePlugin.getInstance().getDescription().getAuthors().contains("kangarko") ? getHeaderPrefix() + "&8\u2122" : "";
 	}
 
@@ -234,8 +235,8 @@ public abstract class SimpleCommandGroup {
 				"&8" + Common.chatLine(),
 				getHeaderPrefix() + "  " + SimplePlugin.getNamed() + getTrademark() + " &7" + SimplePlugin.getVersion(),
 				" ",
-				"&2  [] &f= optional arguments",
-				"&6  <> &f= required arguments",
+				"&2  [] &f= " + SimpleLocalization.Commands.LABEL_OPTIONAL_ARGS,
+				"&6  <> &f= " + SimpleLocalization.Commands.LABEL_REQUIRED_ARGS,
 				" "
 		};
 	}
@@ -318,6 +319,8 @@ public abstract class SimpleCommandGroup {
 		private void tellSubcommandsHelp() {
 			tell(getHelpHeader());
 
+			Integer shown = 0;
+
 			for (final SimpleSubCommand subcommand : subcommands)
 				if (subcommand.showInHelp() && hasPerm(subcommand.getPermission())) {
 					if (subcommand instanceof FillerSubCommand) {
@@ -330,7 +333,12 @@ public abstract class SimpleCommandGroup {
 					final String desc = Common.getOrEmpty(subcommand.getDescription());
 
 					tellNoPrefix(" &f/" + getLabel() + " " + subcommand.getSublabels()[0] + (!usage.startsWith("/") ? " " + usage : "") + (!desc.isEmpty() ? " &e- " + desc : ""));
+
+					shown++;
 				}
+
+			if (shown == 0)
+				tellNoPrefix(SimpleLocalization.Commands.HELP_HEADER_NO_SUBCOMMANDS);
 		}
 
 		/**

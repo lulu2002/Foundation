@@ -1,16 +1,23 @@
 package org.mineacademy.fo.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 
 import org.apache.commons.lang.StringUtils;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.mineacademy.fo.Common;
+import org.mineacademy.fo.MathUtil;
 import org.mineacademy.fo.SerializeUtil;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.SerializedMap;
+import org.mineacademy.fo.remain.Remain;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -174,5 +181,70 @@ public final class Replacer {
 	 */
 	public static Replacer of(String... messages) {
 		return new Replacer(messages);
+	}
+
+	/**
+	 * Sends a message to the player replacing the given associative array of placeholders in the given message
+	 *
+	 * @param recipient
+	 * @param message
+	 * @param replacements
+	 */
+	public static void tell(CommandSender recipient, String message, Object... replacements) {
+		Common.tell(recipient, replaceArray(message, replacements));
+	}
+
+	/**
+	 * Replace all variables in the {@link SerializedMap#ofArray(Object...)} format
+	 * adding {} to them if they do not contain it already
+	 *
+	 * @param message
+	 * @param associativeArray
+	 * @return
+	 */
+	public static String replaceArray(String message, Object... replacements) {
+		final SerializedMap map = SerializedMap.ofArray(replacements);
+
+		for (final Entry<String, Object> replacement : map.entrySet()) {
+			String key = replacement.getKey();
+
+			key = key.indexOf(0) != '{' ? "{" + key : key;
+			key = key.indexOf(key.length() - 1) != '}' ? key + "}" : key;
+
+			message = message.replace(key, simplify(replacement.getValue()));
+		}
+
+		return message;
+	}
+
+	/**
+	 * Replace some common classes such as entity to name automatically
+	 *
+	 * @param arg
+	 * @return
+	 */
+	public static String simplify(Object arg) {
+		if (arg instanceof Entity)
+			return Remain.getName((Entity) arg);
+
+		else if (arg instanceof CommandSender)
+			return ((CommandSender) arg).getName();
+
+		else if (arg instanceof World)
+			return ((World) arg).getName();
+
+		else if (arg instanceof Location)
+			return Common.shortLocation((Location) arg);
+
+		else if (arg.getClass() == double.class || arg.getClass() == float.class)
+			return MathUtil.formatTwoDigits((double) arg);
+
+		else if (arg instanceof Collection)
+			return Common.join((Collection<?>) arg, ", ", Replacer::simplify);
+
+		else if (arg instanceof Enum)
+			return ((Enum<?>) arg).name();
+
+		return arg.toString();
 	}
 }

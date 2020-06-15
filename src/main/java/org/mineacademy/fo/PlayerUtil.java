@@ -10,6 +10,8 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -36,6 +38,7 @@ import org.mineacademy.fo.jsonsimple.JSONObject;
 import org.mineacademy.fo.jsonsimple.JSONParser;
 import org.mineacademy.fo.menu.Menu;
 import org.mineacademy.fo.model.HookManager;
+import org.mineacademy.fo.model.Replacer;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.CompMaterial;
 import org.mineacademy.fo.remain.CompProperty;
@@ -276,13 +279,11 @@ public final class PlayerUtil {
 	}
 
 	/**
-	 * Returns true if the player has a permission using Vault
+	 * Returns true if the player has a permission using Vault. This returns false if the player is OP and
+	 * does not have the permission explicitly set
 	 *
 	 * @param player
 	 * @param permission
-	 * @deprecated Due to vault API Limitations, this will return false if the node is
-	 * false or undefined. Some permissions plugins don't load superperms into their
-	 * dataset, so this should not be relied on.
 	 */
 	@Deprecated
 	public static boolean hasPermVault(final Player player, final String permission) {
@@ -295,9 +296,22 @@ public final class PlayerUtil {
 	 *
 	 * @param sender
 	 * @param permission
+	 * @param associativeArray
 	 * @return
 	 */
-	public static boolean hasPerm(@NonNull final Permissible sender, final String permission) {
+	public static boolean hasPerm(@NonNull final Permissible sender, @Nullable String permission, Object... associativeArray) {
+		return hasPerm(sender, Replacer.replaceArray(permission, associativeArray));
+	}
+
+	/**
+	 * Return if the given sender has a certain permission
+	 * You can use {plugin.name} to replace with your plugin name (lower-cased)
+	 *
+	 * @param sender
+	 * @param permission
+	 * @return
+	 */
+	public static boolean hasPerm(@NonNull final Permissible sender, @Nullable final String permission) {
 		return permission == null || sender.hasPermission(permission.replace("{plugin.name}", SimplePlugin.getNamed().toLowerCase()));
 	}
 
