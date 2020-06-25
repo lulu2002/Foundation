@@ -346,7 +346,7 @@ public class SimpleComponent {
 					components.add(new PermissibleComponent(old, viewPermission));
 				}
 
-				switch (format.getName()) {
+				switch (format.getName().toUpperCase()) {
 					case "BOLD":
 						component.setBold(true);
 						break;
