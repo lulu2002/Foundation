@@ -1,11 +1,9 @@
 package org.mineacademy.fo.menu.model;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -35,9 +33,6 @@ import org.mineacademy.fo.remain.CompMetadata;
 import org.mineacademy.fo.remain.CompMonsterEgg;
 import org.mineacademy.fo.remain.CompProperty;
 
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
-
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Singular;
@@ -51,7 +46,6 @@ import lombok.Singular;
 public final class ItemCreator {
 
 	private static final String STEVE_TEXTURE = "ewogICJ0aW1lc3RhbXAiIDogMTU5MTU3NDcyMzc4MywKICAicHJvZmlsZUlkIiA6ICI4NjY3YmE3MWI4NWE0MDA0YWY1NDQ1N2E5NzM0ZWVkNyIsCiAgInByb2ZpbGVOYW1lIiA6ICJTdGV2ZSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82ZDNiMDZjMzg1MDRmZmMwMjI5Yjk0OTIxNDdjNjlmY2Y1OWZkMmVkNzg4NWY3ODUwMjE1MmY3N2I0ZDUwZGUxIgogICAgfSwKICAgICJDQVBFIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS85NTNjYWM4Yjc3OWZlNDEzODNlNjc1ZWUyYjg2MDcxYTcxNjU4ZjIxODBmNTZmYmNlOGFhMzE1ZWE3MGUyZWQ2IgogICAgfQogIH0KfQ==";
-
 
 	/**
 	 * The initial item stack
@@ -420,7 +414,7 @@ public final class ItemCreator {
 
 		final ItemStack head = new ItemStack(CompMaterial.PLAYER_HEAD.getMaterial(), 1, (short) 3);
 		final SkullMeta meta = (SkullMeta) head.getItemMeta();
-		final GameProfile profile = new GameProfile(UUID.randomUUID(), "");
+/*		final GameProfile profile = new WrappedGameProfile(UUID.randomUUID(), ""); TODO
 
 		profile.getProperties().put("textures", new Property("textures", hash));
 		Field profileField = null;
@@ -434,7 +428,7 @@ public final class ItemCreator {
 			Common.throwError(e);
 		}
 
-		head.setItemMeta(meta);
+		head.setItemMeta(meta);*/
 
 		return of(head);
 	}

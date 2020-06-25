@@ -958,7 +958,7 @@ public enum CompMaterial {
 	public static boolean COMPATIBLE = true;
 
 	// Holds history of last called translated names, for performance.
-	private static HashMap<String, CompMaterial> cachedSearch = new HashMap<>();
+	private static final HashMap<String, CompMaterial> cachedSearch = new HashMap<>();
 
 	/**
 	 * The name of the material in Minecraft 1.12 and older (may or may not be the
@@ -1074,7 +1074,6 @@ public enum CompMaterial {
 	 * Construct an {@link ItemStack} from this material (with corresponding data
 	 * value if necessary).
 	 *
-	 * @param amount the amount
 	 * @return the itemstack
 	 */
 	public final ItemStack toItem() {
@@ -1099,7 +1098,7 @@ public enum CompMaterial {
 	 *
 	 * @return the material
 	 */
-	private final Material toMaterial() {
+	private Material toMaterial() {
 		final Material mat = Material.matchMaterial(toString());
 		final Material altMat = alternativeName != null ? Material.matchMaterial(alternativeName) : null;
 		final Material legacyMat = legacyName != null ? Material.matchMaterial(legacyName) : null;
@@ -1112,7 +1111,7 @@ public enum CompMaterial {
 	 *
 	 * NOT cross-version compatible. For this, use {@link #is(ItemStack)}
 	 *
-	 * @param comp
+	 * @param mat
 	 * @return
 	 */
 	public final boolean is(final Material mat) {
@@ -1165,7 +1164,6 @@ public enum CompMaterial {
 	/**
 	 * Returns true for damageable materials.
 	 *
-	 * @param type
 	 * @return
 	 */
 	public final boolean isDamageable() {
@@ -1302,7 +1300,7 @@ public enum CompMaterial {
 	 */
 	public static final boolean isWoodPressurePlate(final Material mat) {
 		return nameEquals(mat, "WOOD_PLATE", "ACACIA_PRESSURE_PLATE", "BIRCH_PRESSURE_PLATE", "DARK_OAK_PRESSURE_PLATE",
-				"JUNGLE_PRESSURE_PLATE", "OAK_PRESSURE_PLATE", "SPRUCE_PRESSURE_PLATE");
+						  "JUNGLE_PRESSURE_PLATE", "OAK_PRESSURE_PLATE", "SPRUCE_PRESSURE_PLATE");
 	}
 
 	/**
@@ -1442,7 +1440,7 @@ public enum CompMaterial {
 	}
 
 	// Utility method for evaluating matches.
-	private static final boolean nameContains(final Material mat, final String... names) {
+	private static boolean nameContains(final Material mat, final String... names) {
 		final String matName = mat.toString();
 
 		for (final String name : names)
@@ -1453,7 +1451,7 @@ public enum CompMaterial {
 	}
 
 	// Utility method for evaluating matches.
-	private static final boolean nameEquals(final Material mat, final String... names) {
+	private static boolean nameEquals(final Material mat, final String... names) {
 		final String matName = mat.toString();
 
 		for (final String name : names)
@@ -1506,7 +1504,7 @@ public enum CompMaterial {
 		String name = type.toString() + "_SPAWN_EGG";
 
 		// Special cases
-		if (type == EntityType.PIG_ZOMBIE)
+		if (type == EntityType.ZOMBIFIED_PIGLIN) // PIGMAN
 			name = "ZOMBIE_PIGMAN_SPAWN_EGG";
 		else if (type == EntityType.MUSHROOM_COW)
 			name = "MOOSHROOM_SPAWN_EGG";
@@ -1531,7 +1529,7 @@ public enum CompMaterial {
 
 		// Special cases
 		if (name == "ZOMBIE_PIGMAN_SPAWN_EGG")
-			return EntityType.PIG_ZOMBIE;
+			return EntityType.ZOMBIFIED_PIGLIN; // PIGMAN
 
 		else if (name == "MOOSHROOM_SPAWN_EGG")
 			return EntityType.MUSHROOM_COW;
@@ -1622,7 +1620,7 @@ public enum CompMaterial {
 	/**
 	 * Creates {@link CompMaterial} class from a given String. The string may
 	 * contain a colon ":" and a data value after it, we will find then call
-	 * {@link #fromLegacy(String, byte)} and return the proper Material.
+	 * {@link #fromLegacy(String, int)} and return the proper Material.
 	 *
 	 * @param key
 	 * @return
@@ -1667,9 +1665,7 @@ public enum CompMaterial {
 				cachedSearch.put(mat.legacyName + "," + data, mat);
 
 				return mat;
-			}
-
-			else if (mat.alternativeName != null && mat.alternativeName.equals(name)) {
+			} else if (mat.alternativeName != null && mat.alternativeName.equals(name)) {
 				cachedSearch.put(mat.alternativeName + "," + data, mat);
 
 				return mat;
@@ -1795,5 +1791,5 @@ class SoftMaterials {
 			"OBSERVER",
 			"PURPLE_SHULKER_BOX"
 
-	));
+																			  ));
 }

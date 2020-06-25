@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.MinecraftVersion;
 import org.mineacademy.fo.ReflectionUtil;
+import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.remain.Remain;
 
 import com.google.common.collect.Lists;
@@ -26,6 +27,8 @@ import lombok.Getter;
  * @author Ladislav Proc
  * @since 2020
  * </p>
+ *
+ * SUPPORTS ONLY VERSIONS BELOW 1.16
  */
 public class AdvancedScoreboard {
 
@@ -60,6 +63,8 @@ public class AdvancedScoreboard {
 	public AdvancedScoreboard(Player target) {
 		this.target = target;
 		this.teams = new Boolean[16];
+
+		Valid.checkBoolean(MinecraftVersion.newerThan(MinecraftVersion.V.v1_16), "AdvancedScoreboard does not support 1.16 yet!");
 
 		try {
 			if (MinecraftVersion.atLeast(MinecraftVersion.V.v1_13)) {
