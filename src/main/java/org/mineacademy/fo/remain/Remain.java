@@ -1007,10 +1007,13 @@ public final class Remain {
 	 * @param enchantment
 	 */
 	public static void unregisterEnchantment(final Enchantment enchantment) {
-		{ // Unregister by key
-			final Map<NamespacedKey, Enchantment> byKey = ReflectionUtil.getStaticFieldContent(Enchantment.class, "byKey");
 
-			byKey.remove(enchantment.getKey());
+		if (MinecraftVersion.atLeast(V.v1_13)) {
+			{ // Unregister by key
+				final Map<NamespacedKey, Enchantment> byKey = ReflectionUtil.getStaticFieldContent(Enchantment.class, "byKey");
+
+				byKey.remove(enchantment.getKey());
+			}
 		}
 
 		{ // Unregister by name
@@ -1088,6 +1091,13 @@ public final class Remain {
 				nmsStatistic = craftStatistic.getMethod("getMaterialStatistic", stat.getClass(), mat.getClass()).invoke(null, stat, mat);
 
 			Valid.checkNotNull(nmsStatistic, "Could not get NMS statistic from Bukkit's " + stat);
+
+			if (MinecraftVersion.equals(V.v1_8)) {
+				Field f = nmsStatistic.getClass().getField("name");
+				f.setAccessible(true);
+				return f.get(nmsStatistic).toString();
+			}
+
 			return (String) nmsStatistic.getClass().getMethod("getName").invoke(nmsStatistic);
 		} catch (final Throwable t) {
 			throw new FoException(t, "Error getting NMS statistic name from " + stat);
