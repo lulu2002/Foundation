@@ -47,13 +47,13 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.15.2-R0.1-SNAPSHOT</version>
+            <version>1.16.1-R0.1-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>org.mineacademy.server</groupId>
-            <artifactId>PaperSpigot</artifactId>
-            <version>1.15.2-SNAPSHOT-129</version>
-        </dependency>
+        <!--   <dependency>
+               <groupId>org.mineacademy.server</groupId>
+               <artifactId>PaperSpigot</artifactId>
+               <version>1.15.2-SNAPSHOT-129</version>
+           </dependency> -->
         <!-- Plugins from their own repo with documentation and sources -->
         <dependency>
             <groupId>com.github.Angeschossen</groupId>
