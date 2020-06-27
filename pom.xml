@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>Foundation</name>
-    <description>Create complex and unique plugins easily and fast.</description>
+    <description>Create complex and unique plugins quickly and easily.</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
