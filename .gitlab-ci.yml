@@ -1,7 +1,6 @@
 image: maven:3.3.9-jdk-8
 
 stages:
-  - validate
   - build
   - test
   - deploy
@@ -14,11 +13,6 @@ cache:
   paths:
     - .m2/repository/
     - target/
-
-validate:
-  stage: valdiate
-  script:
-    - mvn $MAVEN_CLI_OPTS verify
 
 build:
   stage: build
