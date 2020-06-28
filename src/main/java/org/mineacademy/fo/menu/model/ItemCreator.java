@@ -414,8 +414,8 @@ public final class ItemCreator {
 			profileField.setAccessible(true);
 			profileField.set(meta, profile);
 
-		} catch (final IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
-			Common.throwError(e);
+		} catch (final IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException exception) {
+			Common.throwError(exception, "Exception while setting skin texture");
 		}
 
 		head.setItemMeta(meta);
