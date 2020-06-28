@@ -423,6 +423,7 @@ public final class ItemCreator {
 		return of(head);
 	}
 
+
 	/**
 	 * Convenience method to get a new item creator with material, name and lore set
 	 *
@@ -500,7 +501,7 @@ public final class ItemCreator {
 	/**
 	 * Get a new item creator from material
 	 *
-	 * @param material existing material
+	 * @param mat existing material
 	 * @return the new item creator
 	 */
 	public static ItemCreatorBuilder of(final CompMaterial mat) {
