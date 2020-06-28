@@ -49,6 +49,10 @@
             <id>codemc-repo</id>
             <url>https://repo.codemc.org/repository/maven-public/</url>
         </repository>
+        <repository>
+            <id>Exceptionflug</id>
+            <url>https://mvn.exceptionflug.de/repository/exceptionflug-public/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -62,9 +66,9 @@
 
         <!-- The Spigot API and PaperSpigot server -->
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.16.1-R0.1-SNAPSHOT</version>
+            <groupId>org.mineacademy.server</groupId>
+            <artifactId>paper</artifactId>
+            <version>1.16-SNAPSHOT</version>
         </dependency>
 
         <!-- Plugins from their own repo with documentation and sources -->

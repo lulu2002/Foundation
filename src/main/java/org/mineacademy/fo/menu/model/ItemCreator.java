@@ -1,21 +1,19 @@
 package org.mineacademy.fo.menu.model;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import java.lang.reflect.Field;
+import java.util.*;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Singular;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
-import org.bukkit.inventory.meta.EnchantmentStorageMeta;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.inventory.meta.*;
 import org.bukkit.material.MaterialData;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.MinecraftVersion;
@@ -26,16 +24,7 @@ import org.mineacademy.fo.menu.button.Button.DummyButton;
 import org.mineacademy.fo.model.SimpleEnchant;
 import org.mineacademy.fo.model.SimpleEnchantment;
 import org.mineacademy.fo.model.Tuple;
-import org.mineacademy.fo.remain.CompColor;
-import org.mineacademy.fo.remain.CompItemFlag;
-import org.mineacademy.fo.remain.CompMaterial;
-import org.mineacademy.fo.remain.CompMetadata;
-import org.mineacademy.fo.remain.CompMonsterEgg;
-import org.mineacademy.fo.remain.CompProperty;
-
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.Singular;
+import org.mineacademy.fo.remain.*;
 
 /**
  * Our core class for easy and comfortable item creation.
@@ -414,7 +403,8 @@ public final class ItemCreator {
 
 		final ItemStack head = new ItemStack(CompMaterial.PLAYER_HEAD.getMaterial(), 1, (short) 3);
 		final SkullMeta meta = (SkullMeta) head.getItemMeta();
-/*		final GameProfile profile = new WrappedGameProfile(UUID.randomUUID(), ""); TODO
+		final GameProfile profile = new GameProfile(UUID.randomUUID(), "");
+
 
 		profile.getProperties().put("textures", new Property("textures", hash));
 		Field profileField = null;
@@ -428,7 +418,7 @@ public final class ItemCreator {
 			Common.throwError(e);
 		}
 
-		head.setItemMeta(meta);*/
+		head.setItemMeta(meta);
 
 		return of(head);
 	}
