@@ -422,8 +422,7 @@ public final class ItemCreator {
 
 		return of(head);
 	}
-
-
+	
 	/**
 	 * Convenience method to get a new item creator with material, name and lore set
 	 *
