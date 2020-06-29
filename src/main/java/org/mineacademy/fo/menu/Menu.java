@@ -356,8 +356,7 @@ public abstract class Menu {
 			t.printStackTrace();
 		}
 
-		throw new FoException("Could not instatiate menu of " + getClass()
-				+ ", override 'newInstance' and ensure constructor is public!");
+		throw new FoException("Could not instantiate menu of " + getClass() + ", override the method 'newInstance()' or ensure you have a public constructor which takes only one parameter ");
 	}
 
 	// --------------------------------------------------------------------------------
