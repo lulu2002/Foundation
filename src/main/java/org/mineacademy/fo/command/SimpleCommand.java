@@ -1,9 +1,9 @@
 package org.mineacademy.fo.command;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -356,7 +356,7 @@ public abstract class SimpleCommand extends Command {
 				dynamicTellError(ex.getMessages());
 
 		} catch (final Throwable t) {
-			dynamicTellError(SimpleLocalization.Commands.ERROR.find("error").replace(t.toString()).getReplacedMessage());
+			dynamicTellError(SimpleLocalization.ERROR);
 			final String sublabel = this instanceof SimpleSubCommand ? " " + ((SimpleSubCommand) this).getSublabel() : "";
 
 			Common.error(t, "Failed to execute command /" + getLabel() + sublabel + " " + String.join(" ", args));

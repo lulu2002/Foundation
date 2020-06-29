@@ -1,6 +1,7 @@
 package org.mineacademy.fo.remain;
 
 import java.util.HashMap;
+import java.util.stream.Stream;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -952,7 +953,17 @@ public enum CompMaterial {
 	SWEET_BERRIES("SWEET_BERRIES"),
 	LEATHER_HORSE_ARMOR("IRON_BARDING", "IRON_HORSE_ARMOR", 0),
 	RAVAGER_SPAWN_EGG("MONSTER_EGG", "SHEEP_SPAWN_EGG", 0),
-	PILLAGER_SPAWN_EGG("MONSTER_EGG", "SHEEP_SPAWN_EGG", 0);
+	PILLAGER_SPAWN_EGG("MONSTER_EGG", "SHEEP_SPAWN_EGG", 0),
+	// Added 06.25.2020 - MC 1.15
+	BEEHIVE("STONE"),
+	BEE_NEST("STONE"),
+	HONEY_BLOCK("STONE"),
+	HONEYCOMB_BLOCK("STONE"),
+	HONEY_BOTTLE("POTION"),
+	BEE_SPAWN_EGG("MONSTER_EGG", 98);
+
+	private void hi(){
+	}
 
 	// Safety compatibility check
 	public static boolean COMPATIBLE = true;

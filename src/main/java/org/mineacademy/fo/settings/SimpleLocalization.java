@@ -14,7 +14,7 @@ import org.mineacademy.fo.plugin.SimplePlugin;
 @SuppressWarnings("unused")
 public abstract class SimpleLocalization extends YamlStaticConfig {
 
-	/**
+/**
 	 * A flag indicating that this class has been loaded
 	 *
 	 * You can place this class to {@link SimplePlugin#getSettingsClasses()} to make
@@ -49,6 +49,11 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 	protected static Integer VERSION;
 
 	/**
+	 * The message shown when there is a fatal error running this command
+	 */
+	public static String ERROR = "操作在運行的過程發生錯誤，請至後台查看詳情。";
+
+	/**
 	 * Set and update the config version automatically, however the {@link #VERSION} will
 	 * contain the older version used in the file on the disk so you can use
 	 * it for comparing in the init() methods
@@ -62,6 +67,9 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 
 		if ((VERSION = getInteger("Version")) != getConfigVersion())
 			set("Version", getConfigVersion());
+
+		if (isSetDefault("Error"))
+			ERROR = getString("Error");
 	}
 
 	/**
@@ -118,9 +126,24 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 		public static String INVALID_ARGUMENT_MULTILINE = "&cInvalid argument. Usage:";
 
 		/**
+		 * The authors label
+		 */
+		public static String LABEL_AUTHORS = "Made by";
+
+		/**
 		 * The description label
 		 */
 		public static String LABEL_DESCRIPTION = "&cDescription: {description}";
+
+		/**
+		 * The optional arguments label
+		 */
+		public static String LABEL_OPTIONAL_ARGS = "optional arguments";
+
+		/**
+		 * The required arguments label
+		 */
+		public static String LABEL_REQUIRED_ARGS = "required arguments";
 
 		/**
 		 * The multiline usages label, see {@link SimpleCommand#getMultilineUsageMessage()}
@@ -143,9 +166,24 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 		public static String RELOAD_FAIL = "&4Oups, &creloading failed! See the console for more information. Error: {error}";
 
 		/**
-		 * The message shown when there is a fatal error running this command
+		 * The message shown when player has no permissions to view ANY subcommands in group command.
 		 */
-		public static Replacer ERROR = Replacer.of("&4&lOups! &cThe command failed :( Check the console and report the error.");
+		public static String HELP_HEADER_NO_SUBCOMMANDS = "&cYou don't have permissions to view any subcommands.";
+
+		/**
+		 * Key for when plugin is reloading {@link org.mineacademy.fo.plugin.SimplePlugin}
+		 */
+		public static String RELOADING = "reloading";
+
+		/**
+		 * Key for when plugin is disabled {@link org.mineacademy.fo.plugin.SimplePlugin}
+		 */
+
+		public static String DISABLED = "disabled";
+		/**
+		 * The message shown when plugin is reloading or was disabled and player attempts to run command
+		 */
+		public static String USE_WHILE_NULL = "&cCannot use this command while the plugin is {state}.";
 
 		/**
 		 * Load the values -- this method is called automatically by reflection in the {@link YamlStaticConfig} class!
@@ -168,8 +206,17 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 			if (isSetDefault("Invalid_Argument_Multiline"))
 				INVALID_ARGUMENT_MULTILINE = getString("Invalid_Argument_Multiline");
 
+			if (isSetDefault("Label_Authors"))
+				LABEL_AUTHORS = getString("Label_Authors");
+
 			if (isSetDefault("Label_Description"))
 				LABEL_DESCRIPTION = getString("Label_Description");
+
+			if (isSetDefault("Label_Optional_Args"))
+				LABEL_OPTIONAL_ARGS = getString("Label_Optional_Args");
+
+			if (isSetDefault("Label_Required_Args"))
+				LABEL_REQUIRED_ARGS = getString("Label_Required_Args");
 
 			if (isSetDefault("Label_Usage"))
 				LABEL_USAGE = getString("Label_Usage");
@@ -183,8 +230,18 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 			if (isSetDefault("Reload_Fail"))
 				RELOAD_FAIL = getString("Reload_Fail");
 
-			if (isSetDefault("Error"))
-				ERROR = getReplacer("Error");
+			if (isSetDefault("Header_No_Subcommands"))
+				HELP_HEADER_NO_SUBCOMMANDS = getString("Header_No_Subcommands");
+
+			if (isSet("Reloading"))
+				RELOADING = getString("Reloading");
+
+			if (isSet("Disabled"))
+				DISABLED = getString("Disabled");
+
+			if (isSet("Use_While_Null"))
+				USE_WHILE_NULL = getString("Use_While_Null").replace("{state}", SimplePlugin.isReloading() ? RELOADING : DISABLED);
+
 		}
 	}
 

@@ -49,6 +49,7 @@ import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.exception.RegexTimeoutException;
 import org.mineacademy.fo.model.DiscordSender;
 import org.mineacademy.fo.model.LocalCommandSender;
+import org.mineacademy.fo.model.Message;
 import org.mineacademy.fo.model.Replacer;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.Remain;
@@ -402,6 +403,10 @@ public final class Common {
 	 */
 	public static void tell(final CommandSender sender, final Replacer replacer) {
 		tell(sender, replacer.getReplacedMessage());
+	}
+
+	public static void tell(CommandSender sender, Message message) {
+		tell(sender, message.getContent());
 	}
 
 	/**
