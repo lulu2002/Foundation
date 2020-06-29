@@ -38,7 +38,7 @@ public enum WrapperClass {
 	NMS_REGISTRYMATERIALS(NMS, "RegistryMaterials"),
 	NMS_IREGISTRY(NMS, "IRegistry"),
 	NMS_MINECRAFTKEY(NMS, "MinecraftKey"),
-	;
+	NMS_IBLOCKDATA(NMS, "IBlockData");
 
 	private Class<?> clazz;
 	private boolean enabled = false;

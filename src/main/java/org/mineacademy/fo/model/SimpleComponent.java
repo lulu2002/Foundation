@@ -346,23 +346,23 @@ public class SimpleComponent {
 					components.add(new PermissibleComponent(old, viewPermission));
 				}
 
-				switch (format) {
-					case BOLD:
+				switch (format.getName().toUpperCase()) {
+					case "BOLD":
 						component.setBold(true);
 						break;
-					case ITALIC:
+					case "ITALIC":
 						component.setItalic(true);
 						break;
-					case UNDERLINE:
+					case "UNDERLINE":
 						component.setUnderlined(true);
 						break;
-					case STRIKETHROUGH:
+					case "STRIKETHROUGH":
 						component.setStrikethrough(true);
 						break;
-					case MAGIC:
+					case "MAGIC":
 						component.setObfuscated(true);
 						break;
-					case RESET:
+					case "RESET":
 						format = ChatColor.RESET;
 
 					default:

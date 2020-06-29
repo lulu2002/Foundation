@@ -25,7 +25,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	/**
 	 * A flag indicating that this class has been loaded
 	 *
-	 * You can place this class to {@link SimplePlugin#getSettingsClasses()} to make
+	 * You can place this class to {@link org.mineacademy.fo.plugin.SimplePlugin#getSettings()} ()} to make
 	 * it load automatically
 	 */
 	private static boolean settingsClassCalled;
@@ -216,13 +216,6 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 
 			BUNGEE_SERVER_NAME = keySet ? getString("Bungee_Server_Name") : BUNGEE_SERVER_NAME;
 
-			if (SimplePlugin.getInstance().getBungeeCord() != null && BUNGEE_SERVER_NAME.equals("undefined"))
-				Common.runLater(() -> {
-					Common.logFramed(true,
-							"Please change your Bungee_Server_Name in settings.yml",
-							"of " + SimplePlugin.getNamed() + " to the exact name of this server",
-							"as you have in config.yml of your BungeeCord.");
-				});
 		}
 
 		{ // Load localization

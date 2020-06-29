@@ -1,23 +1,19 @@
 package org.mineacademy.fo.menu.model;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
-
+import java.util.*;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Singular;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
-import org.bukkit.inventory.meta.EnchantmentStorageMeta;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.inventory.meta.*;
 import org.bukkit.material.MaterialData;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.MinecraftVersion;
@@ -28,19 +24,7 @@ import org.mineacademy.fo.menu.button.Button.DummyButton;
 import org.mineacademy.fo.model.SimpleEnchant;
 import org.mineacademy.fo.model.SimpleEnchantment;
 import org.mineacademy.fo.model.Tuple;
-import org.mineacademy.fo.remain.CompColor;
-import org.mineacademy.fo.remain.CompItemFlag;
-import org.mineacademy.fo.remain.CompMaterial;
-import org.mineacademy.fo.remain.CompMetadata;
-import org.mineacademy.fo.remain.CompMonsterEgg;
-import org.mineacademy.fo.remain.CompProperty;
-
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
-
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.Singular;
+import org.mineacademy.fo.remain.*;
 
 /**
  * Our core class for easy and comfortable item creation.
@@ -51,7 +35,6 @@ import lombok.Singular;
 public final class ItemCreator {
 
 	private static final String STEVE_TEXTURE = "ewogICJ0aW1lc3RhbXAiIDogMTU5MTU3NDcyMzc4MywKICAicHJvZmlsZUlkIiA6ICI4NjY3YmE3MWI4NWE0MDA0YWY1NDQ1N2E5NzM0ZWVkNyIsCiAgInByb2ZpbGVOYW1lIiA6ICJTdGV2ZSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82ZDNiMDZjMzg1MDRmZmMwMjI5Yjk0OTIxNDdjNjlmY2Y1OWZkMmVkNzg4NWY3ODUwMjE1MmY3N2I0ZDUwZGUxIgogICAgfSwKICAgICJDQVBFIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS85NTNjYWM4Yjc3OWZlNDEzODNlNjc1ZWUyYjg2MDcxYTcxNjU4ZjIxODBmNTZmYmNlOGFhMzE1ZWE3MGUyZWQ2IgogICAgfQogIH0KfQ==";
-
 
 	/**
 	 * The initial item stack
@@ -422,6 +405,7 @@ public final class ItemCreator {
 		final SkullMeta meta = (SkullMeta) head.getItemMeta();
 		final GameProfile profile = new GameProfile(UUID.randomUUID(), "");
 
+
 		profile.getProperties().put("textures", new Property("textures", hash));
 		Field profileField = null;
 
@@ -430,15 +414,15 @@ public final class ItemCreator {
 			profileField.setAccessible(true);
 			profileField.set(meta, profile);
 
-		} catch (final IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
-			Common.throwError(e);
+		} catch (final IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException exception) {
+			Common.throwError(exception, "Exception while setting skin texture");
 		}
 
 		head.setItemMeta(meta);
 
 		return of(head);
 	}
-
+	
 	/**
 	 * Convenience method to get a new item creator with material, name and lore set
 	 *
@@ -516,7 +500,7 @@ public final class ItemCreator {
 	/**
 	 * Get a new item creator from material
 	 *
-	 * @param material existing material
+	 * @param mat existing material
 	 * @return the new item creator
 	 */
 	public static ItemCreatorBuilder of(final CompMaterial mat) {

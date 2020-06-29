@@ -50,7 +50,7 @@ public enum WrapperMethod {
 
 	COMPOUND_REMOVE_KEY(WrapperClass.NMS_NBTTAGCOMPOUND.getClazz(), new Class[] { String.class }, V.v1_7, new Since(V.v1_7, "remove")),
 	COMPOUND_HAS_KEY(WrapperClass.NMS_NBTTAGCOMPOUND.getClazz(), new Class[] { String.class }, V.v1_7, new Since(V.v1_7, "hasKey")),
-	COMPOUND_GET_TYPE(WrapperClass.NMS_NBTTAGCOMPOUND.getClazz(), new Class[] { String.class }, V.v1_8, new Since(V.v1_8, "b"), new Since(V.v1_9, "d"), new Since(V.v1_15, "e")),
+	COMPOUND_GET_TYPE(WrapperClass.NMS_NBTTAGCOMPOUND.getClazz(), new Class[] { String.class }, V.v1_8, new Since(V.v1_8, "b"), new Since(V.v1_9, "d"), new Since(V.v1_15, "e"), new Since(V.v1_16, "d")),
 	COMPOUND_GET_KEYS(WrapperClass.NMS_NBTTAGCOMPOUND.getClazz(), new Class[] {}, V.v1_7, new Since(V.v1_7, "c"), new Since(V.v1_13, "getKeys")),
 
 	LISTCOMPOUND_GET_KEYS(WrapperClass.NMS_NBTTAGCOMPOUND.getClazz(), new Class[] {}, V.v1_7, new Since(V.v1_7, "c"), new Since(V.v1_13, "getKeys")),
@@ -74,14 +74,17 @@ public enum WrapperMethod {
 
 	//TILEENTITY_LOAD_LEGACY191(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[]{WrapperClass.NMS_MINECRAFTSERVER.getClazz(), WrapperClass.NMS_NBTTAGCOMPOUND.getClazz()}, V.v1_9, V.v1_9, new Since(V.v1_9, "a")),
 	//TILEENTITY_LOAD_LEGACY183(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[]{WrapperClass.NMS_NBTTAGCOMPOUND.getClazz()}, V.v1_8, V.v1_9, new Since(V.v1_8, "c"), new Since(V.v1_9, "a"), new Since(V.v1_9, "c")),
-	TILEENTITY_LOAD_LEGACY1121(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[] { WrapperClass.NMS_WORLD.getClazz(), WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_10, V.v1_12, new Since(V.v1_10, "a"), new Since(V.v1_12, "create")),
-	TILEENTITY_LOAD(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[] { WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_13, new Since(V.v1_12, "create")),
+	TILEENTITY_LOAD_LEGACY112(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[] { WrapperClass.NMS_WORLD.getClazz(), WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_10, V.v1_12, new Since(V.v1_10, "a"), new Since(V.v1_12, "create")),
+	TILEENTITY_LOAD_LEGACY115(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[] { WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_13, V.v1_15, new Since(V.v1_12, "create")),
+	TILEENTITY_LOAD(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[] { WrapperClass.NMS_IBLOCKDATA.getClazz(), WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_16, new Since(V.v1_12, "create")),
 
 	TILEENTITY_GET_NBT(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[] { WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_8, new Since(V.v1_8, "b"), new Since(V.v1_9, "save")),
-	TILEENTITY_SET_NBT(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[] { WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_8, new Since(V.v1_8, "a"), new Since(V.v1_12, "load")),
+	TILEENTITY_SET_NBT_115(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[] { WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_8, V.v1_15, new Since(V.v1_8, "a"), new Since(V.v1_12, "load")),
+	TILEENTITY_SET_NBT(WrapperClass.NMS_TILEENTITY.getClazz(), new Class[] { WrapperClass.NMS_IBLOCKDATA.getClazz(), WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_16, new Since(V.v1_12, "load")),
 
-	CRAFT_ENTITY_GET_HANDLE(WrapperClass.CRAFT_ENTITY.getClazz(), new Class[] {}, V.v1_7, new Since(V.v1_7, "getHandle")),
-	NMS_ENTITY_SET_NBT(WrapperClass.NMS_ENTITY.getClazz(), new Class[] { WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_8, new Since(V.v1_8, "f")),
+	CRAFT_ENTITY_GET_HANDLE(WrapperClass.CRAFT_ENTITY.getClazz(), new Class[] {}, V.v1_7, V.v1_15, new Since(V.v1_7, "getHandle")),
+
+	NMS_ENTITY_SET_NBT(WrapperClass.NMS_ENTITY.getClazz(), new Class[] { WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_8, V.v1_15, new Since(V.v1_8, "f"), new Since(V.v1_16, "save")),
 	NMS_ENTITY_GET_NBT(WrapperClass.NMS_ENTITY.getClazz(), new Class[] { WrapperClass.NMS_NBTTAGCOMPOUND.getClazz() }, V.v1_8, new Since(V.v1_8, "e"), new Since(V.v1_12, "save")),
 	NMS_ENTITY_GETSAVEID(WrapperClass.NMS_ENTITY.getClazz(), new Class[] {}, V.v1_14, new Since(V.v1_14, "getSaveID")),
 
