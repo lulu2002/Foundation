@@ -162,6 +162,13 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	public static String BUNGEE_SERVER_NAME = "Server";
 
 	/**
+	 * Antipiracy stuff for our protected software, leave empty to Serialization: ""
+	 *
+	 * // NOT MANDATORY //
+	 */
+	public static String SECRET_KEY = "";
+
+	/**
 	 * Should we check for updates from SpigotMC and notify the console and users with permission?
 	 *
 	 * See {@link SimplePlugin#getUpdateCheck()} that you can make to return {@link SpigotUpdater} with your Spigot plugin ID.
@@ -202,6 +209,9 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 
 		if (isSetDefault("Server_Name"))
 			SERVER_NAME = Common.colorize(getString("Server_Name"));
+
+		if (isSetDefault("Serialization"))
+			SECRET_KEY = getString("Serialization");
 
 		// -------------------------------------------------------------------
 		// Load maybe-mandatory values

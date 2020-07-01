@@ -341,6 +341,7 @@ public abstract class SimpleCommand extends Command {
 			if (cooldownSeconds > 0)
 				handleCooldown();
 
+			initialVariables();
 			onCommand();
 
 		} catch (final InvalidCommandArgException ex) {
@@ -393,6 +394,13 @@ public abstract class SimpleCommand extends Command {
 			// Update the last try with the current time
 			cooldownMap.put(player.getUniqueId(), System.currentTimeMillis());
 		}
+	}
+
+	/**
+	 * For subclass to init their variables
+	 */
+	protected void initialVariables() {
+
 	}
 
 	/**
