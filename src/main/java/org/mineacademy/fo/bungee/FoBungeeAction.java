@@ -45,7 +45,7 @@ public enum FoBungeeAction implements BungeeAction {
 	/**
 	 * Broadcast a message in a channel.
 	 */
-	CHANNEL("sender", "channel", "message"),
+	CHANNEL("channel", "formatted_message", true /*hasMuteBypassPermission*/, "message"),
 
 	/**
 	 * Sends an announcement message to everyone, and plays a nice sound
