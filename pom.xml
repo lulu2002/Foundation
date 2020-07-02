@@ -23,12 +23,12 @@
 
     <distributionManagement>
         <repository>
-            <id>mineacademy-repo</id>
-            <url>https://repo.mineacademy.org/repository/maven-releases/</url>
+            <id>mineacademy-public-libraries</id>
+            <url>https://repo.mineacademy.org/repository/public-libraries/</url>
         </repository>
         <snapshotRepository>
-            <id>mineacademy-repo</id>
-            <url>https://repo.mineacademy.org/repository/maven-snapshots/</url>
+            <id>mineacademy-public-libraries</id>
+            <url>https://repo.mineacademy.org/repository/public-libraries/</url>
         </snapshotRepository>
     </distributionManagement>
 
