@@ -64,7 +64,7 @@ public class AdvancedScoreboard {
 		this.target = target;
 		this.teams = new Boolean[16];
 
-		Valid.checkBoolean(MinecraftVersion.newerThan(MinecraftVersion.V.v1_16), "AdvancedScoreboard does not support 1.16 yet!");
+		Valid.checkBoolean(!MinecraftVersion.newerThan(MinecraftVersion.V.v1_16), "AdvancedScoreboard does not support 1.16 yet!");
 
 		try {
 			if (MinecraftVersion.atLeast(MinecraftVersion.V.v1_13)) {
