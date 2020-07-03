@@ -18,23 +18,19 @@ public abstract class Tool {
 	protected Tool() {
 
 		// A hacky way of automatically registering it AFTER the parent constructor, assuming all went okay
-		new Thread() {
+		new Thread(() -> {
 
-			@Override
-			public void run() {
-
-				try {
-					Thread.sleep(3);
-				} catch (final InterruptedException e) {
-					e.printStackTrace();
-				}
-
-				final Tool instance = Tool.this;
-
-				if (!ToolRegistry.isRegistered(instance))
-					ToolRegistry.register(instance);
+			try {
+				Thread.sleep(3);
+			} catch (final InterruptedException e) {
+				e.printStackTrace();
 			}
-		}.start();
+
+			final Tool instance = Tool.this;
+
+			if (!ToolRegistry.isRegistered(instance))
+				ToolRegistry.register(instance);
+		}).start();
 	}
 
 	/**
