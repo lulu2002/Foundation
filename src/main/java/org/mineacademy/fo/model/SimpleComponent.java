@@ -292,7 +292,7 @@ public class SimpleComponent {
 	 * @return
 	 */
 	public static PermissibleComponent[] fromLegacyText(@NonNull String message, @Nullable BaseComponent lastComponentFormatting, @Nullable String viewPermission) {
-		final ArrayList<PermissibleComponent> components = new ArrayList<>();
+		final List<PermissibleComponent> components = new ArrayList<>();
 
 		// Plot the previous formatting manually before the message to retain it
 		if (lastComponentFormatting != null) {
@@ -358,6 +358,9 @@ public class SimpleComponent {
 						break;
 					case "STRIKETHROUGH":
 						component.setStrikethrough(true);
+						break;
+					case "OBFUSCATED":
+						component.setObfuscated(true);
 						break;
 					case "MAGIC":
 						component.setObfuscated(true);
