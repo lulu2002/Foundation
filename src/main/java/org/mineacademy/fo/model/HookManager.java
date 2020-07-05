@@ -1827,7 +1827,11 @@ class PlaceholderAPIHook {
 	private final Set<PAPIPlaceholder> placeholders = new HashSet<>();
 
 	PlaceholderAPIHook() {
-		new VariablesInjector().register();
+		try {
+			new VariablesInjector().register();
+		} catch (final Throwable throwable) {
+			Debugger.saveError(throwable, "Can't inject variables!");
+		}
 	}
 
 	final void addPlaceholder(final PAPIPlaceholder placeholder, final Function<Player, String> replacer) {
