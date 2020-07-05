@@ -12,6 +12,7 @@ import org.mineacademy.fo.MinecraftVersion;
 import org.mineacademy.fo.MinecraftVersion.V;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.StrictSet;
+import org.mineacademy.fo.debug.Debugger;
 import org.mineacademy.fo.exception.FoException;
 
 import com.google.common.collect.Sets;
@@ -1498,22 +1499,27 @@ public enum CompMaterial {
 	 * @return the corresponding egg, or Sheep Monster Egg if does not exist
 	 */
 	public static CompMaterial makeMonsterEgg(final EntityType type) {
-		if (!COMPATIBLE)
-			return null;
+		try {
+			if (!COMPATIBLE)
+				return null;
 
-		String name = type.toString() + "_SPAWN_EGG";
+			String name = type.toString() + "_SPAWN_EGG";
 
-		// Special cases
-		if (type == EntityType.ZOMBIFIED_PIGLIN) // PIGMAN
-			name = "ZOMBIE_PIGMAN_SPAWN_EGG";
-		else if (type == EntityType.MUSHROOM_COW)
-			name = "MOOSHROOM_SPAWN_EGG";
+			// Special cases
+			if (MinecraftVersion.newerThan(V.v1_15) && type == EntityType.ZOMBIFIED_PIGLIN) // PIGMAN
+				name = "ZOMBIE_PIGMAN_SPAWN_EGG";
+			else if (type == EntityType.MUSHROOM_COW)
+				name = "MOOSHROOM_SPAWN_EGG";
 
-		// Parse normally, backwards compatible
-		final CompMaterial mat = fromString(name);
+			// Parse normally, backwards compatible
+			final CompMaterial mat = fromString(name);
 
-		// Return the egg or sheep egg if does not exist
-		return Common.getOrDefault(mat, CompMaterial.SHEEP_SPAWN_EGG);
+			// Return the egg or sheep egg if does not exist
+			return Common.getOrDefault(mat, CompMaterial.SHEEP_SPAWN_EGG);
+		} catch (final Throwable throwable) {
+			Debugger.saveError(throwable, "Something went wrong while creating spawn egg!", "Type: " + type);
+		}
+		return CompMaterial.SHEEP_SPAWN_EGG;
 	}
 
 	/**
