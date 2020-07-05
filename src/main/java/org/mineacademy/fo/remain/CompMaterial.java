@@ -1528,10 +1528,10 @@ public enum CompMaterial {
 		final String name = monsterEgg.toString().replace("_SPAWN_EGG", "");
 
 		// Special cases
-		if (name == "ZOMBIE_PIGMAN_SPAWN_EGG")
+		if (name.equals("ZOMBIE_PIGMAN_SPAWN_EGG"))
 			return EntityType.ZOMBIFIED_PIGLIN; // PIGMAN
 
-		else if (name == "MOOSHROOM_SPAWN_EGG")
+		else if (name.equals("MOOSHROOM_SPAWN_EGG"))
 			return EntityType.MUSHROOM_COW;
 
 		else
