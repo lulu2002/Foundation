@@ -77,6 +77,7 @@ import org.mineacademy.fo.ReflectionUtil;
 import org.mineacademy.fo.ReflectionUtil.ReflectionException;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.StrictMap;
+import org.mineacademy.fo.debug.Debugger;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.model.UUIDtoNameConverter;
 import org.mineacademy.fo.plugin.SimplePlugin;
@@ -638,16 +639,16 @@ public final class Remain {
 				text += comp.toLegacyText();
 			}
 
-		} catch (final Throwable t) {
+		} catch (final Throwable throwable) {
 
 			// Do not catch our own exception
-			if (t instanceof InteractiveTextFoundException)
-				throw t;
+			if (throwable instanceof InteractiveTextFoundException)
+				throw throwable;
 
-			Common.error(t,
-						 "Unable to parse JSON message.",
-						 "JSON: " + json,
-						 "Error: %error");
+			Debugger.saveError(throwable,
+					"Unable to parse JSON message.",
+					"JSON: " + json,
+					"Error: %error");
 		}
 
 		return text;

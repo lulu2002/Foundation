@@ -978,10 +978,14 @@ public final class HookManager {
 	 * @return
 	 */
 	public static String replaceRelationPlaceholders(final Player one, final Player two, final String msg) {
-		if (msg == null || "".equals(msg.trim()))
-			return msg;
+		try {
+			if (msg == null || "".equals(msg.trim()))
+				return msg;
 
-		return isPlaceholderAPILoaded() ? placeholderAPIHook.replaceRelationPlaceholders(one, two, msg) : msg;
+			return isPlaceholderAPILoaded() ? placeholderAPIHook.replaceRelationPlaceholders(one, two, msg) : msg;
+		} catch (final Throwable ignored) {
+			return msg;
+		}
 	}
 
 	/**
@@ -1006,8 +1010,12 @@ public final class HookManager {
 	 */
 	@Deprecated
 	public static void addPlaceholder(final String variable, final BiFunction<Player, String, String> value) {
-		if (isPlaceholderAPILoaded())
-			placeholderAPIHook.addPlaceholder(new PAPIPlaceholder(variable, value), null);
+		try {
+			if (isPlaceholderAPILoaded())
+				placeholderAPIHook.addPlaceholder(new PAPIPlaceholder(variable, value), null);
+		} catch (final Throwable ignored) {
+
+		}
 	}
 
 	/**
@@ -1029,8 +1037,12 @@ public final class HookManager {
 	 * @param value
 	 */
 	public static void addPlaceholder(final String variable, final Function<Player, String> value) {
-		if (isPlaceholderAPILoaded())
-			placeholderAPIHook.addPlaceholder(new PAPIPlaceholder(variable, (player, identifier) -> value.apply(player)), value);
+		try {
+			if (isPlaceholderAPILoaded())
+				placeholderAPIHook.addPlaceholder(new PAPIPlaceholder(variable, (player, identifier) -> value.apply(player)), value);
+		} catch (final Throwable ignored) {
+
+		}
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -1815,7 +1827,11 @@ class PlaceholderAPIHook {
 	private final Set<PAPIPlaceholder> placeholders = new HashSet<>();
 
 	PlaceholderAPIHook() {
-		new VariablesInjector().register();
+		try {
+			new VariablesInjector().register();
+		} catch (final Throwable throwable) {
+			Debugger.saveError(throwable, "Can't inject variables!");
+		}
 	}
 
 	final void addPlaceholder(final PAPIPlaceholder placeholder, final Function<Player, String> replacer) {
