@@ -496,6 +496,18 @@ public final class Common {
 	// Colorizing messages
 	// ------------------------------------------------------------------------------------------------------------
 
+	public static String colorizeIfPermission(final String message, final Player player , final String permission) {
+		if (!player.hasPermission(permission))
+			return message;
+		return colorize(message);
+	}
+
+	public static String colorizeIf(final String message, final boolean conditition) {
+		if (!conditition)
+			return message;
+		return colorize(message);
+	}
+
 	/**
 	 * Replaces & colors for every string in the list
 	 * A new list is created only containing non-null list values
