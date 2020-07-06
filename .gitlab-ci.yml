@@ -11,9 +11,10 @@ variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
 
 cache:
-  key: ${CI_COMMIT_REF_SLUG}
+  key: ${CI_PIPELINE_ID}
   paths:
     - .m2/repository/
+    - target/
 
 clean:
   stage: clean
@@ -28,19 +29,11 @@ build:
   artifacts:
     paths:
       - target/*.jar
-  cache:
-    key: ${CI_PIPELINE_ID}-build
-    paths:
-      - target/
 
 test:
   stage: test
   script:
     - mvn $MAVEN_CLI_OPTS test
-  cache:
-    key: ${CI_PIPELINE_ID}-build
-    paths:
-      - target/
 
 deploy:
   stage: deploy
@@ -48,7 +41,3 @@ deploy:
     - mvn $MAVEN_CLI_OPTS deploy -Dmaven.test.skip=true
   only:
     - master
-  cache:
-    key: ${CI_PIPELINE_ID}-build
-    paths:
-      - target/
