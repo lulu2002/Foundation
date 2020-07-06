@@ -1,7 +1,6 @@
 image: maven:3.3.9-jdk-8
 
 stages:
-  - clean
   - build
   - test
   - deploy
@@ -15,12 +14,6 @@ cache:
   paths:
     - .m2/repository/
     - target/
-
-clean:
-  stage: clean
-  script:
-    - mvn $MAVEN_CLI_OPTS clean
-  cache: {}
 
 build:
   stage: build
