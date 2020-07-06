@@ -1,5 +1,12 @@
 package org.mineacademy.fo.remain.nbt;
 
+import com.google.gson.Gson;
+import org.bukkit.block.BlockState;
+import org.bukkit.entity.Entity;
+import org.mineacademy.fo.MinecraftVersion;
+import org.mineacademy.fo.MinecraftVersion.V;
+import org.mineacademy.fo.Valid;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.Serializable;
@@ -7,19 +14,11 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Set;
 
-import org.bukkit.block.BlockState;
-import org.bukkit.entity.Entity;
-import org.mineacademy.fo.MinecraftVersion.V;
-import org.mineacademy.fo.Valid;
-
-import com.google.gson.Gson;
-
 /**
  * Utility class for translating NBTApi calls to reflections into NMS code All
  * methods are allowed to throw {@link NbtApiException}
  *
  * @author tr7zw
- *
  */
 public class NBTReflectionUtil {
 
@@ -232,7 +231,7 @@ public class NBTReflectionUtil {
 		final Object workingtag = gettoCompount(nbttag, comp);
 		try {
 			WrapperMethod.COMPOUND_SET.run(workingtag, name,
-					WrapperClass.NMS_NBTTAGCOMPOUND.getClazz().newInstance());
+				WrapperClass.NMS_NBTTAGCOMPOUND.getClazz().newInstance());
 			comp.setCompound(nbttag);
 		} catch (final Exception e) {
 			throw new NbtApiException("Exception while adding a Compound!", e);
@@ -452,6 +451,9 @@ public class NBTReflectionUtil {
 	 * @param data
 	 */
 	public static void setData(final NBTCompound comp, final WrapperMethod type, final String key, final Object data) {
+		// Unsupported for 1.15
+		if (MinecraftVersion.newerThan(V.v1_15)) return;
+
 		if (data == null) {
 			remove(comp, key);
 			return;
