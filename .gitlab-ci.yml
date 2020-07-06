@@ -10,6 +10,7 @@ variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
 
 cache:
+  key: ${CI_PIPELINE_ID}
   paths:
     - .m2/repository/
     - target/
@@ -20,7 +21,7 @@ build:
     - mvn $MAVEN_CLI_OPTS package -Dmaven.test.skip=true
   artifacts:
     paths:
-      - target/
+      - target/*.jar
 
 test:
   stage: test
