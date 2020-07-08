@@ -10,7 +10,7 @@
 
     <groupId>org.mineacademy.libraries</groupId>
     <artifactId>foundation</artifactId>
-    <version>5.4.4-SNAPSHOT</version>
+    <version>5.4.5</version>
     <packaging>jar</packaging>
 
     <name>Foundation</name>
