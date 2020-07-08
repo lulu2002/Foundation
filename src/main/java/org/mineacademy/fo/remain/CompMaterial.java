@@ -1,7 +1,7 @@
 package org.mineacademy.fo.remain;
 
-import java.util.HashMap;
-
+import com.google.common.collect.Sets;
+import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
@@ -15,13 +15,11 @@ import org.mineacademy.fo.collection.StrictSet;
 import org.mineacademy.fo.debug.Debugger;
 import org.mineacademy.fo.exception.FoException;
 
-import com.google.common.collect.Sets;
-
-import lombok.Getter;
+import java.util.HashMap;
 
 /**
  * Heavily inspired by a library made by Hex_27.
- *
+ * <p>
  * Source:
  * https://www.spigotmc.org/threads/1-8-to-1-13-itemstack-material-version-support.329630/
  */
@@ -964,7 +962,7 @@ public enum CompMaterial {
 	/**
 	 * The name of the material in Minecraft 1.12 and older (may or may not be the
 	 * same).
-	 *
+	 * <p>
 	 * Returns the closest alternative in case such material was non-existing in
 	 * that old version.
 	 */
@@ -979,7 +977,7 @@ public enum CompMaterial {
 
 	/**
 	 * Holds data value for legacy material name.
-	 *
+	 * <p>
 	 * For Minecraft 1.12 and older, some materials could only be obtained by their
 	 * data value (for example WOOL with data value 4 represents YELLOW_WOOL in
 	 * 1.13+).
@@ -1038,7 +1036,7 @@ public enum CompMaterial {
 
 	// Handles Minecraft below 1.12 and replaces non-existing Materials to STONE.
 	private Material findName() {
-		final String[] names = { name(), legacyName, alternativeName, "STONE" };
+		final String[] names = {name(), legacyName, alternativeName, "STONE"};
 
 		for (final String legacy : names)
 			if (legacy != null)
@@ -1109,7 +1107,7 @@ public enum CompMaterial {
 
 	/**
 	 * Return true if the {@link #getMaterial()} and the given Material matches.
-	 *
+	 * <p>
 	 * NOT cross-version compatible. For this, use {@link #is(ItemStack)}
 	 *
 	 * @param mat
@@ -1147,7 +1145,7 @@ public enum CompMaterial {
 	 * @param data
 	 * @return
 	 */
-	public final boolean is(Material type, int data) {
+	public final boolean is(final Material type, final int data) {
 		if (MinecraftVersion.atLeast(V.v1_13))
 			return type == toMaterial();
 
@@ -1301,7 +1299,7 @@ public enum CompMaterial {
 	 */
 	public static final boolean isWoodPressurePlate(final Material mat) {
 		return nameEquals(mat, "WOOD_PLATE", "ACACIA_PRESSURE_PLATE", "BIRCH_PRESSURE_PLATE", "DARK_OAK_PRESSURE_PLATE",
-						  "JUNGLE_PRESSURE_PLATE", "OAK_PRESSURE_PLATE", "SPRUCE_PRESSURE_PLATE");
+			"JUNGLE_PRESSURE_PLATE", "OAK_PRESSURE_PLATE", "SPRUCE_PRESSURE_PLATE");
 	}
 
 	/**
@@ -1491,7 +1489,7 @@ public enum CompMaterial {
 	/**
 	 * Attempts to convert an {@link EntityType} into a valid {@link CompMaterial}
 	 * representing a spawnable Monster Egg.
-	 *
+	 * <p>
 	 * In case the entity given is not a valid entity or does not have an egg, we
 	 * return Sheep Monster Egg instead.
 	 *
@@ -1511,8 +1509,10 @@ public enum CompMaterial {
 			else if (type == EntityType.MUSHROOM_COW)
 				name = "MOOSHROOM_SPAWN_EGG";
 
+
 			// Parse normally, backwards compatible
 			final CompMaterial mat = fromString(name);
+			if (mat == CompMaterial.STONE) return CompMaterial.SHEEP_SPAWN_EGG;
 
 			// Return the egg or sheep egg if does not exist
 			return Common.getOrDefault(mat, CompMaterial.SHEEP_SPAWN_EGG);
@@ -1602,16 +1602,15 @@ public enum CompMaterial {
 	}
 
 	/**
-	 *
 	 * A special method for some of our plugins that by default include
 	 * materials in their config files that do not exist in older MC versions.
-	 *
+	 * <p>
 	 * For these materials, we simply return null and do not add them to settings
 	 * instead of throwing an error.
 	 *
-	 * @deprecated special usage only
 	 * @param name
 	 * @return
+	 * @deprecated special usage only
 	 */
 	@Deprecated
 	public static CompMaterial fromStringCompat(final String name) {
@@ -1714,7 +1713,7 @@ public enum CompMaterial {
 /**
  * A special class for some of our plugins that by default include
  * materials in their config files that do not exist in older MC versions.
- *
+ * <p>
  * For these materials, we simply return null and do not add them to settings
  * instead of throwing an error.
  *
@@ -1724,78 +1723,78 @@ public enum CompMaterial {
 class SoftMaterials {
 
 	final static StrictSet<String> MATERIALS = new StrictSet<>(Sets.newHashSet(
-			"SKULL",
-			"ANVIL",
-			"TRAPPED_CHEST",
-			"GOLD_PLATE",
-			"IRON_PLATE",
-			"REDSTONE_COMPARATOR_OFF",
-			"REDSTONE_COMPARATOR_ON",
-			"DAYLIGHT_DETECTOR",
-			"REDSTONE_BLOCK",
-			"QUARTZ_ORE",
-			"HOPPER",
-			"QUARTZ_BLOCK",
-			"QUARTZ_STAIRS",
-			"ACTIVATOR_RAIL",
-			"DROPPER",
-			"STAINED_CLAY",
-			"STAINED_GLASS_PANE",
-			"LEAVES_2",
-			"LOG_2",
-			"ACACIA_STAIRS",
-			"DARK_OAK_STAIRS",
-			"SLIME_BLOCK",
-			"BARRIER",
-			"IRON_TRAPDOOR",
-			"PRISMARINE",
-			"SEA_LANTERN",
-			"HAY_BLOCK",
-			"CARPET",
-			"HARD_CLAY",
-			"COAL_BLOCK",
-			"PACKED_ICE",
-			"DOUBLE_PLANT",
-			"STANDING_BANNER",
-			"WALL_BANNER",
-			"DAYLIGHT_DETECTOR_INVERTED",
-			"RED_SANDSTONE",
-			"RED_SANDSTONE_STAIRS",
-			"DOUBLE_STONE_SLAB2",
-			"STONE_SLAB2",
-			"SPRUCE_FENCE_GATE",
-			"BIRCH_FENCE_GATE",
-			"JUNGLE_FENCE_GATE",
-			"DARK_OAK_FENCE_GATE",
-			"ACACIA_FENCE_GATE",
-			"SPRUCE_FENCE",
-			"BIRCH_FENCE",
-			"JUNGLE_FENCE",
-			"DARK_OAK_FENCE",
-			"ACACIA_FENCE",
-			"SPRUCE_DOOR",
-			"BIRCH_DOOR",
-			"JUNGLE_DOOR",
-			"ACACIA_DOOR",
-			"DARK_OAK_DOOR",
-			"END_ROD",
-			"CHORUS_PLANT",
-			"CHORUS_FLOWER",
-			"PURPUR_BLOCK",
-			"PURPUR_PILLAR",
-			"PURPUR_STAIRS",
-			"PURPUR_DOUBLE_SLAB",
-			"PURPUR_SLAB",
-			"END_BRICKS",
-			"GRASS_PATH",
-			"END_GATEWAY",
-			"FROSTED_ICE",
-			"MAGMA",
-			"NETHER_WART_BLOCK",
-			"RED_NETHER_BRICK",
-			"BONE_BLOCK",
-			"OBSERVER",
-			"PURPLE_SHULKER_BOX"
+		"SKULL",
+		"ANVIL",
+		"TRAPPED_CHEST",
+		"GOLD_PLATE",
+		"IRON_PLATE",
+		"REDSTONE_COMPARATOR_OFF",
+		"REDSTONE_COMPARATOR_ON",
+		"DAYLIGHT_DETECTOR",
+		"REDSTONE_BLOCK",
+		"QUARTZ_ORE",
+		"HOPPER",
+		"QUARTZ_BLOCK",
+		"QUARTZ_STAIRS",
+		"ACTIVATOR_RAIL",
+		"DROPPER",
+		"STAINED_CLAY",
+		"STAINED_GLASS_PANE",
+		"LEAVES_2",
+		"LOG_2",
+		"ACACIA_STAIRS",
+		"DARK_OAK_STAIRS",
+		"SLIME_BLOCK",
+		"BARRIER",
+		"IRON_TRAPDOOR",
+		"PRISMARINE",
+		"SEA_LANTERN",
+		"HAY_BLOCK",
+		"CARPET",
+		"HARD_CLAY",
+		"COAL_BLOCK",
+		"PACKED_ICE",
+		"DOUBLE_PLANT",
+		"STANDING_BANNER",
+		"WALL_BANNER",
+		"DAYLIGHT_DETECTOR_INVERTED",
+		"RED_SANDSTONE",
+		"RED_SANDSTONE_STAIRS",
+		"DOUBLE_STONE_SLAB2",
+		"STONE_SLAB2",
+		"SPRUCE_FENCE_GATE",
+		"BIRCH_FENCE_GATE",
+		"JUNGLE_FENCE_GATE",
+		"DARK_OAK_FENCE_GATE",
+		"ACACIA_FENCE_GATE",
+		"SPRUCE_FENCE",
+		"BIRCH_FENCE",
+		"JUNGLE_FENCE",
+		"DARK_OAK_FENCE",
+		"ACACIA_FENCE",
+		"SPRUCE_DOOR",
+		"BIRCH_DOOR",
+		"JUNGLE_DOOR",
+		"ACACIA_DOOR",
+		"DARK_OAK_DOOR",
+		"END_ROD",
+		"CHORUS_PLANT",
+		"CHORUS_FLOWER",
+		"PURPUR_BLOCK",
+		"PURPUR_PILLAR",
+		"PURPUR_STAIRS",
+		"PURPUR_DOUBLE_SLAB",
+		"PURPUR_SLAB",
+		"END_BRICKS",
+		"GRASS_PATH",
+		"END_GATEWAY",
+		"FROSTED_ICE",
+		"MAGMA",
+		"NETHER_WART_BLOCK",
+		"RED_NETHER_BRICK",
+		"BONE_BLOCK",
+		"OBSERVER",
+		"PURPLE_SHULKER_BOX"
 
-																			  ));
+	));
 }

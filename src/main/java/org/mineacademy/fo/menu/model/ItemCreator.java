@@ -2,8 +2,6 @@ package org.mineacademy.fo.menu.model;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import java.lang.reflect.Field;
-import java.util.*;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Singular;
@@ -26,9 +24,12 @@ import org.mineacademy.fo.model.SimpleEnchantment;
 import org.mineacademy.fo.model.Tuple;
 import org.mineacademy.fo.remain.*;
 
+import java.lang.reflect.Field;
+import java.util.*;
+
 /**
  * Our core class for easy and comfortable item creation.
- *
+ * <p>
  * You can use this to make named items with incredible speed and quality.
  */
 @Builder
@@ -100,7 +101,7 @@ public final class ItemCreator {
 	/**
 	 * Should we add glow to the item? (adds a fake enchant and uses
 	 * {@link ItemFlag} to hide it)
-	 *
+	 * <p>
 	 * The enchant is visible on older MC versions.
 	 */
 	private final boolean glow;
@@ -166,7 +167,7 @@ public final class ItemCreator {
 	 *
 	 * @return
 	 */
-	public ItemStack makeSurvival() {
+	private ItemStack makeSurvival() {
 		hideTags = false;
 
 		return make();
@@ -210,8 +211,8 @@ public final class ItemCreator {
 		if (MinecraftVersion.atLeast(V.v1_12) && color != null && !is.getType().toString().contains("LEATHER")) {
 			final String dye = color.getDye().toString();
 			final List<String> colorableMaterials = Arrays.asList(
-					"BANNER", "BED", "CARPET", "CONCRETE", "GLAZED_TERRACOTTA", "SHULKER_BOX",
-					"STAINED_GLASS", "STAINED_GLASS_PANE", "TERRACOTTA", "WALL_BANNER", "WOOL");
+				"BANNER", "BED", "CARPET", "CONCRETE", "GLAZED_TERRACOTTA", "SHULKER_BOX",
+				"STAINED_GLASS", "STAINED_GLASS_PANE", "TERRACOTTA", "WALL_BANNER", "WOOL");
 
 			for (final String colorable : colorableMaterials) {
 				final String suffix = "_" + colorable;
@@ -300,7 +301,7 @@ public final class ItemCreator {
 			for (final SimpleEnchant ench : enchants)
 				if (itemMeta instanceof EnchantmentStorageMeta)
 					((EnchantmentStorageMeta) itemMeta)
-							.addStoredEnchant(ench.getEnchant(), ench.getLevel(), true);
+						.addStoredEnchant(ench.getEnchant(), ench.getLevel(), true);
 				else
 					itemMeta.addEnchant(ench.getEnchant(), ench.getLevel(), true);
 
@@ -366,11 +367,11 @@ public final class ItemCreator {
 	/**
 	 * A method to add colors (colorize) item bellow 1.13
 	 *
-	 * @param color color to set
+	 * @param color    color to set
 	 * @param material material used
-	 * @param is ItemStack to apply to
+	 * @param is       ItemStack to apply to
 	 */
-	public static void applyColors0(CompColor color, CompMaterial material, ItemStack is) {
+	private static void applyColors0(final CompColor color, final CompMaterial material, final ItemStack is) {
 		int dataValue = material != null ? material.getData() : is.getData().getData();
 
 		if (!is.getType().toString().contains("LEATHER") && color != null)
@@ -393,13 +394,10 @@ public final class ItemCreator {
 	 * Creates an ItemBuilder from a skull-texture
 	 *
 	 * @param hash Base64-String representation of a skull-texture
-	 *
 	 * @return
 	 */
 	public static ItemCreatorBuilder ofSkullHash(final String hash) {
-		if (hash == null || hash.isEmpty()) {
-			return ofSkullHash(STEVE_TEXTURE);
-		}
+		if (hash == null || hash.isEmpty()) return ofSkullHash(STEVE_TEXTURE);
 
 		final ItemStack head = new ItemStack(CompMaterial.PLAYER_HEAD.getMaterial(), 1, (short) 3);
 		final SkullMeta meta = (SkullMeta) head.getItemMeta();
@@ -422,7 +420,7 @@ public final class ItemCreator {
 
 		return of(head);
 	}
-	
+
 	/**
 	 * Convenience method to get a new item creator with material, name and lore set
 	 *
