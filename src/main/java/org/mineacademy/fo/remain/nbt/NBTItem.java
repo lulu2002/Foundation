@@ -22,8 +22,9 @@ public class NBTItem extends NBTCompound {
      */
     public NBTItem(final ItemStack item) {
         super(null, null);
-        if (item == null || item.getType() == Material.AIR)
-            throw new NullPointerException("ItemStack can't be null/Air!");
+        if (item == null)
+            throw new NullPointerException("ItemStack can't be null!");
+
         bukkitItem = item.clone();
     }
 
