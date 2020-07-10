@@ -6,11 +6,11 @@ import org.mineacademy.fo.menu.button.config.ConfigLeftOrRightButton;
 import org.mineacademy.fo.menu.config.ItemPath;
 import org.mineacademy.fo.model.SimpleReplacer;
 
-public abstract class ConfigChangeValueButtonConfig extends ConfigLeftOrRightButton {
+public abstract class ConfigChangeValueButton extends ConfigLeftOrRightButton {
 
     private final int sizeChange;
 
-    public ConfigChangeValueButtonConfig(ItemPath path, int sizeChange) {
+    public ConfigChangeValueButton(ItemPath path, int sizeChange) {
         super(path);
 
         this.sizeChange = sizeChange;

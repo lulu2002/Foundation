@@ -6,7 +6,7 @@ import org.mineacademy.fo.model.ConfigItem;
 import org.mineacademy.fo.settings.YamlSectionConfig;
 
 @Getter
-public abstract class MenuSection extends YamlSectionConfig {
+public class MenuSection extends YamlSectionConfig {
 
     private final String path;
     private final String title;

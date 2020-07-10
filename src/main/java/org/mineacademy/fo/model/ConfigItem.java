@@ -21,13 +21,12 @@ public class ConfigItem extends YamlConfig {
 
     public ConfigItem(ItemPath path) {
         loadConfiguration(path.getFile());
-
         pathPrefix(path.getPath());
 
         material = getMaterial("Type");
         name = getString("Name");
         lore = getStringList("Lore");
-        slot = isSet("Slot") ? getInteger("Slot") : -1;
+        slot = getInteger("Slot");
 
         saveIfNecessary();
     }
@@ -39,7 +38,6 @@ public class ConfigItem extends YamlConfig {
     public static ItemStack getItem(String fileName, String path) {
         return fromItemsFile(fileName, path).getItem();
     }
-
 
     public ItemStack getItem() {
         return ItemCreator.of(getMaterial(), getName(), getLore()).build().make();

@@ -7,16 +7,19 @@ import org.mineacademy.fo.menu.config.ItemPath;
 import org.mineacademy.fo.model.SimpleReplacer;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 
 public abstract class ConfigNumberEditButton<N extends Number> extends ConfigSaveInputButton implements NumberButton {
 
     private final Class numberClass;
     private N number;
 
-    public ConfigNumberEditButton(ItemPath path, Class<? extends Number> numberClass) {
+    public ConfigNumberEditButton(ItemPath path) {
         super(path);
 
-        this.numberClass = numberClass;
+        this.numberClass = (Class) ((ParameterizedType) this.getClass()
+                .getGenericSuperclass())
+                .getActualTypeArguments()[0];
     }
 
     @Override

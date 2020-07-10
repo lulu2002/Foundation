@@ -25,8 +25,8 @@ public final class TimeUtil {
 	 */
 	private static final DateFormat DATE_FORMAT_SHORT = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 
-    private static String SECONDS_SYMBOL = "seconds", SECOND_SYMBOL = "second";
-    private static String MINUTES_SYMBOL = "minutes ",MINUTE_SYMBOL = "minute";
+    public static String SECONDS_SYMBOL = "seconds", SECOND_SYMBOL = "second";
+    public static String MINUTES_SYMBOL = "minutes ",MINUTE_SYMBOL = "minute";
 
     // ------------------------------------------------------------------------------------------------------------
 	// Current time

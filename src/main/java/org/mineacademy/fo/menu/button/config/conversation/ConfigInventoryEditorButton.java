@@ -1,9 +1,10 @@
 package org.mineacademy.fo.menu.button.config.conversation;
 
+import lombok.Getter;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.mineacademy.fo.menu.config.ItemPath;
 
 
@@ -12,17 +13,22 @@ public abstract class ConfigInventoryEditorButton extends ConfigEditorButton {
 
     private ItemStack[] inventoryBackup;
     private GameMode gameModeBackup;
+    @Getter
+    private ItemStack[] storageContent;
+    @Getter
+    private ItemStack[] armorContent;
 
     protected ConfigInventoryEditorButton(ItemPath path) {
         super(path);
     }
 
     @Override
-    protected void sendPrompt() {
+    protected final void sendPrompt() {
         Player player = getPlayer();
 
         backup(player);
-        player.getInventory().setContents(loadInventory().getContents());
+        player.getInventory().clear();
+        loadInventory(player.getInventory());
         player.setGameMode(GameMode.CREATIVE);
 
         onStart();
@@ -33,9 +39,8 @@ public abstract class ConfigInventoryEditorButton extends ConfigEditorButton {
         return input.equalsIgnoreCase(FINISH_INPUT);
     }
 
+    protected abstract void loadInventory(PlayerInventory inventory);
     protected abstract void onStart();
-
-    protected abstract Inventory loadInventory();
 
     @Override
     protected final void onEdit(String input) {
@@ -44,18 +49,19 @@ public abstract class ConfigInventoryEditorButton extends ConfigEditorButton {
     @Override
     protected void onEnd() {
         Player player = getPlayer();
+        PlayerInventory inventory = player.getInventory();
 
-        onSave(player.getInventory().getContents());
+        onSave(inventory);
         restore(player);
     }
 
-    public abstract void onSave(ItemStack[] contents);
-
+    public abstract void onSave(PlayerInventory inventory);
 
     private void backup(Player player) {
         gameModeBackup = player.getGameMode();
         inventoryBackup = player.getInventory().getContents();
     }
+
 
     private void restore(Player player) {
         player.getInventory().clear();

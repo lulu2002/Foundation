@@ -20,4 +20,8 @@ public abstract class ConfigMenuPagged<E> extends MenuPagged<E> {
     protected String[] getInfo() {
         return null;
     }
+
+    protected ItemPath getButtonPath(String buttonName) {
+        return new ItemPath(section.getFile(), section.getPath() + ".Buttons." + buttonName);
+    }
 }

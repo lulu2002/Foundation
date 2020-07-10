@@ -8,12 +8,12 @@ import org.mineacademy.fo.menu.config.ItemPath;
 
 import java.lang.reflect.Constructor;
 
-public class ConfigOpenMenuButton<E extends Menu> extends ConfigClickableButton {
+public class ConfigOpenMenuButton extends ConfigClickableButton {
 
-    private final Class<E> toOpenMenuClass;
+    private final Class toOpenMenuClass;
     private final Object[] paramOfNewMenuConstructor;
 
-    public ConfigOpenMenuButton(ItemPath path, Class<E> toOpenMenuClass, Object... param) {
+    public ConfigOpenMenuButton(ItemPath path, Class toOpenMenuClass, Object... param) {
         super(path);
 
         this.toOpenMenuClass = toOpenMenuClass;
