@@ -89,6 +89,7 @@ import org.mineacademy.fo.remain.internal.ParticleInternals;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import lombok.NonNull;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -96,7 +97,7 @@ import net.md_5.bungee.chat.ComponentSerializer;
 
 /**
  * Our main cross-version compatibility class.
- *
+ * <p>
  * Look up for many methods enabling you to make your plugin
  * compatible with MC 1.8.8 up to the latest version.
  */
@@ -285,7 +286,7 @@ public final class Remain {
 
 			try {
 				Objective.class.getMethod("getScore", String.class);
-			} catch (NoClassDefFoundError | NoSuchMethodException e) {
+			} catch (final NoClassDefFoundError | NoSuchMethodException e) {
 				newScoreboardAPI = false;
 			}
 
@@ -619,24 +620,23 @@ public final class Remain {
 	 * message with color codes. e.g. {text:"Hello world",color="red"} converts to
 	 * &cHello world
 	 *
+	 * @param denyEvents if an exception should be thrown if hover/click event is
+	 *                   found.
 	 * @throws InteractiveTextFoundException if click/hover event are found. Such
 	 *                                       events would be removed, and therefore
 	 *                                       message containing them shall not be
 	 *                                       unpacked
-	 *
-	 * @param denyEvents if an exception should be thrown if hover/click event is
-	 *                   found.
 	 */
 	public static String toLegacyText(final String json, final boolean denyEvents) throws InteractiveTextFoundException {
 		Valid.checkBoolean(bungeeApiPresent, "(Un)packing chat requires Spigot 1.7.10 or newer");
-		String text = "";
+		final StringBuilder text = new StringBuilder();
 
 		try {
-			for (final BaseComponent comp : ComponentSerializer.parse(json)) {
+			for (final BaseComponent comp : parseSave(json)) {
 				if ((comp.getHoverEvent() != null || comp.getClickEvent() != null) && denyEvents)
 					throw new InteractiveTextFoundException();
 
-				text += comp.toLegacyText();
+				text.append(comp.toLegacyText());
 			}
 
 		} catch (final Throwable throwable) {
@@ -651,7 +651,16 @@ public final class Remain {
 					"Error: %error");
 		}
 
-		return text;
+		return text.toString();
+	}
+
+	private static BaseComponent[] parseSave(@NonNull final String json) {
+		try {
+			return ComponentSerializer.parse(json);
+		} catch (final Throwable throwable) {
+			Debugger.debug("Components", "Can't parse component: '" + json + "'");
+			return new BaseComponent[0];
+		}
 	}
 
 	/**
@@ -769,13 +778,12 @@ public final class Remain {
 	 * @param subtitle the subtitle, will be colorized
 	 */
 	public static void sendTitle(final Player player, final int fadeIn, final int stay, final int fadeOut, final String title, final String subtitle) {
-		if (MinecraftVersion.newerThan(V.v1_7)) {
+		if (MinecraftVersion.newerThan(V.v1_7))
 			if (hasExtendedPlayerTitleAPI)
 				player.sendTitle(Common.colorize(title), Common.colorize(subtitle), fadeIn, stay, fadeOut);
 			else
 				ChatInternals.sendTitleLegacy(player, fadeIn, stay, fadeOut, title, subtitle);
-
-		} else {
+		else {
 			Common.tell(player, title);
 			Common.tell(player, subtitle);
 		}
@@ -881,7 +889,7 @@ public final class Remain {
 
 	/**
 	 * Attempts to remove a boss bar from player.
-	 *
+	 * <p>
 	 * Only works if you rendered it through methods in this class!
 	 *
 	 * @param player
@@ -1009,12 +1017,10 @@ public final class Remain {
 	 */
 	public static void unregisterEnchantment(final Enchantment enchantment) {
 
-		if (MinecraftVersion.atLeast(V.v1_13)) {
-			{ // Unregister by key
-				final Map<NamespacedKey, Enchantment> byKey = ReflectionUtil.getStaticFieldContent(Enchantment.class, "byKey");
+		if (MinecraftVersion.atLeast(V.v1_13)) { // Unregister by key
+			final Map<NamespacedKey, Enchantment> byKey = ReflectionUtil.getStaticFieldContent(Enchantment.class, "byKey");
 
-				byKey.remove(enchantment.getKey());
-			}
+			byKey.remove(enchantment.getKey());
 		}
 
 		{ // Unregister by name
@@ -1044,9 +1050,9 @@ public final class Remain {
 
 	/**
 	 * Return the language of the player's Minecraft client
-	 *
+	 * <p>
 	 * See {@link Player#getLocale()}
-	 *
+	 * <p>
 	 * Returns null if not available for your MC version
 	 *
 	 * @param player
@@ -1094,7 +1100,7 @@ public final class Remain {
 			Valid.checkNotNull(nmsStatistic, "Could not get NMS statistic from Bukkit's " + stat);
 
 			if (MinecraftVersion.equals(V.v1_8)) {
-				Field f = nmsStatistic.getClass().getField("name");
+				final Field f = nmsStatistic.getClass().getField("name");
 				f.setAccessible(true);
 				return f.get(nmsStatistic).toString();
 			}
@@ -1150,9 +1156,9 @@ public final class Remain {
 	/**
 	 * Update the player's inventory title without closing the window
 	 *
-	 * @deprecated use {@link PlayerUtil#updateInventoryTitle(Player, String)}
 	 * @param player the player
 	 * @param title  the new title
+	 * @deprecated use {@link PlayerUtil#updateInventoryTitle(Player, String)}
 	 */
 	@Deprecated
 	public static void updateInventoryTitle(final Player player, String title) {
@@ -1209,7 +1215,7 @@ public final class Remain {
 	 *
 	 * @param delayTicks the pause between reverting back
 	 * @param player     the player
-	 * @param location        the location
+	 * @param location   the location
 	 * @param material   the material
 	 */
 	public static void sendBlockChange(final int delayTicks, final Player player, final Location location, final CompMaterial material) {
@@ -1282,7 +1288,7 @@ public final class Remain {
 	/**
 	 * Since Minecraft introduced double yelding, it fires two events for
 	 * interaction for each hand. Return if the event was fired for the main hand.
-	 *
+	 * <p>
 	 * Backwards compatible.
 	 *
 	 * @param e, the event
@@ -1333,7 +1339,7 @@ public final class Remain {
 
 	/**
 	 * Tries to find offline player by uuid
-	 *
+	 * <p>
 	 * This method may include a blocking call
 	 *
 	 * @param id
@@ -1396,7 +1402,7 @@ public final class Remain {
 	 *
 	 * @param e the inventory click event
 	 * @return the actual inventory clicked, either bottom or top, or null if
-	 *         clicked outside
+	 * clicked outside
 	 */
 	public static Inventory getClickedInventory(final InventoryClickEvent e) {
 		final int slot = e.getRawSlot();
@@ -1526,7 +1532,7 @@ public final class Remain {
 	/**
 	 * Set the visual cooldown for the given material, see {@link Player#setCooldown(Material, int)}
 	 * You still have to implement custom handling of it
-	 *
+	 * <p>
 	 * Old MC versions are supported and handled by us
 	 * however there is no visual effect
 	 *
@@ -1548,7 +1554,7 @@ public final class Remain {
 
 	/**
 	 * See {@link Player#hasCooldown(Material)}
-	 *
+	 * <p>
 	 * Old MC versions are supported and handled by us
 	 * however there is no visual effect
 	 *
@@ -1569,7 +1575,7 @@ public final class Remain {
 
 	/**
 	 * Return the item cooldown as specified in {@link Player#getCooldown(Material)}
-	 *
+	 * <p>
 	 * Old MC versions are supported and handled by us
 	 * however there is no visual effect
 	 *
@@ -1675,7 +1681,7 @@ public final class Remain {
 				else if (MinecraftVersion.atLeast(V.v1_9))
 					item.setAmount(0);
 
-					// Explanation: For some weird reason there is a bug not removing 1 piece of ItemStack in 1.8.8
+				// Explanation: For some weird reason there is a bug not removing 1 piece of ItemStack in 1.8.8
 				else {
 					final ItemStack[] content = player.getInventory().getContents();
 
@@ -1726,7 +1732,7 @@ public final class Remain {
 	/**
 	 * Attempts to return the I18N localized display name, or returns the
 	 * capitalized Material name if fails.
-	 *
+	 * <p>
 	 * Requires PaperSpigot.
 	 *
 	 * @param item the {@link ItemStack} to get I18N name from
@@ -1820,7 +1826,7 @@ public final class Remain {
 	 * Returns if statistics do not save
 	 *
 	 * @return true if stat saving was disabled, false if not or if not running
-	 *         Spigot
+	 * Spigot
 	 */
 	public static boolean isStatSavingDisabled() {
 		try {
@@ -1862,7 +1868,7 @@ public final class Remain {
 		try {
 			SneakyThrow.sneaky(throwable);
 
-		} catch (NoClassDefFoundError | NoSuchFieldError | NoSuchMethodError err) {
+		} catch (final NoClassDefFoundError | NoSuchFieldError | NoSuchMethodError err) {
 			throw new FoException(throwable);
 		}
 	}
@@ -1870,11 +1876,11 @@ public final class Remain {
 	/**
 	 * Sets a game rule
 	 *
-	 * @param world world to set game rule in
+	 * @param world    world to set game rule in
 	 * @param gameRule game rule
-	 * @param value value to set (true/false)
+	 * @param value    value to set (true/false)
 	 */
-	public static void setGameRule(World world, String gameRule, boolean value) {
+	public static void setGameRule(final World world, final String gameRule, final boolean value) {
 		try {
 			if (MinecraftVersion.newerThan(V.v1_13)) {
 				final GameRule rule = GameRule.getByName(gameRule);
@@ -1883,7 +1889,7 @@ public final class Remain {
 			} else
 				world.setGameRuleValue(gameRule, "" + value);
 
-		} catch (Throwable t) {
+		} catch (final Throwable t) {
 			Common.error(t, "Game rule " + gameRule + " not found.");
 		}
 	}
@@ -1894,9 +1900,9 @@ public final class Remain {
 
 	/**
 	 * Return if the server is running Paper, formerly PaperSpigot software.
-	 *
+	 * <p>
 	 * Paper is a fork of Spigot compatible with most Bukkit plugins.
-	 *
+	 * <p>
 	 * We use the method getTPS to determine if Paper is installed.
 	 *
 	 * @return true if the server is running Paper(Spigot)
@@ -2002,7 +2008,7 @@ public final class Remain {
 	/**
 	 * Thrown when message contains hover or click events which would otherwise got
 	 * removed.
-	 *
+	 * <p>
 	 * Such message is not checked.
 	 */
 	public static class InteractiveTextFoundException extends RuntimeException {
@@ -2056,7 +2062,7 @@ class BungeeChatProvider {
 		try {
 			((Player) sender).spigot().sendMessage(comps);
 
-		} catch (NoClassDefFoundError | NoSuchMethodError ex) {
+		} catch (final NoClassDefFoundError | NoSuchMethodError ex) {
 			if (MinecraftVersion.newerThan(V.v1_7))
 				Common.error(ex, "Error printing JSON message, sending as plain.");
 
