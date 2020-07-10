@@ -8,34 +8,37 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * String implementation for NBTLists
+ * Float implementation for NBTLists
  *
  * @author tr7zw
  */
-public class NBTStringList extends NBTList<String> {
+public class NBTFloatList extends NBTList<Float> {
 
-    NBTStringList(final NBTCompound owner, final String name, final NBTType type, final Object list) {
+    NBTFloatList(final NBTCompound owner, final String name, final NBTType type, final Object list) {
         super(owner, name, type, list);
     }
 
     @Override
-    public String get(final int index) {
+    protected Object asTag(final Float object) {
         try {
-            return (String) ReflectionMethod.LIST_GET_STRING.run(listObject, index);
-        } catch (final Exception ex) {
-            throw new NbtApiException(ex);
-        }
-    }
-
-    @Override
-    protected Object asTag(final String object) {
-        try {
-            final Constructor<?> con = ClassWrapper.NMS_NBTTAGSTRING.getClazz().getDeclaredConstructor(String.class);
+            final Constructor<?> con = ClassWrapper.NMS_NBTTAGFLOAT.getClazz().getDeclaredConstructor(float.class);
             con.setAccessible(true);
             return con.newInstance(object);
         } catch (final InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
                 | NoSuchMethodException | SecurityException e) {
             throw new NbtApiException("Error while wrapping the Object " + object + " to it's NMS object!", e);
+        }
+    }
+
+    @Override
+    public Float get(final int index) {
+        try {
+            final Object obj = ReflectionMethod.LIST_GET.run(listObject, index);
+            return Float.valueOf(obj.toString());
+        } catch (final NumberFormatException nf) {
+            return 0f;
+        } catch (final Exception ex) {
+            throw new NbtApiException(ex);
         }
     }
 

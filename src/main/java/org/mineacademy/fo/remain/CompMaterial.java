@@ -1,7 +1,6 @@
 package org.mineacademy.fo.remain;
 
 import java.util.HashMap;
-import java.util.stream.Stream;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -1094,6 +1093,13 @@ public enum CompMaterial {
 	private final String alternativeName;
 
 	/**
+	 * Is this material available in its native state for the server version being used?
+	 * If not, we try to supplement it with a compatible version instead, defaulting back to STONE.
+	 */
+	@Getter
+	private boolean materialAvailable = true;
+
+	/**
 	 * Construct new legacy material
 	 *
 	 * @param legacyName
@@ -1134,7 +1140,9 @@ public enum CompMaterial {
 			if (legacy != null)
 				try {
 					return Material.valueOf(legacy);
+
 				} catch (final IllegalArgumentException ex) {
+					materialAvailable = false;
 				}
 
 		throw new FoException("[REPORT] CompMaterial could not parse " + this + ". Tried: " + String.join(", ", names));
@@ -1664,8 +1672,7 @@ public enum CompMaterial {
 
 		} catch (final IllegalArgumentException e) {
 			for (final CompMaterial compMat : CompMaterial.values())
-				if (compMat.legacyName.equals(mat.toString())
-						|| (compMat.alternativeName != null && compMat.alternativeName.equals(mat.toString())))
+				if (compMat.legacyName.equals(mat.toString()))
 					return compMat;
 		}
 		return null;
