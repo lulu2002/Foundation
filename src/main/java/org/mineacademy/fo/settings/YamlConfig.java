@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
@@ -1607,6 +1608,45 @@ public class YamlConfig implements ConfigSerializable {
 	 */
 	protected final String getPathPrefix() {
 		return pathPrefix;
+	}
+
+	/**
+	 * Get a map assuming each key contains a map of string and objects
+	 */
+	@Deprecated
+	protected final LinkedHashMap<String, LinkedHashMap<String, Object>> getValuesAndKeys_OLD(String path) {
+		Valid.checkNotNull(path, "Path cannot be null");
+		path = formPathPrefix(path);
+
+		// add default
+		if (getDefaults() != null && !getConfig().isSet(path)) {
+			Valid.checkBoolean(
+					getDefaults().isSet(path),
+					"Default '" + getFileName() + "' lacks a section at " + path);
+
+			for (final String name : getDefaults().getConfigurationSection(path).getKeys(false))
+				for (final String setting : getDefaults()
+						.getConfigurationSection(path + "." + name)
+						.getKeys(false))
+					addDefaultIfNotExist(path + "." + name + "." + setting, Object.class);
+		}
+
+		Valid.checkBoolean(getConfig().isSet(path), "Malfunction copying default section to " + path);
+
+		// key, values assigned to the key
+		final TreeMap<String, LinkedHashMap<String, Object>> groups = new TreeMap<>();
+
+		for (final String name : getConfig().getConfigurationSection(path).getKeys(false)) {
+			// type, value (UNPARSED)
+			final LinkedHashMap<String, Object> valuesRaw = getMap(
+					path + "." + name,
+					String.class,
+					Object.class);
+
+			groups.put(name, valuesRaw);
+		}
+
+		return new LinkedHashMap<>(groups);
 	}
 
 	// ------------------------------------------------------------------------------------
