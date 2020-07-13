@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.TreeMap;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -416,7 +417,37 @@ public abstract class YamlStaticConfig {
 	}
 
 	protected static LinkedHashMap<String, LinkedHashMap<String, Object>> getValuesAndKeys(final String path) {
-		return TEMPORARY_INSTANCE.getValuesAndKeys_OLD(path);
+		Valid.checkNotNull(path, "Path cannot be null");
+
+		// add default
+		if (getDefaults() != null && !getConfig().isSet(path)) {
+			Valid.checkBoolean(
+					getDefaults().isSet(path),
+					"Default '" + getFileName() + "' lacks a section at " + path);
+
+			for (final String name : getDefaults().getConfigurationSection(path).getKeys(false))
+				for (final String setting : getDefaults()
+						.getConfigurationSection(path + "." + name)
+						.getKeys(false))
+					TEMPORARY_INSTANCE.addDefaultIfNotExist(path + "." + name + "." + setting, Object.class);
+		}
+
+		Valid.checkBoolean(getConfig().isSet(path), "Malfunction copying default section to " + path);
+
+		// key, values assigned to the key
+		final TreeMap<String, LinkedHashMap<String, Object>> groups = new TreeMap<>();
+
+		for (final String name : getConfig().getConfigurationSection(path).getKeys(false)) {
+			// type, value (UNPARSED)
+			final LinkedHashMap<String, Object> valuesRaw = getMap(
+					path + "." + name,
+					String.class,
+					Object.class);
+
+			groups.put(name, valuesRaw);
+		}
+
+		return new LinkedHashMap<>(groups);
 	}
 
 }
