@@ -1497,11 +1497,18 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param pathAbs
 	 * @param type
 	 */
-	private void addDefaultIfNotExist(final String pathAbs, final Class<?> type) {
+	public void addDefaultIfNotExist(final String pathAbs, final Class<?> type) {
 		if (usingDefaults && getDefaults() != null && !isSetAbsolute(pathAbs)) {
 			final Object object = getDefaults().get(pathAbs);
 
-			Valid.checkNotNull(object, "Default '" + getFileName() + "' lacks " + Common.article(type.getSimpleName()) + " at '" + pathAbs + "'");
+			Valid.checkNotNull(object,
+					"Default '"
+					+ getFileName()
+					+ "' lacks "
+					+ Common.article(type.getSimpleName())
+					+ " at '"
+					+ pathAbs
+					+ "'");
 			checkAssignable(true, pathAbs, object, type);
 
 			checkAndFlagForSave(pathAbs, object);
