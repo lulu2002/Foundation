@@ -1,10 +1,6 @@
 package org.mineacademy.fo.command;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-
+import lombok.Getter;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.mineacademy.fo.Common;
@@ -15,7 +11,10 @@ import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.settings.SimpleLocalization;
 
-import lombok.Getter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.List;
 
 /**
  * A command group contains a set of different subcommands
@@ -146,13 +145,12 @@ public abstract class SimpleCommandGroup {
 	/**
 	 * Return the message displayed when no parameter is given, by
 	 * default we give credits
-	 *
+	 * <p>
 	 * If you specify "author" in your plugin.yml we display author information
 	 * If you override {@link SimplePlugin#getFoundedYear()} we display copyright
 	 *
 	 * @param sender the command sender that requested this to be shown to him
-	 * 				 may be null
-	 *
+	 *               may be null
 	 * @return
 	 */
 	protected String[] getNoParamsHeader(CommandSender sender) {
@@ -186,6 +184,7 @@ public abstract class SimpleCommandGroup {
 
 	/**
 	 * Should we send command helps instead of no-param header?
+	 *
 	 * @return
 	 */
 
@@ -212,9 +211,9 @@ public abstract class SimpleCommandGroup {
 	/**
 	 * Return which subcommands should trigger the automatic help
 	 * menu that shows all subcommands sender has permission for.
-	 *
+	 * <p>
 	 * Also see {@link #getHelpHeader()}
-	 *
+	 * <p>
 	 * Default: help and ?
 	 *
 	 * @return
@@ -230,14 +229,14 @@ public abstract class SimpleCommandGroup {
 	 * @return
 	 */
 	protected String[] getHelpHeader() {
-		return new String[] {
-				"&8",
-				"&8" + Common.chatLine(),
-				getHeaderPrefix() + "  " + SimplePlugin.getNamed() + getTrademark() + " &7" + SimplePlugin.getVersion(),
-				" ",
-				"&2  [] &f= " + SimpleLocalization.Commands.LABEL_OPTIONAL_ARGS,
-				"&6  <> &f= " + SimpleLocalization.Commands.LABEL_REQUIRED_ARGS,
-				" "
+		return new String[]{
+			"&8",
+			"&8" + Common.chatLine(),
+			getHeaderPrefix() + "  " + SimplePlugin.getNamed() + getTrademark() + " &7" + SimplePlugin.getVersion(),
+			" ",
+			"&2  [] &f= " + SimpleLocalization.Commands.LABEL_OPTIONAL_ARGS,
+			"&6  <> &f= " + SimpleLocalization.Commands.LABEL_REQUIRED_ARGS,
+			" "
 		};
 	}
 
@@ -301,14 +300,14 @@ public abstract class SimpleCommandGroup {
 				command.setSublabel(args[0]);
 
 				// Run the command
-				command.execute(sender, getLabel(), args.length == 1 ? new String[] {} : Arrays.copyOfRange(args, 1, args.length));
+				command.execute(sender, getLabel(), args.length == 1 ? new String[]{} : Arrays.copyOfRange(args, 1, args.length));
 			}
 
 			// Handle help argument
 			else if (!getHelpLabel().isEmpty() && Valid.isInList(argument, getHelpLabel()))
 				tellSubcommandsHelp();
 
-			// Handle unknown argument
+				// Handle unknown argument
 			else
 				returnInvalidArgs();
 		}

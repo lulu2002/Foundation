@@ -55,7 +55,7 @@ public abstract class Tool {
 
 	/**
 	 * Get the tool item
-	 *
+	 * <p>
 	 * TIP: Use {@link ItemCreator}
 	 *
 	 * @return the tool item
@@ -89,7 +89,7 @@ public abstract class Tool {
 	/**
 	 * Should we fire {@link #onBlockClick(PlayerInteractEvent)} even on cancelled
 	 * events?
-	 *
+	 * <p>
 	 * True by default. Set to false if you want to catch clicking air.
 	 *
 	 * @return true if we should ignore the click event if it was cancelled
@@ -103,7 +103,7 @@ public abstract class Tool {
 	 * {@link PlayerInteractEvent} ?
 	 *
 	 * @return true if the interact event should be cancelled automatically false by
-	 *         default
+	 * default
 	 */
 	protected boolean autoCancel() {
 		return false;

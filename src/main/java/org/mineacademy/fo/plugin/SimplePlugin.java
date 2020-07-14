@@ -81,7 +81,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 	/**
 	 * Returns the instance of {@link SimplePlugin}.
-	 *
+	 * <p>
 	 * It is recommended to override this in your own {@link SimplePlugin}
 	 * implementation so you will get the instance of that, directly.
 	 *
@@ -344,7 +344,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	/**
 	 * Scans your plugin and if your {@link Tool} or {@link SimpleEnchantment} class implements {@link Listener}
 	 * and has "instance" method to be a singleton, your events are registered there automatically
-	 *
+	 * <p>
 	 * If not, we only call the instance constructor in case there is any underlying registration going on
 	 */
 	private static void checkSingletons() {
@@ -449,7 +449,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	 * does not match this class' instance, which is most likely caused by wrong repackaging
 	 * or no repackaging at all (two plugins using Foundation must both have different packages
 	 * for their own Foundation version).
-	 *
+	 * <p>
 	 * Or, this is caused by a PlugMan, and we have no mercy for that.
 	 */
 	private final class ShadingException extends Throwable {
@@ -697,7 +697,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 	/**
 	 * Register your commands, events, tasks and files here.
-	 *
+	 * <p>
 	 * This is invoked when you start the plugin, call /reload, or the {@link #reload()}
 	 * method.
 	 */
@@ -908,7 +908,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 	/**
 	 * The the minimum MC version to run
-	 *
+	 * <p>
 	 * We will prevent loading it automatically if the server's version is
 	 * below the given one
 	 *
@@ -920,7 +920,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 	/**
 	 * The maximum MC version for this plugin to load
-	 *
+	 * <p>
 	 * We will prevent loading it automatically if the server's version is
 	 * above the given one
 	 *
@@ -932,7 +932,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 	/**
 	 * Return your main setting classes extending {@link YamlStaticConfig}.
-	 *
+	 * <p>
 	 * TIP: Extend {@link SimpleSettings} and {@link SimpleLocalization}
 	 *
 	 * @return
@@ -972,7 +972,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	 * If you want to use bStats.org metrics system,
 	 * simply return the plugin ID (https://bstats.org/what-is-my-plugin-id)
 	 * here and we will automatically start tracking it.
-	 *
+	 * <p>
 	 * Defaults to -1 which means disabled
 	 *
 	 * @return
@@ -1002,7 +1002,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 	/**
 	 * Should Pattern.CASE_INSENSITIVE be applied when compiling regular expressions in {@link Common#compilePattern(String)}?
-	 *
+	 * <p>
 	 * May impose a slight performance penalty but increases catches.
 	 *
 	 * @return
@@ -1013,7 +1013,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 	/**
 	 * Should Pattern.UNICODE_CASE be applied when compiling regular expressions in {@link Common#compilePattern(String)}?
-	 *
+	 * <p>
 	 * May impose a slight performance penalty but useful for non-English servers.
 	 *
 	 * @return
@@ -1045,8 +1045,8 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	/**
 	 * Use JavaScript variables/javascript.txt file
 	 *
-	 * @deprecated this feature has been removed
 	 * @return
+	 * @deprecated this feature has been removed
 	 */
 	@Deprecated
 	public boolean areScriptVariablesEnabled() {
@@ -1067,7 +1067,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 	/**
 	 * @deprecated DO NOT USE
-	 * 				Use {@link SimpleCommand#register()} instead for your commands
+	 * Use {@link SimpleCommand#register()} instead for your commands
 	 */
 	@Deprecated
 	@Override

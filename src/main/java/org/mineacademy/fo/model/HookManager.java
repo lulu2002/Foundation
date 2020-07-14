@@ -309,7 +309,7 @@ public final class HookManager {
 
 	/**
 	 * Is ProtocolLib loaded?¡
-	 *
+	 * <p>
 	 * This will not only check if the plugin is in plugins folder, but also if it's
 	 * correctly loaded and working. (*Should* detect plugin's malfunction when
 	 * out-dated.)
@@ -850,8 +850,8 @@ public final class HookManager {
 	@Deprecated
 	public static boolean hasPermissionVault(final Player online, final String perm) {
 		return online != null && online.getUniqueId() != null
-				&& isVaultLoaded()
-				&& vaultHook.hasPerm(online.getWorld().getName(), online.getName(), perm);
+			&& isVaultLoaded()
+			&& vaultHook.hasPerm(online.getWorld().getName(), online.getName(), perm);
 	}
 
 	/**
@@ -979,21 +979,20 @@ public final class HookManager {
 	/**
 	 * If PlaceholderAPI is loaded, registers a new placeholder within it
 	 * with the given variable and value.
-	 *
+	 * <p>
 	 * The variable is automatically prepended with your plugin name, lowercased + _,
 	 * such as chatcontrol_ or boss_ + your variable.
-	 *
+	 * <p>
 	 * Example if the variable is player health in ChatControl plugin: "chatcontrol_health"
-	 *
+	 * <p>
 	 * The value will be called against the given player and the variable you set initially
-	 *
+	 * <p>
 	 * NB: In your chat formatting plugin you can append your variable with a "+" sign
 	 * to automatically insert a space after it in case it is not empty (NOT HERE, but in your
 	 * chat control plugin)
 	 *
 	 * @param variable
 	 * @param value
-	 *
 	 * @deprecated does not register the variable in PlaceholderAPI
 	 */
 	@Deprecated
@@ -1009,14 +1008,14 @@ public final class HookManager {
 	/**
 	 * If PlaceholderAPI is loaded, registers a new placeholder within it
 	 * with the given variable and value.
-	 *
+	 * <p>
 	 * The variable is automatically prepended with your plugin name, lowercased + _,
 	 * such as chatcontrol_ or boss_ + your variable.
-	 *
+	 * <p>
 	 * Example if the variable is player health in ChatControl plugin: "chatcontrol_health"
-	 *
+	 * <p>
 	 * The value will be called against the given player
-	 *
+	 * <p>
 	 * NB: In your chat formatting plugin you can append your variable with a "+" sign
 	 * to automatically insert a space after it in case it is not empty (NOT HERE, but in your
 	 * chat control plugin)
@@ -1092,7 +1091,7 @@ public final class HookManager {
 
 	/**
 	 * Adds a {@link PacketAdapter} packet listener to ProtocolLib.
-	 *
+	 * <p>
 	 * If the plugin is missing, an error will be thrown
 	 *
 	 * @param adapter
@@ -1292,7 +1291,7 @@ public final class HookManager {
 
 	/**
 	 * Sends a message from the given sender to a certain channel on Discord using DiscordSRV
-	 *
+	 * <p>
 	 * Enhanced functionality is available if the sender is a player
 	 *
 	 * @param sender
@@ -1336,9 +1335,9 @@ public final class HookManager {
 	/**
 	 * Represents a PlaceholderAPI placeholder replacer with the given
 	 * variable (will be prepended with the name of your plugin, such as
-	 *
+	 * <p>
 	 * chatcontrol_ + this variable
-	 *
+	 * <p>
 	 * and the value that is callable so that you can return updated value each time.
 	 */
 	@Data
@@ -1607,7 +1606,7 @@ class TownyHook {
 					return channel.getName();
 
 			final com.palmergames.bukkit.TownyChat.channels.Channel channel = townyChat.getChannelsHandler().getActiveChannel(pl,
-					com.palmergames.bukkit.TownyChat.channels.channelTypes.GLOBAL);
+				com.palmergames.bukkit.TownyChat.channels.channelTypes.GLOBAL);
 			return channel == null ? null : channel.getName();
 
 		} catch (final Throwable ex) {
@@ -1818,7 +1817,7 @@ class PlaceholderAPIHook {
 		try {
 			new VariablesInjector().register();
 		} catch (final Throwable throwable) {
-			if(Debugger.isDebugged("placeholder"))
+			if (Debugger.isDebugged("placeholder"))
 				Debugger.saveError(throwable, "Can't inject variables!");
 		}
 	}
@@ -1845,10 +1844,10 @@ class PlaceholderAPIHook {
 
 		} catch (final Throwable t) {
 			Common.error(t,
-					"PlaceholderAPI failed to replace variables!",
-					"Player: " + pl.getName(),
-					"Message: " + msg,
-					"Error: %error");
+				"PlaceholderAPI failed to replace variables!",
+				"Player: " + pl.getName(),
+				"Message: " + msg,
+				"Error: %error");
 
 			return msg;
 		}
@@ -1889,11 +1888,11 @@ class PlaceholderAPIHook {
 
 		} catch (final Throwable t) {
 			Common.error(t,
-					"PlaceholderAPI failed to replace relation variables!",
-					"Player one: " + one,
-					"Player two: " + two,
-					"Message: " + msg,
-					"Error: %error");
+				"PlaceholderAPI failed to replace relation variables!",
+				"Player one: " + one,
+				"Player two: " + two,
+				"Message: " + msg,
+				"Error: %error");
 
 			return msg;
 		}
@@ -1985,7 +1984,7 @@ class PlaceholderAPIHook {
 		/**
 		 * This is the version of the expansion.
 		 * <br>You don't have to use numbers, since it is set as a String.
-		 *
+		 * <p>
 		 * For convenience do we return the version from the plugin.yml
 		 *
 		 * @return The version as a String.
@@ -2001,11 +2000,8 @@ class PlaceholderAPIHook {
 		 * <br>We specify the value identifier in this method.
 		 * <br>Since version 2.9.1 can you use OfflinePlayers in your requests.
 		 *
-		 * @param  player
-		 *         A {@link org.bukkit.OfflinePlayer Player}.
-		 * @param  identifier
-		 *         A String containing the identifier/value.
-		 *
+		 * @param player     A {@link org.bukkit.OfflinePlayer Player}.
+		 * @param identifier A String containing the identifier/value.
 		 * @return possibly-null String of the requested identifier.
 		 */
 		@Override
@@ -2071,13 +2067,13 @@ class MVdWPlaceholderHook {
 
 		} catch (final Throwable t) {
 			Common.error(t,
-					"MvdWPlaceholders placeholders failed!",
-					"Player: " + player.getName(),
-					"Message: '" + message + "'",
-					"Consider writing to developer of that library",
-					"first as this may be a bug we cannot handle!",
-					"",
-					"Your chat message will appear without replacements.");
+				"MvdWPlaceholders placeholders failed!",
+				"Player: " + player.getName(),
+				"Message: '" + message + "'",
+				"Consider writing to developer of that library",
+				"first as this may be a bug we cannot handle!",
+				"",
+				"Your chat message will appear without replacements.");
 		}
 
 		return message;
@@ -2263,7 +2259,7 @@ class WorldGuardHook {
 				}
 			else
 				((com.sk89q.worldguard.protection.managers.RegionManager) rm)
-						.getRegions().values().forEach(reg -> {
+					.getRegions().values().forEach(reg -> {
 					if (reg == null || reg.getId() == null)
 						return;
 
@@ -2291,7 +2287,7 @@ class WorldGuardHook {
 			}
 
 		return ((com.sk89q.worldguard.protection.managers.RegionManager) rm)
-				.getApplicableRegions(com.sk89q.worldedit.math.BlockVector3.at(loc.getX(), loc.getY(), loc.getZ()));
+			.getApplicableRegions(com.sk89q.worldedit.math.BlockVector3.at(loc.getX(), loc.getY(), loc.getZ()));
 	}
 
 	private Object getRegionManager(final World w) {
@@ -2328,19 +2324,29 @@ class WorldGuardHook {
 
 abstract class FactionsHook {
 
-	/** Get all loaded factions */
+	/**
+	 * Get all loaded factions
+	 */
 	abstract Collection<String> getFactions();
 
-	/** Get faction of the player */
+	/**
+	 * Get faction of the player
+	 */
 	abstract String getFaction(Player pl);
 
-	/** Get faction in the location */
+	/**
+	 * Get faction in the location
+	 */
 	abstract String getFaction(Location loc);
 
-	/** Get faction owner at the specific location */
+	/**
+	 * Get faction owner at the specific location
+	 */
 	abstract String getFactionOwner(Location loc);
 
-	/** Get all players being in the same faction, used for party chat. */
+	/**
+	 * Get all players being in the same faction, used for party chat.
+	 */
 	final Collection<? extends Player> getSameFactionPlayers(final Player pl) {
 		final List<Player> recipients = new ArrayList<>();
 		final String playerFaction = getFaction(pl);

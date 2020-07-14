@@ -1,10 +1,7 @@
 package org.mineacademy.fo.menu;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import lombok.Getter;
+import lombok.val;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
@@ -19,14 +16,15 @@ import org.mineacademy.fo.menu.model.InventoryDrawer;
 import org.mineacademy.fo.menu.model.ItemCreator;
 import org.mineacademy.fo.remain.CompMaterial;
 
-import lombok.Getter;
-import lombok.val;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An advanced menu listing items with automatic page support
  *
- * @param <T>
- *            the item that each page consists of
+ * @param <T> the item that each page consists of
  */
 public abstract class MenuPagged<T> extends Menu {
 
@@ -55,8 +53,7 @@ public abstract class MenuPagged<T> extends Menu {
 	/**
 	 * Create a new paged menu where each page has 3 rows + 1 bottom bar
 	 *
-	 * @param pages
-	 *            the pages
+	 * @param pages the pages
 	 */
 	protected MenuPagged(final Iterable<T> pages) {
 		this(null, pages);
@@ -65,10 +62,8 @@ public abstract class MenuPagged<T> extends Menu {
 	/**
 	 * Create a new paged menu
 	 *
-	 * @param parent
-	 *            the parent menu
-	 * @param pages
-	 *            the pages the pages
+	 * @param parent the parent menu
+	 * @param pages  the pages the pages
 	 */
 	protected MenuPagged(final Menu parent, final Iterable<T> pages) {
 		this(null, parent, pages, false);
@@ -82,21 +77,18 @@ public abstract class MenuPagged<T> extends Menu {
 	 * @param returnMakesNewInstance
 	 */
 	protected MenuPagged(final Menu parent, final Iterable<T> pages,
-			final boolean returnMakesNewInstance) {
+	                     final boolean returnMakesNewInstance) {
 		this(null, parent, pages, returnMakesNewInstance);
 	}
 
 	/**
 	 * Create a new paged menu
 	 *
-	 * @param pageSize
-	 *            size of the menu, a multiple of 9 (keep in mind we already add
-	 *            1 row there)
-	 * @param pages
-	 *            the pages
-	 *
+	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add
+	 *                 1 row there)
+	 * @param pages    the pages
 	 * @deprecated we recommend you don't set the page size for the menu to
-	 *             autocalculate
+	 * autocalculate
 	 */
 	@Deprecated
 	protected MenuPagged(final int pageSize, final Iterable<T> pages) {
@@ -106,19 +98,16 @@ public abstract class MenuPagged<T> extends Menu {
 	/**
 	 * Create a new paged menu
 	 *
-	 * @param pageSize
-	 *            size of the menu, a multiple of 9 (keep in mind we already add
-	 *            1 row there)
-	 * @param parent
-	 *            the parent menu
-	 * @param pages
-	 *            the pages the pages
+	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add
+	 *                 1 row there)
+	 * @param parent   the parent menu
+	 * @param pages    the pages the pages
 	 * @deprecated we recommend you don't set the page size for the menu to
-	 *             autocalculate
+	 * autocalculate
 	 */
 	@Deprecated
 	protected MenuPagged(final int pageSize, final Menu parent,
-			final Iterable<T> pages) {
+	                     final Iterable<T> pages) {
 		this(pageSize, parent, pages, false);
 	}
 
@@ -130,26 +119,22 @@ public abstract class MenuPagged<T> extends Menu {
 	 * @param pages
 	 * @param returnMakesNewInstance *
 	 * @deprecated we recommend you don't set the page size for the menu to
-	 *             autocalculate
+	 * autocalculate
 	 */
 	@Deprecated
 	protected MenuPagged(final int pageSize, final Menu parent,
-			final Iterable<T> pages, final boolean returnMakesNewInstance) {
+	                     final Iterable<T> pages, final boolean returnMakesNewInstance) {
 		this((Integer) pageSize, parent, pages, returnMakesNewInstance);
 	}
 
 	/**
 	 * Create a new paged menu
 	 *
-	 * @param pageSize
-	 *            size of the menu, a multiple of 9 (keep in mind we already add
-	 *            1 row there)
-	 * @param parent
-	 *            the parent menu
-	 * @param pages
-	 *            the pages the pages
-	 * @param returnMakesNewInstance
-	 *            should we re-instatiate the parent menu when returning to it?
+	 * @param pageSize               size of the menu, a multiple of 9 (keep in mind we already add
+	 *                               1 row there)
+	 * @param parent                 the parent menu
+	 * @param pages                  the pages the pages
+	 * @param returnMakesNewInstance should we re-instatiate the parent menu when returning to it?
 	 */
 	private MenuPagged(final Integer pageSize, final Menu parent, final Iterable<T> pages, final boolean returnMakesNewInstance) {
 		super(parent, returnMakesNewInstance);
@@ -187,9 +172,7 @@ public abstract class MenuPagged<T> extends Menu {
 					final T page = allItems.get(valueIndex);
 
 					pageItems.add(page);
-				}
-
-				else
+				} else
 					break;
 
 			pages.put(i, pageItems);
@@ -218,10 +201,10 @@ public abstract class MenuPagged<T> extends Menu {
 
 			@Override
 			public void onClickedInMenu(final Player pl, final Menu menu,
-					final ClickType click) {
+			                            final ClickType click) {
 				if (canGo) {
 					currentPage = MathUtil.range(currentPage - 1, 1,
-							pages.size());
+						pages.size());
 
 					updatePage();
 				}
@@ -232,9 +215,9 @@ public abstract class MenuPagged<T> extends Menu {
 				final int str = currentPage - 1;
 
 				return ItemCreator.of(
-						canGo ? CompMaterial.LIME_DYE : CompMaterial.GRAY_DYE)
-						.name(str == 0 ? "&7First Page" : "&8<< &fPage " + str)
-						.build().make();
+					canGo ? CompMaterial.LIME_DYE : CompMaterial.GRAY_DYE)
+					.name(str == 0 ? "&7First Page" : "&8<< &fPage " + str)
+					.build().make();
 			}
 		} : Button.makeEmpty();
 
@@ -244,10 +227,10 @@ public abstract class MenuPagged<T> extends Menu {
 
 			@Override
 			public void onClickedInMenu(final Player pl, final Menu menu,
-					final ClickType click) {
+			                            final ClickType click) {
 				if (canGo) {
 					currentPage = MathUtil.range(currentPage + 1, 1,
-							pages.size());
+						pages.size());
 
 					updatePage();
 				}
@@ -258,11 +241,11 @@ public abstract class MenuPagged<T> extends Menu {
 				final boolean last = currentPage == pages.size();
 
 				return ItemCreator.of(
-						canGo ? CompMaterial.LIME_DYE : CompMaterial.GRAY_DYE)
-						.name(last
-								? "&7Last Page"
-								: "Page " + (currentPage + 1) + " &8>>")
-						.build().make();
+					canGo ? CompMaterial.LIME_DYE : CompMaterial.GRAY_DYE)
+					.name(last
+						? "&7Last Page"
+						: "Page " + (currentPage + 1) + " &8>>")
+					.build().make();
 			}
 		} : Button.makeEmpty();
 	}
@@ -282,13 +265,13 @@ public abstract class MenuPagged<T> extends Menu {
 		final boolean canAddNumbers = addPageNumbers() && pages.size() > 1;
 
 		return getTitle() + (canAddNumbers
-				? " &8" + currentPage + "/" + pages.size()
-				: "");
+			? " &8" + currentPage + "/" + pages.size()
+			: "");
 	}
 
 	/**
 	 * Automatically prepend the title with page numbers
-	 *
+	 * <p>
 	 * Override for a custom last-minute implementation, but
 	 * ensure to call the super method otherwise no title will
 	 * be set in {@link InventoryDrawer}
@@ -302,11 +285,10 @@ public abstract class MenuPagged<T> extends Menu {
 
 	/**
 	 * Return the {@link ItemStack} representation of an item on a certain page
-	 *
+	 * <p>
 	 * Use {@link ItemCreator} for easy creation.
 	 *
-	 * @param item
-	 *            the given object, for example Arena
+	 * @param item the given object, for example Arena
 	 * @return the itemstack, for example diamond sword having arena name
 	 */
 	protected abstract ItemStack convertToItemStack(T item);
@@ -314,12 +296,9 @@ public abstract class MenuPagged<T> extends Menu {
 	/**
 	 * Called automatically when an item is clicked
 	 *
-	 * @param player
-	 *            the player who clicked
-	 * @param item
-	 *            the clicked item
-	 * @param click
-	 *            the click type
+	 * @param player the player who clicked
+	 * @param item   the clicked item
+	 * @param click  the click type
 	 */
 	protected abstract void onPageClick(Player player, T item, ClickType click);
 
@@ -355,8 +334,7 @@ public abstract class MenuPagged<T> extends Menu {
 	 * Automatically get the correct item from the actual page, including
 	 * prev/next buttons
 	 *
-	 * @param slot
-	 *            the slot
+	 * @param slot the slot
 	 * @return the item, or null
 	 */
 	@Override
@@ -382,9 +360,9 @@ public abstract class MenuPagged<T> extends Menu {
 	 */
 	@Override
 	public final void onMenuClick(final Player player, final int slot,
-			final InventoryAction action, final ClickType click,
-			final ItemStack cursor, final ItemStack clicked,
-			final boolean cancelled) {
+	                              final InventoryAction action, final ClickType click,
+	                              final ItemStack cursor, final ItemStack clicked,
+	                              final boolean cancelled) {
 		if (slot < getCurrentPageItems().size()) {
 			final T obj = getCurrentPageItems().get(slot);
 
@@ -393,9 +371,9 @@ public abstract class MenuPagged<T> extends Menu {
 				onPageClick(player, obj, click);
 
 				if (updateButtonOnClick()
-						&& prevType == player.getOpenInventory().getType())
+					&& prevType == player.getOpenInventory().getType())
 					player.getOpenInventory().getTopInventory().setItem(slot,
-							getItemAt(slot));
+						getItemAt(slot));
 			}
 		}
 	}
@@ -403,23 +381,23 @@ public abstract class MenuPagged<T> extends Menu {
 	// Do not allow override
 	@Override
 	public final void onButtonClick(final Player player, final int slot,
-			final InventoryAction action, final ClickType click,
-			final Button button) {
+	                                final InventoryAction action, final ClickType click,
+	                                final Button button) {
 		super.onButtonClick(player, slot, action, click, button);
 	}
 
 	// Do not allow override
 	@Override
 	public final void onMenuClick(final Player player, final int slot,
-			final ItemStack clicked) {
+	                              final ItemStack clicked) {
 		throw new FoException("Simplest click unsupported");
 	}
 
 	// Get all items in a page
 	private List<T> getCurrentPageItems() {
 		Valid.checkBoolean(pages.containsKey(currentPage - 1),
-				"The menu has only " + pages.size() + " pages, not "
-						+ currentPage + "!");
+			"The menu has only " + pages.size() + " pages, not "
+				+ currentPage + "!");
 
 		return pages.get(currentPage - 1);
 	}
