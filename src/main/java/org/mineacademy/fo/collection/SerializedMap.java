@@ -498,9 +498,9 @@ public final class SerializedMap extends StrictCollection {
 			return list;
 
 		final Object rawList = map.get(key);
-		Valid.checkBoolean(rawList instanceof List, "Key '" + key + "' expected to have a list, got " + rawList.getClass().getSimpleName() + " instead!");
+		Valid.checkBoolean(rawList instanceof Collection, "Key '" + key + "' expected to have a collection or list, got " + rawList.getClass().getSimpleName() + " instead!");
 
-		for (final Object object : (List<Object>) rawList)
+		for (final Object object : (Collection<Object>) rawList)
 			list.add(object == null ? null : SerializeUtil.deserialize(type, object));
 
 		return list;
