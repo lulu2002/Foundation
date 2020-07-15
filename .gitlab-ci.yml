@@ -10,10 +10,9 @@ variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
 
 cache:
-  key: ${CI_PIPELINE_ID}
+  key: maven-local-repository
   paths:
     - .m2/repository/
-    - target/
 
 build:
   stage: build

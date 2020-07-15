@@ -1,13 +1,7 @@
 package org.mineacademy.fo.model;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-
+import com.google.common.collect.Lists;
+import lombok.Getter;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.mineacademy.fo.Common;
@@ -16,18 +10,19 @@ import org.mineacademy.fo.ReflectionUtil;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.remain.Remain;
 
-import com.google.common.collect.Lists;
-
-import lombok.Getter;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 /**
  * This is AdvancedScoreboard made with packets. - Use me with love :)
  *
  * <p>
+ *
  * @author Ladislav Proc
  * @since 2020
  * </p>
- *
+ * <p>
  * SUPPORTS ONLY VERSIONS BELOW 1.16
  */
 public class AdvancedScoreboard {
@@ -339,7 +334,7 @@ public class AdvancedScoreboard {
 
 	/**
 	 * Create a "fake" taem
-	 *
+	 * <p>
 	 * DO NOT TOUCH IF YOU DO NOT KNOW WHAT ARE YOU DOING!!!
 	 *
 	 * @param line

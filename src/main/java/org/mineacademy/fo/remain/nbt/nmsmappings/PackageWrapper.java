@@ -2,16 +2,15 @@ package org.mineacademy.fo.remain.nbt.nmsmappings;
 
 /**
  * Package enum
- * 
- * @author tr7zw
  *
+ * @author tr7zw
  */
 @SuppressWarnings("javadoc")
 public enum PackageWrapper {
-	NMS(new String(new byte[] {'n', 'e', 't', '.', 'm', 'i', 'n', 'e', 'c', 'r', 'a', 'f', 't', '.', 's', 'e', 'r', 'v', 'e', 'r'})),
-	CRAFTBUKKIT(new String(new byte[] {'o', 'r', 'g', '.', 'b', 'u', 'k', 'k', 'i', 't', '.', 'c', 'r', 'a', 'f', 't', 'b', 'u', 'k', 'k', 'i', 't'})),
+	NMS(new String(new byte[]{'n', 'e', 't', '.', 'm', 'i', 'n', 'e', 'c', 'r', 'a', 'f', 't', '.', 's', 'e', 'r', 'v', 'e', 'r'})),
+	CRAFTBUKKIT(new String(new byte[]{'o', 'r', 'g', '.', 'b', 'u', 'k', 'k', 'i', 't', '.', 'c', 'r', 'a', 'f', 't', 'b', 'u', 'k', 'k', 'i', 't'})),
 	;
-	
+
 	private final String uri;
 
 	private PackageWrapper(String uri) {

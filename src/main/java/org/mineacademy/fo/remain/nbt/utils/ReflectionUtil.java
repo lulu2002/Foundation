@@ -1,9 +1,10 @@
 package org.mineacademy.fo.remain.nbt.utils;
 
+import org.mineacademy.fo.remain.nbt.NbtApiException;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import org.mineacademy.fo.remain.nbt.NbtApiException;
 
 public final class ReflectionUtil {
 
@@ -43,7 +44,7 @@ public final class ReflectionUtil {
 	}
 
 	public static void setFinal(Object obj, Field field, Object newValue)
-			throws IllegalArgumentException, IllegalAccessException {
+		throws IllegalArgumentException, IllegalAccessException {
 		field.setAccessible(true);
 		field = makeNonFinal(field);
 		field.set(obj, newValue);

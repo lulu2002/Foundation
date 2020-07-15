@@ -1,26 +1,10 @@
-
 package org.mineacademy.fo;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
-import javax.annotation.Nullable;
-
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -56,11 +40,17 @@ import org.mineacademy.fo.remain.Remain;
 import org.mineacademy.fo.settings.SimpleLocalization;
 import org.mineacademy.fo.settings.SimpleSettings;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import net.md_5.bungee.api.chat.TextComponent;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Our main utility class hosting a large variety of different convenience
@@ -100,8 +90,8 @@ public final class Common {
 	 * Holds words that differ in their plural form (nominative case only)
 	 */
 	private static final SerializedMap PLURAL_EXCEPTIONS = SerializedMap.ofArray(
-			"life", "lives",
-			"wolf", "wolves");
+		"life", "lives",
+		"wolf", "wolves");
 
 	// ------------------------------------------------------------------------------------------------------------
 	// Tell prefix
@@ -109,7 +99,7 @@ public final class Common {
 
 	/**
 	 * Should we add a prefix to the messages we send to players using tell() methods?
-	 *
+	 * <p>
 	 * False by default
 	 */
 	public static boolean ADD_TELL_PREFIX = false;
@@ -121,7 +111,7 @@ public final class Common {
 
 	/**
 	 * Should we add a prefix to the messages we send to the console?
-	 *
+	 * <p>
 	 * True by default
 	 */
 	public static boolean ADD_LOG_PREFIX = true;
@@ -146,24 +136,24 @@ public final class Common {
 
 	/**
 	 * Set the tell prefix applied for messages to players from tell() methods
-	 *
+	 * <p>
 	 * Colors with & letter are translated automatically.
 	 *
 	 * @param prefix
 	 */
 	public static void setTellPrefix(final String prefix) {
-		tellPrefix = colorize(prefix);
+		Common.tellPrefix = Common.colorize(prefix);
 	}
 
 	/**
 	 * Set the log prefix applied for messages in the console from log() methods.
-	 *
+	 * <p>
 	 * Colors with & letter are translated automatically.
 	 *
 	 * @param prefix
 	 */
 	public static void setLogPrefix(final String prefix) {
-		logPrefix = colorize(prefix);
+		Common.logPrefix = Common.colorize(prefix);
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -177,7 +167,7 @@ public final class Common {
 	 * @param sender
 	 */
 	public static void broadcastWithPlayer(final String message, final CommandSender sender) {
-		broadcastWithPlayer(message, resolveSenderName(sender));
+		Common.broadcastWithPlayer(message, Common.resolveSenderName(sender));
 	}
 
 	/**
@@ -187,7 +177,7 @@ public final class Common {
 	 * @param playerReplacement
 	 */
 	public static void broadcastWithPlayer(final String message, final String playerReplacement) {
-		broadcast(message.replace("{player}", playerReplacement));
+		Common.broadcast(message.replace("{player}", playerReplacement));
 	}
 
 	/**
@@ -196,7 +186,7 @@ public final class Common {
 	 * @param message
 	 */
 	public static void broadcast(final String message) {
-		broadcast(message, true);
+		Common.broadcast(message, true);
 	}
 
 	/**
@@ -208,10 +198,10 @@ public final class Common {
 	public static void broadcast(final String message, final boolean log) {
 		if (message != null && !message.equals("none")) {
 			for (final Player online : Remain.getOnlinePlayers())
-				tellJson(online, message);
+				Common.tellJson(online, message);
 
 			if (log)
-				log(message);
+				Common.log(message);
 		}
 	}
 
@@ -222,7 +212,7 @@ public final class Common {
 	 */
 	public static void broadcast(final Collection<String> messages) {
 		for (final String message : messages)
-			broadcast(message, true);
+			Common.broadcast(message, true);
 	}
 
 	/**
@@ -233,7 +223,7 @@ public final class Common {
 	 */
 	public static void broadcast(final Collection<String> messages, final boolean log) {
 		for (final String message : messages)
-			broadcast(message, log);
+			Common.broadcast(message, log);
 	}
 
 	/**
@@ -247,10 +237,10 @@ public final class Common {
 		if (message != null && !message.equals("none")) {
 			for (final Player online : Remain.getOnlinePlayers())
 				if (PlayerUtil.hasPerm(online, permission))
-					tellJson(online, message);
+					Common.tellJson(online, message);
 
 			if (log)
-				log(message);
+				Common.log(message);
 		}
 	}
 
@@ -268,7 +258,7 @@ public final class Common {
 				if (PlayerUtil.hasPerm(online, permission))
 					Remain.sendComponent(online, message);
 
-			log(legacy);
+			Common.log(legacy);
 		}
 	}
 
@@ -280,7 +270,7 @@ public final class Common {
 	 */
 	public static void broadcastTo(final Iterable<? extends CommandSender> recipients, final String... messages) {
 		for (final CommandSender sender : recipients)
-			tell(sender, messages);
+			Common.tell(sender, messages);
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -291,9 +281,9 @@ public final class Common {
 	 * Sends a message to the player and saves the time when it was sent.
 	 * The delay in seconds is the delay between which we won't send player the
 	 * same message, in case you call this method again.
-	 *
+	 * <p>
 	 * Does not prepend the message with {@link #getTellPrefix()}
-	 *
+	 * <p>
 	 * See {@link #TIMED_TELL_CACHE} for more explanation.
 	 *
 	 * @param delaySeconds
@@ -301,19 +291,19 @@ public final class Common {
 	 * @param message
 	 */
 	public static void tellTimedNoPrefix(final int delaySeconds, final CommandSender sender, final String message) {
-		final boolean hadPrefix = ADD_TELL_PREFIX;
-		ADD_TELL_PREFIX = false;
+		final boolean hadPrefix = Common.ADD_TELL_PREFIX;
+		Common.ADD_TELL_PREFIX = false;
 
-		tellTimed(delaySeconds, sender, message);
+		Common.tellTimed(delaySeconds, sender, message);
 
-		ADD_TELL_PREFIX = hadPrefix;
+		Common.ADD_TELL_PREFIX = hadPrefix;
 	}
 
 	/**
 	 * Sends a message to the player and saves the time when it was sent.
 	 * The delay in seconds is the delay between which we won't send player the
 	 * same message, in case you call this method again.
-	 *
+	 * <p>
 	 * See {@link #TIMED_TELL_CACHE} for more explanation.
 	 *
 	 * @param delaySeconds
@@ -323,17 +313,17 @@ public final class Common {
 	public static void tellTimed(final int delaySeconds, final CommandSender sender, final String message) {
 
 		// No previous message stored, just tell the player now
-		if (!TIMED_TELL_CACHE.containsKey(message)) {
-			tell(sender, message);
+		if (!Common.TIMED_TELL_CACHE.containsKey(message)) {
+			Common.tell(sender, message);
 
-			TIMED_TELL_CACHE.put(message, TimeUtil.currentTimeSeconds());
+			Common.TIMED_TELL_CACHE.put(message, TimeUtil.currentTimeSeconds());
 			return;
 		}
 
-		if (TimeUtil.currentTimeSeconds() - TIMED_TELL_CACHE.get(message) > delaySeconds) {
-			tell(sender, message);
+		if (TimeUtil.currentTimeSeconds() - Common.TIMED_TELL_CACHE.get(message) > delaySeconds) {
+			Common.tell(sender, message);
 
-			TIMED_TELL_CACHE.put(message, TimeUtil.currentTimeSeconds());
+			Common.TIMED_TELL_CACHE.put(message, TimeUtil.currentTimeSeconds());
 		}
 	}
 
@@ -345,7 +335,7 @@ public final class Common {
 	 * @param message
 	 */
 	public static void tellLaterConversing(final int delayTicks, final Conversable conversable, final String message) {
-		Common.runLater(delayTicks, () -> tellConversing(conversable, message));
+		Common.runLater(delayTicks, () -> Common.tellConversing(conversable, message));
 	}
 
 	/**
@@ -355,7 +345,7 @@ public final class Common {
 	 * @param message
 	 */
 	public static void tellConversing(final Conversable conversable, final String message) {
-		conversable.sendRawMessage(Common.colorize((ADD_TELL_PREFIX && ADD_TELL_PREFIX_IN_CONVERSATION ? tellPrefix : "") + removeFirstSpaces(message)).trim());
+		conversable.sendRawMessage(Common.colorize((Common.ADD_TELL_PREFIX && Common.ADD_TELL_PREFIX_IN_CONVERSATION ? Common.tellPrefix : "") + Common.removeFirstSpaces(message)).trim());
 	}
 
 	/**
@@ -366,7 +356,7 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void tellLater(final int delayTicks, final CommandSender sender, final String... messages) {
-		runLater(delayTicks, () -> tell(sender, messages));
+		Common.runLater(delayTicks, () -> Common.tell(sender, messages));
 	}
 
 	/**
@@ -377,7 +367,7 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void tellNoPrefix(final CommandSender sender, final Replacer replacer) {
-		tellNoPrefix(sender, replacer.getReplacedMessage());
+		Common.tellNoPrefix(sender, replacer.getReplacedMessage());
 	}
 
 	/**
@@ -388,11 +378,11 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void tellNoPrefix(final CommandSender sender, final String... messages) {
-		final boolean was = ADD_TELL_PREFIX;
+		final boolean was = Common.ADD_TELL_PREFIX;
 
-		ADD_TELL_PREFIX = false;
-		tell(sender, messages);
-		ADD_TELL_PREFIX = was;
+		Common.ADD_TELL_PREFIX = false;
+		Common.tell(sender, messages);
+		Common.ADD_TELL_PREFIX = was;
 	}
 
 	/**
@@ -402,7 +392,7 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void tell(final CommandSender sender, final Replacer replacer) {
-		tell(sender, replacer.getReplacedMessage());
+		Common.tell(sender, replacer.getReplacedMessage());
 	}
 
 	public static void tell(CommandSender sender, Message message) {
@@ -416,7 +406,7 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void tell(final CommandSender sender, final Collection<String> messages) {
-		tell(sender, toArray(messages));
+		Common.tell(sender, Common.toArray(messages));
 	}
 
 	/**
@@ -429,15 +419,15 @@ public final class Common {
 	public static void tell(final CommandSender sender, final String... messages) {
 		for (final String message : messages)
 			if (message != null && !"none".equals(message))
-				tellJson(sender, message);
+				Common.tellJson(sender, message);
 	}
 
 	/**
 	 * Tells the sender a basic message with & colors replaced and {player} with his variable replaced.
-	 *
+	 * <p>
 	 * If the message starts with [JSON] than we remove the [JSON] prefix and handle the message
 	 * as a valid JSON component.
-	 *
+	 * <p>
 	 * Finally, a prefix to non-json messages is added, see {@link #getTellPrefix()}
 	 *
 	 * @param sender
@@ -452,9 +442,9 @@ public final class Common {
 
 		// Add colors and replace player
 		message = Replacer.of(message)
-				.find("player", "plugin_name", "plugin.name", "plugin_version", "plugin.version")
-				.replace(resolveSenderName(sender), SimplePlugin.getNamed(), SimplePlugin.getNamed(), SimplePlugin.getVersion(), SimplePlugin.getVersion()).getReplacedMessageJoined();
-		message = colorize(message);
+			.find("player", "plugin_name", "plugin.name", "plugin_version", "plugin.version")
+			.replace(Common.resolveSenderName(sender), SimplePlugin.getNamed(), SimplePlugin.getNamed(), SimplePlugin.getVersion(), SimplePlugin.getVersion()).getReplacedMessageJoined();
+		message = Common.colorize(message);
 
 		// Send [JSON] prefixed messages as json component
 		if (message.startsWith("[JSON]")) {
@@ -467,10 +457,10 @@ public final class Common {
 				Remain.sendJson(sender, stripped);
 
 		} else
-			for (final String part : splitNewline(message)) {
-				final String toSend = (ADD_TELL_PREFIX && !hasPrefix ? removeSurroundingSpaces(tellPrefix) + " " : "") + part;
+			for (final String part : Common.splitNewline(message)) {
+				final String toSend = (Common.ADD_TELL_PREFIX && !hasPrefix ? Common.removeSurroundingSpaces(Common.tellPrefix) + " " : "") + part;
 
-				if (SEND_TELL_TO_CONVERSING && sender instanceof Conversable && ((Conversable) sender).isConversing())
+				if (Common.SEND_TELL_TO_CONVERSING && sender instanceof Conversable && ((Conversable) sender).isConversing())
 					((Conversable) sender).sendRawMessage(toSend);
 				else
 					sender.sendMessage(toSend);
@@ -501,16 +491,16 @@ public final class Common {
 	// Colorizing messages
 	// ------------------------------------------------------------------------------------------------------------
 
-	public static String colorizeIfPermission(final String message, final Player player , final String permission) {
+	public static String colorizeIfPermission(final String message, final Player player, final String permission) {
 		if (!player.hasPermission(permission))
 			return message;
-		return colorize(message);
+		return Common.colorize(message);
 	}
 
 	public static String colorizeIf(final String message, final boolean conditition) {
 		if (!conditition)
 			return message;
-		return colorize(message);
+		return Common.colorize(message);
 	}
 
 	/**
@@ -528,7 +518,7 @@ public final class Common {
 			final String message = copy.get(i);
 
 			if (message != null)
-				copy.set(i, colorize(message));
+				copy.set(i, Common.colorize(message));
 		}
 
 		return copy;
@@ -541,33 +531,59 @@ public final class Common {
 	 * @return the colored message
 	 */
 	public static String colorize(final String... messages) {
-		return colorize(StringUtils.join(messages, "\n"));
+		return Common.colorize(StringUtils.join(messages, "\n"));
 	}
 
 	/**
 	 * Replace the & letter with the {@link org.bukkit.ChatColor.COLOR_CHAR} in the message.
-	 *
+	 * <p>
 	 * Also replaces {prefix} with {@link #getTellPrefix()} and {server} with {@link SimplePlugin#getServerPrefix()}
 	 *
 	 * @param message the message to replace color codes with '&'
 	 * @return the colored message
 	 */
 	public static String colorize(final String message) {
-		return message == null || message.isEmpty() ? ""
-				: ChatColor.translateAlternateColorCodes('&', message
-						.replace("{prefix}", message.startsWith(tellPrefix) ? "" : removeSurroundingSpaces(tellPrefix.trim()))
-						.replace("{server}", SimpleLocalization.SERVER_PREFIX)
-						.replace("{plugin.name}", SimplePlugin.getNamed().toLowerCase()));
+		String result = message == null || message.isEmpty() ? ""
+			: ChatColor.translateAlternateColorCodes('&', message
+			.replace("{prefix}", message.startsWith(Common.tellPrefix) ? "" : Common.removeSurroundingSpaces(Common.tellPrefix.trim()))
+			.replace("{server}", SimpleLocalization.SERVER_PREFIX)
+			.replace("{plugin.name}", SimplePlugin.getNamed().toLowerCase()));
+
+		// Don't replace rgb colors when older than 1.16
+		if (!MinecraftVersion.newerThan(MinecraftVersion.V.v1_15))
+			return result;
+		// RGB colors
+		final Pattern pattern = Pattern.compile(Pattern.quote("{#") + "(.*?)" + Pattern.quote("}"));
+		final Matcher match = pattern.matcher(result);
+		while (match.find()) {
+			final String colorCode = match.group(1);
+			result = result.replaceAll("\\{#" + colorCode + "\\}", Common.getColor("#" + colorCode).toString());
+		}
+		return result;
+
+	}
+
+	private static net.md_5.bungee.api.ChatColor getColor(@NonNull final String message) {
+		Valid.checkBoolean(MinecraftVersion.newerThan(MinecraftVersion.V.v1_15), "Minecraft version must be newer than 1.15!");
+		try {
+			final Class<?> clazz = net.md_5.bungee.api.ChatColor.class;
+			final Method method = clazz.getMethod("of", String.class);
+			final Object object = method.invoke(null, message);
+			return (net.md_5.bungee.api.ChatColor) object;
+
+		} catch (final Exception e) {
+			return net.md_5.bungee.api.ChatColor.WHITE;
+		}
 	}
 
 	// Remove first and last spaces from the given message
 	private static String removeSurroundingSpaces(String message) {
-		message = getOrEmpty(message);
+		message = Common.getOrEmpty(message);
 
 		while (message.endsWith(" "))
 			message = message.substring(0, message.length() - 1);
 
-		return removeFirstSpaces(message);
+		return Common.removeFirstSpaces(message);
 	}
 
 	/**
@@ -578,7 +594,7 @@ public final class Common {
 	 */
 	public static String[] revertColorizing(final String[] messages) {
 		for (int i = 0; i < messages.length; i++)
-			messages[i] = revertColorizing(messages[i]);
+			messages[i] = Common.revertColorizing(messages[i]);
 
 		return messages;
 	}
@@ -610,7 +626,7 @@ public final class Common {
 	 * @return
 	 */
 	public static boolean hasColors(final String message) {
-		return COLOR_REGEX.matcher(message).find();
+		return Common.COLOR_REGEX.matcher(message).find();
 	}
 
 	/**
@@ -620,8 +636,8 @@ public final class Common {
 	 * @return
 	 */
 	public static String lastColor(final String message) {
-		final String andLetter = lastColorLetter(message);
-		final String colorChat = lastColorChar(message);
+		final String andLetter = Common.lastColorLetter(message);
+		final String colorChat = Common.lastColorChar(message);
 
 		return !andLetter.isEmpty() ? andLetter : !colorChat.isEmpty() ? colorChat : "";
 	}
@@ -633,7 +649,7 @@ public final class Common {
 	 * @return
 	 */
 	public static String lastColorLetter(final String message) {
-		return lastColor(message, '&');
+		return Common.lastColor(message, '&');
 	}
 
 	/**
@@ -643,7 +659,7 @@ public final class Common {
 	 * @return
 	 */
 	public static String lastColorChar(final String message) {
-		return lastColor(message, ChatColor.COLOR_CHAR);
+		return Common.lastColor(message, ChatColor.COLOR_CHAR);
 	}
 
 	private static String lastColor(final String msg, final char colorChar) {
@@ -658,7 +674,7 @@ public final class Common {
 					return msg.substring(c, c + 2).trim();
 
 			// Search after colors before that invalid character
-			return lastColor(msg.substring(0, c), colorChar);
+			return Common.lastColor(msg.substring(0, c), colorChar);
 		}
 
 		return "";
@@ -730,7 +746,7 @@ public final class Common {
 
 	/**
 	 * Limits length to 60 chars.
-	 *
+	 * <p>
 	 * If JSON, unpacks it and display [json] prefix.
 	 */
 	public static String formatStringHover(final String msg) {
@@ -740,7 +756,7 @@ public final class Common {
 			final String stripped = msg.replaceFirst("\\[JSON\\]", "").trim();
 
 			if (!stripped.isEmpty())
-				finalText = "&8[&6json&8] &r" + StringUtils.join(splitNewline(Remain.toLegacyText(stripped, false)));
+				finalText = "&8[&6json&8] &r" + StringUtils.join(Common.splitNewline(Remain.toLegacyText(stripped, false)));
 		}
 
 		return finalText.length() <= 60 ? finalText : finalText.substring(0, 60) + "...";
@@ -753,7 +769,7 @@ public final class Common {
 	 * @return
 	 */
 	public static String formatList(final Collection<String> list) {
-		return formatList(list, ChatColor.GRAY, ChatColor.WHITE);
+		return Common.formatList(list, ChatColor.GRAY, ChatColor.WHITE);
 	}
 
 	/**
@@ -764,7 +780,8 @@ public final class Common {
 	 * @param secondary
 	 * @return
 	 */
-	public static String formatList(final Collection<String> list, final ChatColor primary, final ChatColor secondary) {
+	public static String formatList(final Collection<String> list, final ChatColor primary,
+	                                final ChatColor secondary) {
 		String formatted = "";
 		boolean toggle = true;
 
@@ -787,7 +804,7 @@ public final class Common {
 	 * @return
 	 */
 	public static String plural(final long count, final String ofWhat) {
-		final String exception = getException(count, ofWhat);
+		final String exception = Common.getException(count, ofWhat);
 
 		return exception != null ? exception : count + " " + ofWhat + (count == 0 || count > 1 && !ofWhat.endsWith("s") ? "s" : "");
 	}
@@ -800,7 +817,7 @@ public final class Common {
 	 * @return
 	 */
 	public static String pluralEs(final long count, final String ofWhat) {
-		final String exception = getException(count, ofWhat);
+		final String exception = Common.getException(count, ofWhat);
 
 		return exception != null ? exception : count + " " + ofWhat + (count == 0 || count > 1 && !ofWhat.endsWith("es") ? "es" : "");
 	}
@@ -813,7 +830,7 @@ public final class Common {
 	 * @return
 	 */
 	public static String pluralIes(final long count, final String ofWhat) {
-		final String exception = getException(count, ofWhat);
+		final String exception = Common.getException(count, ofWhat);
 
 		return exception != null ? exception : count + " " + (count == 0 || count > 1 && !ofWhat.endsWith("ies") ? ofWhat.substring(0, ofWhat.length() - 1) + "ies" : ofWhat);
 	}
@@ -822,7 +839,7 @@ public final class Common {
 	 * Return the plural word from the exception list or null if none
 	 */
 	private static String getException(final long count, final String ofWhat) {
-		return PLURAL_EXCEPTIONS.containsKey(ofWhat) ? count + " " + (count == 0 || count > 1 ? PLURAL_EXCEPTIONS.getString(ofWhat) : ofWhat) : null;
+		return Common.PLURAL_EXCEPTIONS.containsKey(ofWhat) ? count + " " + (count == 0 || count > 1 ? Common.PLURAL_EXCEPTIONS.getString(ofWhat) : ofWhat) : null;
 	}
 
 	/**
@@ -842,19 +859,20 @@ public final class Common {
 
 	/**
 	 * Generates a bar indicating progress. Example:
-	 *
+	 * <p>
 	 * ##-----
 	 * ###----
 	 * ####---
 	 *
-	 * @param min the min progress
+	 * @param min            the min progress
 	 * @param minChar
-	 * @param max the max prograss
+	 * @param max            the max prograss
 	 * @param maxChar
 	 * @param delimiterColor
 	 * @return
 	 */
-	public static String fancyBar(final int min, final char minChar, final int max, final char maxChar, final ChatColor delimiterColor) {
+	public static String fancyBar(final int min, final char minChar, final int max, final char maxChar,
+	                              final ChatColor delimiterColor) {
 		String formatted = "";
 
 		for (int i = 0; i < min; i++)
@@ -908,10 +926,10 @@ public final class Common {
 	 * @return
 	 */
 	public static boolean doesPluginExist(final String plugin) {
-		final boolean hooked = doesPluginExistSilently(plugin);
+		final boolean hooked = Common.doesPluginExistSilently(plugin);
 
 		if (hooked)
-			log("&3Hooked into&8: &f" + plugin);
+			Common.log("&3Hooked into&8: &f" + plugin);
 
 		return hooked;
 	}
@@ -919,7 +937,7 @@ public final class Common {
 	/**
 	 * Checks if a plugin is enabled. We also schedule an async task to make
 	 * sure the plugin is loaded correctly when the server is done booting
-	 *
+	 * <p>
 	 * Return true if it is loaded (this does not mean it works correctly)
 	 *
 	 * @param pluginName
@@ -940,8 +958,8 @@ public final class Common {
 			return false;
 
 		if (!found.isEnabled())
-			runLaterAsync(0, () -> Valid.checkBoolean(found.isEnabled(), SimplePlugin.getNamed() + " could not hook into " + pluginName + " as the plugin is disabled! (DO NOT REPORT THIS TO "
-					+ SimplePlugin.getNamed() + ", look for errors above and contact support " + pluginName + ")"));
+			Common.runLaterAsync(0, () -> Valid.checkBoolean(found.isEnabled(), SimplePlugin.getNamed() + " could not hook into " + pluginName + " as the plugin is disabled! (DO NOT REPORT THIS TO "
+				+ SimplePlugin.getNamed() + ", look for errors above and contact support " + pluginName + ")"));
 
 		return true;
 	}
@@ -956,7 +974,8 @@ public final class Common {
 	 * @param playerReplacement
 	 * @param command
 	 */
-	public static void dispatchCommand(@Nullable final CommandSender playerReplacement, @NonNull final String command) {
+	public static void dispatchCommand(@Nullable final CommandSender playerReplacement,
+	                                   @NonNull final String command) {
 		if (command.isEmpty() || command.equalsIgnoreCase("none"))
 			return;
 
@@ -996,22 +1015,22 @@ public final class Common {
 	/**
 	 * Logs the message, and saves the time it was logged. If you call this method
 	 * to log exactly the same message within the delay in seconds, it will not be logged.
-	 *
+	 * <p>
 	 * Saves console spam.
 	 *
 	 * @param delaySec
 	 * @param msg
 	 */
 	public static void logTimed(final int delaySec, final String msg) {
-		if (!TIMED_LOG_CACHE.containsKey(msg)) {
-			log(msg);
-			TIMED_LOG_CACHE.put(msg, TimeUtil.currentTimeSeconds());
+		if (!Common.TIMED_LOG_CACHE.containsKey(msg)) {
+			Common.log(msg);
+			Common.TIMED_LOG_CACHE.put(msg, TimeUtil.currentTimeSeconds());
 			return;
 		}
 
-		if (TimeUtil.currentTimeSeconds() - TIMED_LOG_CACHE.get(msg) > delaySec) {
-			log(msg);
-			TIMED_LOG_CACHE.put(msg, TimeUtil.currentTimeSeconds());
+		if (TimeUtil.currentTimeSeconds() - Common.TIMED_LOG_CACHE.get(msg) > delaySec) {
+			Common.log(msg);
+			Common.TIMED_LOG_CACHE.put(msg, TimeUtil.currentTimeSeconds());
 		}
 	}
 
@@ -1023,15 +1042,15 @@ public final class Common {
 	 * @param args
 	 */
 	public static void logF(final String format, @NonNull final Object... args) {
-		final String formatted = format(format, args);
+		final String formatted = Common.format(format, args);
 
-		log(false, formatted);
+		Common.log(false, formatted);
 	}
 
 	/**
 	 * Replace boring CraftPlayer{name=noob} into a proper player name,
 	 * works fine with entities, worlds, and locations
-	 *
+	 * <p>
 	 * Example use: format("Hello %s from world %s", player, player.getWorld())
 	 *
 	 * @param format
@@ -1055,7 +1074,7 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void log(final List<String> messages) {
-		log(toArray(messages));
+		Common.log(Common.toArray(messages));
 	}
 
 	/**
@@ -1064,18 +1083,18 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void log(final String... messages) {
-		log(true, messages);
+		Common.log(true, messages);
 	}
 
 	/**
 	 * Logs a bunch of messages to the console, & colors are supported
-	 *
+	 * <p>
 	 * Does not add {@link #getLogPrefix()}
 	 *
 	 * @param messages
 	 */
 	public static void logNoPrefix(final String... messages) {
-		log(false, messages);
+		Common.log(false, messages);
 	}
 
 	/**
@@ -1092,32 +1111,32 @@ public final class Common {
 			if (message.equals("none") || message.isEmpty())
 				continue;
 
-			if (stripColors(message).replace(" ", "").isEmpty()) {
-				if (CONSOLE_SENDER == null)
+			if (Common.stripColors(message).replace(" ", "").isEmpty()) {
+				if (Common.CONSOLE_SENDER == null)
 					System.out.println(" ");
 				else
-					CONSOLE_SENDER.sendMessage("  ");
+					Common.CONSOLE_SENDER.sendMessage("  ");
 
 				continue;
 			}
 
 			message = Replacer.of(message).find("plugin_name", "plugin.name", "plugin_version", "plugin.version").replace(SimplePlugin.getNamed(), SimplePlugin.getNamed(), SimplePlugin.getVersion(), SimplePlugin.getVersion()).getReplacedMessageJoined();
-			message = colorize(message);
+			message = Common.colorize(message);
 
 			if (message.startsWith("[JSON]")) {
 				final String stripped = message.replaceFirst("\\[JSON\\]", "").trim();
 
 				if (!stripped.isEmpty())
-					log(Remain.toLegacyText(stripped, false));
+					Common.log(Remain.toLegacyText(stripped, false));
 
 			} else
-				for (final String part : splitNewline(message)) {
-					final String log = ((addLogPrefix && ADD_LOG_PREFIX ? removeSurroundingSpaces(logPrefix) + " " : "") + Common.getOrEmpty(part).replace("\n", colorize("\n&r"))).trim();
+				for (final String part : Common.splitNewline(message)) {
+					final String log = ((addLogPrefix && Common.ADD_LOG_PREFIX ? Common.removeSurroundingSpaces(Common.logPrefix) + " " : "") + Common.getOrEmpty(part).replace("\n", Common.colorize("\n&r"))).trim();
 
-					if (CONSOLE_SENDER != null)
-						CONSOLE_SENDER.sendMessage(log);
+					if (Common.CONSOLE_SENDER != null)
+						Common.CONSOLE_SENDER.sendMessage(log);
 					else
-						System.out.println("[" + SimplePlugin.getNamed() + "] " + stripColors(log));
+						System.out.println("[" + SimplePlugin.getNamed() + "] " + Common.stripColors(log));
 				}
 		}
 
@@ -1129,12 +1148,12 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void logFramed(final String... messages) {
-		logFramed(false, messages);
+		Common.logFramed(false, messages);
 	}
 
 	/**
 	 * Logs a bunch of messages to the console in a {@link #consoleLine()} frame.
-	 *
+	 * <p>
 	 * Used when an error occurs, can also disable the plugin
 	 *
 	 * @param disablePlugin
@@ -1142,14 +1161,14 @@ public final class Common {
 	 */
 	public static void logFramed(final boolean disablePlugin, final String... messages) {
 		if (messages != null && !Valid.isNullOrEmpty(messages)) {
-			log("&7" + consoleLine());
+			Common.log("&7" + Common.consoleLine());
 			for (final String msg : messages)
-				log(" &c" + msg);
+				Common.log(" &c" + msg);
 
 			if (disablePlugin)
-				log(" &cPlugin is now disabled.");
+				Common.log(" &cPlugin is now disabled.");
 
-			log("&7" + consoleLine());
+			Common.log("&7" + Common.consoleLine());
 		}
 
 		if (disablePlugin)
@@ -1164,7 +1183,7 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void error(final Throwable t, final String... messages) {
-		error(false, t, messages);
+		Common.error(false, t, messages);
 	}
 
 	/**
@@ -1180,13 +1199,13 @@ public final class Common {
 			Debugger.saveError(t, messages);
 
 		Debugger.printStackTrace(t);
-		logFramed(disablePlugin, replaceErrorVariable(t, messages));
+		Common.logFramed(disablePlugin, Common.replaceErrorVariable(t, messages));
 	}
 
 	/**
 	 * Logs the messages in frame (if not null),
 	 * saves the error to errors.log and then throws it
-	 *
+	 * <p>
 	 * Possible to use %error variable
 	 *
 	 * @param throwable
@@ -1197,7 +1216,7 @@ public final class Common {
 			throwable = throwable.getCause();
 
 		if (messages != null)
-			logFramed(false, replaceErrorVariable(throwable, messages));
+			Common.logFramed(false, Common.replaceErrorVariable(throwable, messages));
 
 		if (!(throwable instanceof FoException))
 			Debugger.saveError(throwable, messages);
@@ -1237,7 +1256,7 @@ public final class Common {
 	 * @return
 	 */
 	public static boolean regExMatch(final String regex, final String message) {
-		return regExMatch(compilePattern(regex), message);
+		return Common.regExMatch(Common.compilePattern(regex), message);
 	}
 
 	/**
@@ -1248,7 +1267,7 @@ public final class Common {
 	 * @return
 	 */
 	public static boolean regExMatch(final Pattern regex, final String message) {
-		return regExMatch(compileMatcher(regex, message));
+		return Common.regExMatch(Common.compileMatcher(regex, message));
 	}
 
 	/**
@@ -1266,10 +1285,10 @@ public final class Common {
 		} catch (final RegexTimeoutException ex) {
 			FileUtil.writeFormatted(FoConstants.File.ERRORS, null, "Matching timed out (bad regex?) (plugin ver. " + SimplePlugin.getVersion() + ")! \nString checked: " + ex.getCheckedMessage() + "\nRegex: " + (matcher != null ? matcher.pattern().pattern() : "null") + "");
 
-			logFramed(false,
-					"&cRegex check took too long! (allowed: " + SimpleSettings.REGEX_TIMEOUT + "ms)",
-					"&cRegex:&f " + (matcher != null ? matcher.pattern().pattern() : matcher),
-					"&cMessage:&f " + ex.getCheckedMessage());
+			Common.logFramed(false,
+				"&cRegex check took too long! (allowed: " + SimpleSettings.REGEX_TIMEOUT + "ms)",
+				"&cRegex:&f " + (matcher != null ? matcher.pattern().pattern() : matcher),
+				"&cMessage:&f " + ex.getCheckedMessage());
 
 			return false;
 		}
@@ -1277,7 +1296,7 @@ public final class Common {
 
 	/**
 	 * Compiles a matches for the given pattern and message. Colors are stripped.
-	 *
+	 * <p>
 	 * We also evaluate how long the evaluation took and stop it in case it takes too long,
 	 * see {@link SimplePlugin#getRegexTimeout()}
 	 *
@@ -1287,7 +1306,7 @@ public final class Common {
 	 */
 	public static Matcher compileMatcher(@NonNull final Pattern pattern, final String message) {
 		try {
-			final String strippedMessage = SimplePlugin.getInstance().regexStripColors() ? stripColors(message) : message;
+			final String strippedMessage = SimplePlugin.getInstance().regexStripColors() ? Common.stripColors(message) : message;
 			final int timeout = SimpleSettings.REGEX_TIMEOUT;
 
 			return pattern.matcher(new TimedCharSequence(strippedMessage, timeout));
@@ -1295,10 +1314,10 @@ public final class Common {
 		} catch (final RegexTimeoutException ex) {
 			FileUtil.writeFormatted(FoConstants.File.ERRORS, null, "Regex check timed out (bad regex?) (plugin ver. " + SimplePlugin.getVersion() + ")! \nString checked: " + ex.getCheckedMessage() + "\nRegex: " + pattern.pattern() + "");
 
-			throwError(ex,
-					"&cChecking a message took too long! (limit: " + SimpleSettings.REGEX_TIMEOUT + ")",
-					"&cReg-ex:&f " + pattern.pattern(),
-					"&cString:&f " + ex.getCheckedMessage());
+			Common.throwError(ex,
+				"&cChecking a message took too long! (limit: " + SimpleSettings.REGEX_TIMEOUT + ")",
+				"&cReg-ex:&f " + pattern.pattern(),
+				"&cString:&f " + ex.getCheckedMessage());
 			return null;
 		}
 	}
@@ -1311,7 +1330,7 @@ public final class Common {
 	 * @return
 	 */
 	public static Matcher compileMatcher(final String regex, final String message) {
-		return compileMatcher(compilePattern(regex), message);
+		return Common.compileMatcher(Common.compilePattern(regex), message);
 	}
 
 	/**
@@ -1325,7 +1344,7 @@ public final class Common {
 		final SimplePlugin instance = SimplePlugin.getInstance();
 		Pattern pattern = null;
 
-		regex = SimplePlugin.getInstance().regexStripColors() ? stripColors(regex) : regex;
+		regex = SimplePlugin.getInstance().regexStripColors() ? Common.stripColors(regex) : regex;
 
 		try {
 			if (instance.regexCaseInsensitive())
@@ -1335,7 +1354,7 @@ public final class Common {
 				pattern = instance.regexUnicode() ? Pattern.compile(regex, Pattern.UNICODE_CASE) : Pattern.compile(regex);
 
 		} catch (final PatternSyntaxException ex) {
-			throwError(ex, "Malformed regex: \'" + regex + "\'", "Use online services (like &fregex101.com&f) for fixing errors");
+			Common.throwError(ex, "Malformed regex: \'" + regex + "\'", "Use online services (like &fregex101.com&f) for fixing errors");
 
 			return null;
 		}
@@ -1388,7 +1407,7 @@ public final class Common {
 	 * @return
 	 */
 	public static String joinRange(final int startIndex, final String[] array) {
-		return joinRange(startIndex, array.length, array);
+		return Common.joinRange(startIndex, array.length, array);
 	}
 
 	/**
@@ -1400,7 +1419,7 @@ public final class Common {
 	 * @return
 	 */
 	public static String joinRange(final int startIndex, final int stopIndex, final String[] array) {
-		return joinRange(startIndex, stopIndex, array, " ");
+		return Common.joinRange(startIndex, stopIndex, array, " ");
 	}
 
 	/**
@@ -1434,7 +1453,7 @@ public final class Common {
 	public static <T> String join(final T[] array, final String delimiter, final Stringer<T> stringer) {
 		Valid.checkNotNull(array, "Cannot join null array!");
 
-		return join(Arrays.asList(array), delimiter, stringer);
+		return Common.join(Arrays.asList(array), delimiter, stringer);
 	}
 
 	/**
@@ -1446,7 +1465,7 @@ public final class Common {
 	 * @return
 	 */
 	public static <T> String joinToString(final T[] array) {
-		return array == null ? "null" : joinToString(Arrays.asList(array));
+		return array == null ? "null" : Common.joinToString(Arrays.asList(array));
 	}
 
 	/**
@@ -1458,7 +1477,7 @@ public final class Common {
 	 * @return
 	 */
 	public static <T> String joinToString(final Iterable<T> array) {
-		return array == null ? "null" : joinToString(array, ", ");
+		return array == null ? "null" : Common.joinToString(array, ", ");
 	}
 
 	/**
@@ -1471,7 +1490,7 @@ public final class Common {
 	 * @return
 	 */
 	public static <T> String joinToString(final Iterable<T> array, final String delimiter) {
-		return join(array, delimiter, object -> object == null ? "" : Replacer.simplify(object));
+		return Common.join(array, delimiter, object -> object == null ? "" : Replacer.simplify(object));
 	}
 
 	/**
@@ -1482,7 +1501,7 @@ public final class Common {
 	 * @return
 	 */
 	public static <T extends CommandSender> String joinPlayers(final Iterable<T> array) {
-		return join(array, ", ", (Stringer<T>) CommandSender::getName);
+		return Common.join(array, ", ", (Stringer<T>) CommandSender::getName);
 	}
 
 	/**
@@ -1494,7 +1513,8 @@ public final class Common {
 	 * @param nameToIgnore
 	 * @return
 	 */
-	public static <T extends CommandSender> String joinPlayersExcept(final Iterable<T> array, final String nameToIgnore) {
+	public static <T extends CommandSender> String joinPlayersExcept(final Iterable<T> array,
+	                                                                 final String nameToIgnore) {
 		final Iterator<T> it = array.iterator();
 		String message = "";
 
@@ -1538,7 +1558,7 @@ public final class Common {
 	 * @return
 	 */
 	public static List<String> getWorldNames() {
-		return convert(Bukkit.getWorlds(), World::getName);
+		return Common.convert(Bukkit.getWorlds(), World::getName);
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -1551,7 +1571,7 @@ public final class Common {
 	 * @return
 	 */
 	public static List<String> getPlayerNames() {
-		return getPlayerNames(true);
+		return Common.getPlayerNames(true);
 	}
 
 	/**
@@ -1593,11 +1613,12 @@ public final class Common {
 	/**
 	 * Converts a list having one type object into another
 	 *
-	 * @param list the old list
+	 * @param list      the old list
 	 * @param converter the converter;
 	 * @return the new list
 	 */
-	public static <OLD, NEW> List<NEW> convert(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
+	public static <OLD, NEW> List<NEW> convert(final Iterable<OLD> list,
+	                                           final TypeConverter<OLD, NEW> converter) {
 		final List<NEW> copy = new ArrayList<>();
 
 		for (final OLD old : list) {
@@ -1618,7 +1639,8 @@ public final class Common {
 	 * @param converter
 	 * @return
 	 */
-	public static <OLD, NEW> Set<NEW> convertSet(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
+	public static <OLD, NEW> Set<NEW> convertSet(final Iterable<OLD> list,
+	                                             final TypeConverter<OLD, NEW> converter) {
 		final Set<NEW> copy = new HashSet<>();
 
 		for (final OLD old : list)
@@ -1630,11 +1652,12 @@ public final class Common {
 	/**
 	 * Converts a list having one type object into another
 	 *
-	 * @param list the old list
+	 * @param list      the old list
 	 * @param converter the converter
 	 * @return the new list
 	 */
-	public static <OLD, NEW> StrictList<NEW> convertStrict(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
+	public static <OLD, NEW> StrictList<NEW> convertStrict(final Iterable<OLD> list,
+	                                                       final TypeConverter<OLD, NEW> converter) {
 		final StrictList<NEW> copy = new StrictList<>();
 
 		for (final OLD old : list)
@@ -1654,7 +1677,8 @@ public final class Common {
 	 * @param converter
 	 * @return
 	 */
-	public static <OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> Map<NEW_KEY, NEW_VALUE> convert(final Map<OLD_KEY, OLD_VALUE> oldMap, final MapToMapConverter<OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> converter) {
+	public static <OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> Map<NEW_KEY, NEW_VALUE> convert(
+		final Map<OLD_KEY, OLD_VALUE> oldMap, final MapToMapConverter<OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> converter) {
 		final Map<NEW_KEY, NEW_VALUE> newMap = new HashMap<>();
 		oldMap.entrySet().forEach(e -> newMap.put(converter.convertKey(e.getKey()), converter.convertValue(e.getValue())));
 
@@ -1672,7 +1696,8 @@ public final class Common {
 	 * @param converter
 	 * @return
 	 */
-	public static <OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> StrictMap<NEW_KEY, NEW_VALUE> convertStrict(final Map<OLD_KEY, OLD_VALUE> oldMap, final MapToMapConverter<OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> converter) {
+	public static <OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> StrictMap<NEW_KEY, NEW_VALUE> convertStrict(
+		final Map<OLD_KEY, OLD_VALUE> oldMap, final MapToMapConverter<OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> converter) {
 		final StrictMap<NEW_KEY, NEW_VALUE> newMap = new StrictMap<>();
 		oldMap.entrySet().forEach(e -> newMap.put(converter.convertKey(e.getKey()), converter.convertValue(e.getValue())));
 
@@ -1689,7 +1714,8 @@ public final class Common {
 	 * @param converter
 	 * @return
 	 */
-	public static <LIST_KEY, OLD_KEY, OLD_VALUE> StrictList<LIST_KEY> convertToList(final Map<OLD_KEY, OLD_VALUE> map, final MapToListConverter<LIST_KEY, OLD_KEY, OLD_VALUE> converter) {
+	public static <LIST_KEY, OLD_KEY, OLD_VALUE> StrictList<LIST_KEY> convertToList(
+		final Map<OLD_KEY, OLD_VALUE> map, final MapToListConverter<LIST_KEY, OLD_KEY, OLD_VALUE> converter) {
 		final StrictList<LIST_KEY> list = new StrictList<>();
 
 		for (final Entry<OLD_KEY, OLD_VALUE> e : map.entrySet())
@@ -1707,7 +1733,8 @@ public final class Common {
 	 * @param converter
 	 * @return
 	 */
-	public static <OLD_TYPE, NEW_TYPE> List<NEW_TYPE> convert(final OLD_TYPE[] oldArray, final TypeConverter<OLD_TYPE, NEW_TYPE> converter) {
+	public static <OLD_TYPE, NEW_TYPE> List<NEW_TYPE> convert(final OLD_TYPE[] oldArray,
+	                                                          final TypeConverter<OLD_TYPE, NEW_TYPE> converter) {
 		final List<NEW_TYPE> newList = new ArrayList<>();
 
 		for (final OLD_TYPE old : oldArray)
@@ -1808,7 +1835,7 @@ public final class Common {
 	 * @return
 	 */
 	public static <T> List<T> removeNulsAndEmpties(final T[] array) {
-		return array != null ? removeNulsAndEmpties(Arrays.asList(array)) : new ArrayList<>();
+		return array != null ? Common.removeNulsAndEmpties(Arrays.asList(array)) : new ArrayList<>();
 	}
 
 	/**
@@ -1837,7 +1864,6 @@ public final class Common {
 	 * is a list, return its array, otherwise return an array only containing the
 	 * object as the first element
 	 *
-	 *
 	 * @param obj
 	 * @return
 	 */
@@ -1845,10 +1871,10 @@ public final class Common {
 		if (obj instanceof List) {
 			final List<String> cast = (List<String>) obj;
 
-			return toArray(cast);
+			return Common.toArray(cast);
 		}
 
-		return new String[] { obj.toString() };
+		return new String[]{obj.toString()};
 	}
 
 	/**
@@ -1888,7 +1914,7 @@ public final class Common {
 	 * Returns the value or its default counterpart in case it is null
 	 *
 	 * @param value the primary value
-	 * @param def the default value
+	 * @param def   the default value
 	 * @return the value, or default it the value is null
 	 */
 	public static <T> T getOrDefault(final T value, final T def) {
@@ -1927,7 +1953,7 @@ public final class Common {
 		for (int i = 0; i < list.size(); i++)
 			Array.set(array, i, list.get(i));
 
-		return getNext(given, array, forward);
+		return Common.getNext(given, array, forward);
 	}
 
 	/**
@@ -2061,7 +2087,7 @@ public final class Common {
 	 */
 	public static void runLaterIf(final boolean condition, final Runnable task) {
 		if (condition)
-			runLater(1, task);
+			Common.runLater(1, task);
 		else
 			task.run();
 	}
@@ -2073,7 +2099,7 @@ public final class Common {
 	 * @return the task or null
 	 */
 	public static <T extends Runnable> BukkitTask runLater(final T task) {
-		return runLater(1, task);
+		return Common.runLater(1, task);
 	}
 
 	/**
@@ -2087,33 +2113,33 @@ public final class Common {
 		final BukkitScheduler scheduler = Bukkit.getScheduler();
 		final JavaPlugin instance = SimplePlugin.getInstance();
 
-		return runIfDisabled(task) ? null
-				: delayTicks == 0 ? task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTask(instance) : scheduler.runTask(instance, task)
-						: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskLater(instance, delayTicks) : scheduler.runTaskLater(instance, task, delayTicks);
+		return Common.runIfDisabled(task) ? null
+			: delayTicks == 0 ? task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTask(instance) : scheduler.runTask(instance, task)
+			: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskLater(instance, delayTicks) : scheduler.runTaskLater(instance, task, delayTicks);
 	}
 
 	/**
 	 * Runs the task async even if the plugin is disabled for some reason.
-	 *
+	 * <p>
 	 * Schedules the run on the next tick.
 	 *
 	 * @param task
 	 * @return
 	 */
 	public static BukkitTask runAsync(final Runnable task) {
-		return runLaterAsync(0, task);
+		return Common.runLaterAsync(0, task);
 	}
 
 	/**
 	 * Runs the task async even if the plugin is disabled for some reason.
-	 *
+	 * <p>
 	 * Schedules the run on the next tick.
 	 *
 	 * @param task
 	 * @return
 	 */
 	public static BukkitTask runLaterAsync(final Runnable task) {
-		return runLaterAsync(0, task);
+		return Common.runLaterAsync(0, task);
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -2131,36 +2157,36 @@ public final class Common {
 		final BukkitScheduler scheduler = Bukkit.getScheduler();
 		final JavaPlugin instance = SimplePlugin.getInstance();
 
-		return runIfDisabled(task) ? null
-				: delayTicks == 0 ? task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskAsynchronously(instance)
-						: scheduler.runTaskAsynchronously(instance, task)
-						: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskLaterAsynchronously(instance, delayTicks)
-								: scheduler.runTaskLaterAsynchronously(instance, task, delayTicks);
+		return Common.runIfDisabled(task) ? null
+			: delayTicks == 0 ? task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskAsynchronously(instance)
+			: scheduler.runTaskAsynchronously(instance, task)
+			: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskLaterAsynchronously(instance, delayTicks)
+			: scheduler.runTaskLaterAsynchronously(instance, task, delayTicks);
 	}
 
 	/**
 	 * Runs the task timer even if the plugin is disabled.
 	 *
 	 * @param repeatTicks the delay between each execution
-	 * @param task the task
+	 * @param task        the task
 	 * @return the bukkit task or null
 	 */
 	public static BukkitTask runTimer(final int repeatTicks, final Runnable task) {
-		return runTimer(0, repeatTicks, task);
+		return Common.runTimer(0, repeatTicks, task);
 	}
 
 	/**
-	 *	Runs the task timer even if the plugin is disabled.
+	 * Runs the task timer even if the plugin is disabled.
 	 *
-	 * @param delayTicks the delay before first run
+	 * @param delayTicks  the delay before first run
 	 * @param repeatTicks the delay between each run
-	 * @param task the task
+	 * @param task        the task
 	 * @return the bukkit task or null if error
 	 */
 	public static BukkitTask runTimer(final int delayTicks, final int repeatTicks, final Runnable task) {
-		return runIfDisabled(task) ? null
-				: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskTimer(SimplePlugin.getInstance(), delayTicks, repeatTicks)
-						: Bukkit.getScheduler().runTaskTimer(SimplePlugin.getInstance(), task, delayTicks, repeatTicks);
+		return Common.runIfDisabled(task) ? null
+			: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskTimer(SimplePlugin.getInstance(), delayTicks, repeatTicks)
+			: Bukkit.getScheduler().runTaskTimer(SimplePlugin.getInstance(), task, delayTicks, repeatTicks);
 	}
 
 	/**
@@ -2171,7 +2197,7 @@ public final class Common {
 	 * @return
 	 */
 	public static BukkitTask runTimerAsync(final int repeatTicks, final Runnable task) {
-		return runTimerAsync(0, repeatTicks, task);
+		return Common.runTimerAsync(0, repeatTicks, task);
 	}
 
 	/**
@@ -2183,9 +2209,9 @@ public final class Common {
 	 * @return
 	 */
 	public static BukkitTask runTimerAsync(final int delayTicks, final int repeatTicks, final Runnable task) {
-		return runIfDisabled(task) ? null
-				: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskTimerAsynchronously(SimplePlugin.getInstance(), delayTicks, repeatTicks)
-						: Bukkit.getScheduler().runTaskTimerAsynchronously(SimplePlugin.getInstance(), task, delayTicks, repeatTicks);
+		return Common.runIfDisabled(task) ? null
+			: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskTimerAsynchronously(SimplePlugin.getInstance(), delayTicks, repeatTicks)
+			: Bukkit.getScheduler().runTaskTimerAsynchronously(SimplePlugin.getInstance(), task, delayTicks, repeatTicks);
 	}
 
 	// Check our plugin instance if it's enabled
