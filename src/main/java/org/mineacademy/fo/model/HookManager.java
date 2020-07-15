@@ -76,6 +76,7 @@ import org.mineacademy.fo.model.HookManager.PAPIPlaceholder;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.region.Region;
 import org.mineacademy.fo.remain.Remain;
+import org.mineacademy.fo.settings.SimpleSettings;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -317,7 +318,7 @@ public final class HookManager {
 	 * @return
 	 */
 	public static boolean isProtocolLibLoaded() {
-		return protocolLibHook != null;
+		return protocolLibHook != null && SimpleSettings.HOOK_PROTOCOLLIB;
 	}
 
 	/**
@@ -1652,10 +1653,16 @@ class ProtocolLibHook {
 	private final ProtocolManager manager;
 
 	ProtocolLibHook() {
-		manager = ProtocolLibrary.getProtocolManager();
+
+		if (SimpleSettings.HOOK_PROTOCOLLIB)
+			manager = ProtocolLibrary.getProtocolManager();
+		else
+			manager = null;
 	}
 
 	final void addPacketListener(final Object listener) {
+		if (!SimpleSettings.HOOK_PROTOCOLLIB)
+			return;
 		Valid.checkBoolean(listener instanceof PacketListener, "Listener must extend or implements PacketListener or PacketAdapter");
 		manager.addPacketListener((PacketListener) listener);
 	}
@@ -1665,11 +1672,15 @@ class ProtocolLibHook {
 	}
 
 	final void sendPacket(final PacketContainer packet) {
+		if (!SimpleSettings.HOOK_PROTOCOLLIB)
+			return;
 		for (final Player player : Remain.getOnlinePlayers())
 			sendPacket(player, packet);
 	}
 
 	final void sendPacket(final Player player, final Object packet) {
+		if (!SimpleSettings.HOOK_PROTOCOLLIB)
+			return;
 		Valid.checkNotNull(player);
 		Valid.checkBoolean(packet instanceof PacketContainer, "Packet must be instance of PacketContainer from ProtocolLib");
 
