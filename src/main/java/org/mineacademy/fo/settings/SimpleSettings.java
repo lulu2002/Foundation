@@ -30,6 +30,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	 */
 	private static boolean settingsClassCalled;
 	public static Boolean HOOK_PROTOCOLLIB = true;
+	public static Boolean USE_JAVA_SCRIPT_ENGINE = true;
 
 	// --------------------------------------------------------------------
 	// Loading

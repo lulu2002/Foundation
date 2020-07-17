@@ -318,7 +318,8 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 				new Metrics(this, pluginId);
 
 			// Prepare Nashorn engine
-			JavaScriptExecutor.run("");
+			if (SimpleSettings.USE_JAVA_SCRIPT_ENGINE)
+				JavaScriptExecutor.run("");
 
 		} catch (final Throwable t) {
 			displayError0(t);

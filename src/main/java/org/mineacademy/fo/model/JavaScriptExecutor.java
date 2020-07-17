@@ -7,6 +7,7 @@ import org.bukkit.event.Event;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.collection.expiringmap.ExpiringMap;
 import org.mineacademy.fo.plugin.SimplePlugin;
+import org.mineacademy.fo.settings.SimpleSettings;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -20,38 +21,43 @@ import java.util.concurrent.TimeUnit;
 /**
  * An engine that compiles and executes code on the fly.
  * <p>
- * The code is based off JavaScript with new Java methods, see:
- * https://winterbe.com/posts/2014/04/05/java8-nashorn-tutorial/
+ * The code is based off JavaScript with new Java methods, see: https://winterbe.com/posts/2014/04/05/java8-nashorn-tutorial/
  */
 public final class JavaScriptExecutor {
 
 	/**
 	 * The engine singleton
 	 */
-	private static final ScriptEngine engine;
+	private static ScriptEngine engine = null;
 
 	/**
 	 * Cache scripts for 1 second per player for highest performance
 	 * <p>
 	 * Player -> Map of scripts and their results
 	 */
-	private static final Map<UUID, Map<String, Object>> resultCache = ExpiringMap.builder().expiration(1, TimeUnit.SECONDS).build();
+	private static final Map<UUID, Map<String, Object>> resultCache = ExpiringMap
+		.builder()
+		.expiration(1, TimeUnit.SECONDS)
+		.build();
 
 	// Load the engine
 	static {
-		Thread.currentThread().setContextClassLoader(SimplePlugin.class.getClassLoader());
+		if (SimpleSettings.USE_JAVA_SCRIPT_ENGINE) {
+			Thread.currentThread().setContextClassLoader(SimplePlugin.class.getClassLoader());
 
-		final ScriptEngineManager engineManager = new ScriptEngineManager(null);
-		engine = engineManager.getEngineByName("Nashorn");
+			final ScriptEngineManager engineManager = new ScriptEngineManager(null);
+			engine = engineManager.getEngineByName("Nashorn");
 
-		if (engine == null)
-			Common.logFramed(true,
-				"JavaScript placeholders will not function!",
-				"",
-				"Your Java version/distribution lacks",
-				"the Nashorn library for JavaScript",
-				"placeholders. Ensure you have Oracle",
-				"Java 8.");
+			if (engine == null)
+				Common.logFramed(
+					true,
+					"JavaScript placeholders will not function!",
+					"",
+					"Your Java version/distribution lacks",
+					"the Nashorn library for JavaScript",
+					"placeholders. Ensure you have Oracle",
+					"Java 8.");
+		}
 	}
 
 	/**
@@ -65,8 +71,7 @@ public final class JavaScriptExecutor {
 	}
 
 	/**
-	 * Runs the given JavaScript code for the player,
-	 * making the "player" variable in the code usable
+	 * Runs the given JavaScript code for the player, making the "player" variable in the code usable
 	 *
 	 * @param javascript
 	 * @param sender
@@ -77,8 +82,8 @@ public final class JavaScriptExecutor {
 	}
 
 	/**
-	 * Compiles and executes the Javascript code for the player ("player" variable is put into the JS code)
-	 * as well as the bukkit event (use "event" variable there)
+	 * Compiles and executes the Javascript code for the player ("player" variable is put into the JS
+	 * code) as well as the bukkit event (use "event" variable there)
 	 *
 	 * @param javascript
 	 * @param sender
@@ -88,7 +93,9 @@ public final class JavaScriptExecutor {
 	public static Object run(@NonNull String javascript, CommandSender sender, Event event) {
 		synchronized (engine) {
 			// Cache for highest performance
-			Map<String, Object> cached = sender instanceof Player ? resultCache.get(((Player) sender).getUniqueId()) : null;
+			Map<String, Object> cached = sender instanceof Player
+				? resultCache.get(((Player) sender).getUniqueId())
+				: null;
 
 			if (cached != null) {
 				final Object result = cached.get(javascript);
@@ -119,7 +126,8 @@ public final class JavaScriptExecutor {
 				return result;
 
 			} catch (final ScriptException ex) {
-				Common.error(ex,
+				Common.error(
+					ex,
 					"Script executing failed!",
 					"Script: " + javascript,
 					"%error");
@@ -137,7 +145,8 @@ public final class JavaScriptExecutor {
 	 * @return
 	 * @throws ScriptException
 	 */
-	public static Object run(String javascript, Map<String, Object> replacements) throws ScriptException {
+	public static Object run(String javascript, Map<String, Object> replacements)
+		throws ScriptException {
 		synchronized (engine) {
 			engine.getBindings(ScriptContext.ENGINE_SCOPE).clear();
 
