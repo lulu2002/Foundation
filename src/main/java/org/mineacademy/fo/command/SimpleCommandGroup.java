@@ -315,7 +315,7 @@ public abstract class SimpleCommandGroup {
 		/**
 		 * Automatically tells all help for all subcommands
 		 */
-		private void tellSubcommandsHelp() {
+		protected void tellSubcommandsHelp() {
 			tell(getHelpHeader());
 
 			Integer shown = 0;
