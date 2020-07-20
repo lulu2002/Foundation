@@ -29,7 +29,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	 * it load automatically
 	 */
 	private static boolean settingsClassCalled;
-	public static boolean HOOK_PROTOCOLLIB = true;
+	public static Boolean HOOK_PROTOCOLLIB = true; // ?
 
 	// --------------------------------------------------------------------
 	// Loading
