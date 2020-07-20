@@ -2507,14 +2507,17 @@ class McMMOHook {
 	// Empty
 
 	String getActivePartyChat(final Player player) {
-		final McMMOPlayer mcplayer = UserManager.getPlayer(player);
+		try {
 
-		if (mcplayer == null)
+			final McMMOPlayer mcplayer = UserManager.getPlayer(player);
+			if (mcplayer == null)
+				return null;
+			final Party party = mcplayer.getParty();
+			return mcplayer.isChatEnabled(ChatMode.PARTY) && party != null ? party.getName() : null;
+		} catch (final Throwable throwable) {
 			return null;
+		}
 
-		final Party party = mcplayer.getParty();
-
-		return mcplayer.isChatEnabled(ChatMode.PARTY) && party != null ? party.getName() : null;
 	}
 }
 

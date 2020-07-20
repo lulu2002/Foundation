@@ -257,7 +257,7 @@ public abstract class SimpleCommandGroup {
 	/**
 	 * The main command handling this command group
 	 */
-	private final class MainCommand extends SimpleCommand {
+	public final class MainCommand extends SimpleCommand {
 
 		/**
 		 * Create new main command with the given label
@@ -315,7 +315,7 @@ public abstract class SimpleCommandGroup {
 		/**
 		 * Automatically tells all help for all subcommands
 		 */
-		private void tellSubcommandsHelp() {
+		protected void tellSubcommandsHelp() {
 			tell(getHelpHeader());
 
 			Integer shown = 0;
