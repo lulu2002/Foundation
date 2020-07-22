@@ -21,6 +21,7 @@ import java.util.List;
  * associated with the main command, for example: /arena join, /arena leave etc.
  */
 public abstract class SimpleCommandGroup {
+	protected static String pattern = " &f/{label} {sublabel} {usage} {desc}";
 
 	/**
 	 * The list of sub-commands belonging to this command tree, for example
@@ -331,8 +332,10 @@ public abstract class SimpleCommandGroup {
 					final String usage = colorizeUsage(subcommand.getUsage());
 					final String desc = Common.getOrEmpty(subcommand.getDescription());
 
-					tellNoPrefix(" &f/" + getLabel() + " " + subcommand.getSublabels()[0] + (!usage.startsWith("/") ? " " + usage : "") + (!desc.isEmpty() ? " &e- " + desc : ""));
-
+					tellNoPrefix(pattern
+						.replace("{label}", getLabel())
+						.replace("{sublabel}", subcommand.getSublabels()[0])
+						.replace("{desc}", (!desc.isEmpty() ? " &e- " + desc : "")));
 					shown++;
 				}
 
