@@ -333,7 +333,8 @@ public abstract class SimpleCommandGroup {
 					final String desc = Common.getOrEmpty(subcommand.getDescription());
 
 					tellNoPrefix(pattern
-						.replace("{label}", getLabel())
+							.replace("{label}", getLabel())
+							.replace("{usage}", subcommand.getUsage())
 						.replace("{sublabel}", subcommand.getSublabels()[0])
 						.replace("{desc}", (!desc.isEmpty() ? " &e- " + desc : "")));
 					shown++;
