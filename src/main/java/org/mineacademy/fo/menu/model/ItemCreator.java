@@ -161,13 +161,12 @@ public final class ItemCreator {
 	}
 
 	/**
-	 * Make an item suitable for survival where we remove the "hideFlag"
-	 * that is automatically put in {@link ItemCreator#of(CompMaterial, String, String...)}
-	 * to hide enchants, attributes etc.
+	 * Make an item suitable for survival where we remove the "hideFlag" that is automatically put in
+	 * {@link ItemCreator#of(CompMaterial, String, String...)} to hide enchants, attributes etc.
 	 *
 	 * @return
 	 */
-	private ItemStack makeSurvival() {
+	public ItemStack makeSurvival() {
 		hideTags = false;
 
 		return make();
