@@ -171,7 +171,7 @@ public abstract class SimpleCommand extends Command {
 			setAliases(aliases);
 
 		// Set a default permission for this command
-		setPermission(DEFAULT_PERMISSION_SYNTAX.replace("{label}", label));
+		setPermission(DEFAULT_PERMISSION_SYNTAX);
 
 		registeredCommands.add(this);
 	}
@@ -884,7 +884,7 @@ public abstract class SimpleCommand extends Command {
 	 */
 	private String replaceBasicPlaceholders0(final String message) {
 		return message
-			.replace("{label}", getLabel())
+			.replace("{label}", getMainLabel())
 			.replace("{sublabel}", this instanceof SimpleSubCommand ? ((SimpleSubCommand) this).getSublabels()[0] : super.getLabel())
 			.replace("{plugin.name}", SimplePlugin.getNamed().toLowerCase());
 	}
