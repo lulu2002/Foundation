@@ -74,6 +74,7 @@
             <groupId>org.mineacademy.server</groupId>
             <artifactId>paper</artifactId>
             <version>1.16-SNAPSHOT</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Plugins from their own repo with documentation and sources -->
