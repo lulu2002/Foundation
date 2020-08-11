@@ -62,15 +62,11 @@ public final class MenuListener implements Listener {
 			final Inventory clickedInv = Remain.getClickedInventory(event);
 
 			final InventoryAction action = event.getAction();
-			final MenuClickLocation whereClicked = clickedInv != null
-				? clickedInv.getType() == InventoryType.CHEST ? MenuClickLocation.MENU
-				: MenuClickLocation.PLAYER_INVENTORY
-				: MenuClickLocation.OUTSIDE;
+			final MenuClickLocation whereClicked = clickedInv != null ? clickedInv.getType() == InventoryType.CHEST ? MenuClickLocation.MENU : MenuClickLocation.PLAYER_INVENTORY : MenuClickLocation.OUTSIDE;
 
 			final boolean allowed = menu.isActionAllowed(whereClicked, event.getSlot(), slotItem, cursor);
 
-			if (action.toString().contains("PICKUP") || action.toString().contains("PLACE")
-				|| action.toString().equals("SWAP_WITH_CURSOR") || action == InventoryAction.CLONE_STACK) {
+			if (action.toString().contains("PICKUP") || action.toString().contains("PLACE") || action.toString().equals("SWAP_WITH_CURSOR") || action == InventoryAction.CLONE_STACK) {
 				if (whereClicked == MenuClickLocation.MENU)
 					try {
 						final Button button = menu.getButton(slotItem);
@@ -78,8 +74,7 @@ public final class MenuListener implements Listener {
 						if (button != null)
 							menu.onButtonClick(player, event.getSlot(), action, event.getClick(), button);
 						else
-							menu.onMenuClick(player, event.getSlot(), action, event.getClick(), cursor, slotItem,
-								!allowed);
+							menu.onMenuClick(player, event.getSlot(), action, event.getClick(), cursor, slotItem, !allowed);
 
 					} catch (final Throwable t) {
 						Common.tell(player, SimpleLocalization.ERROR);
@@ -94,8 +89,7 @@ public final class MenuListener implements Listener {
 					player.updateInventory();
 				}
 
-			} else if (action == InventoryAction.MOVE_TO_OTHER_INVENTORY
-				|| whereClicked != MenuClickLocation.PLAYER_INVENTORY) {
+			} else if (action == InventoryAction.MOVE_TO_OTHER_INVENTORY || whereClicked != MenuClickLocation.PLAYER_INVENTORY) {
 				event.setResult(Result.DENY);
 
 				player.updateInventory();

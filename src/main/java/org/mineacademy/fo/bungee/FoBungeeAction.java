@@ -5,11 +5,12 @@ import lombok.Getter;
 /**
  * Proprietary implementation of BungeeAction for some of our
  * premium plugins handled by BungeeControl
- * <p>
- * The bungee protocol always begins with
+ *
+ * The BungeeCord protocol always begins with
+ *
  * 1) The sender server name
  * 2) The {@link BungeeAction}
- * <p>
+ *
  * and the rest is the actual data within this enum
  */
 public enum FoBungeeAction implements BungeeAction {
@@ -45,7 +46,7 @@ public enum FoBungeeAction implements BungeeAction {
 	/**
 	 * Broadcast a message in a channel.
 	 */
-	CHANNEL("channel", "formatted_message", true /*hasMuteBypassPermission*/, "message"),
+	CHANNEL("sender", "channel_name", true /*hasMuteBypassPermission*/, "message"),
 
 	/**
 	 * Sends an announcement message to everyone, and plays a nice sound

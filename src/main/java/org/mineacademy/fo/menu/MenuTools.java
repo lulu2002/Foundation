@@ -1,5 +1,9 @@
 package org.mineacademy.fo.menu;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -15,10 +19,6 @@ import org.mineacademy.fo.menu.tool.Tool;
 import org.mineacademy.fo.model.SimpleEnchant;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.CompItemFlag;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * A standardized menu to display a list of tools player can toggle to get in
@@ -49,8 +49,7 @@ public abstract class MenuTools extends Menu {
 		this.tools = compile0(compileTools());
 
 		final int items = tools.size();
-		final int pages = items < 9 ? 9 * 1
-			: items < 9 * 2 ? 9 * 2 : items < 9 * 3 ? 9 * 3 : items < 9 * 4 ? 9 * 4 : 9 * 5;
+		final int pages = items < 9 ? 9 * 1 : items < 9 * 2 ? 9 * 2 : items < 9 * 3 ? 9 * 3 : items < 9 * 4 ? 9 * 4 : 9 * 5;
 
 		setSize(pages);
 		setTitle("Tools Menu");
@@ -118,8 +117,7 @@ public abstract class MenuTools extends Menu {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final void onMenuClick(final Player pl, final int slot, final InventoryAction action, final ClickType click,
-	                              final ItemStack cursor, final ItemStack item, final boolean cancelled) {
+	public final void onMenuClick(final Player pl, final int slot, final InventoryAction action, final ClickType click, final ItemStack cursor, final ItemStack item, final boolean cancelled) {
 		final ItemStack it = getItemAt(slot);
 		final ToggleableTool tool = it != null ? findTool(it) : null;
 
@@ -202,8 +200,7 @@ final class ToggleableTool {
 				this.item = new ItemStack(Material.AIR);
 
 			else
-				throw new FoException(
-					"Unknown tool: " + unparsed + " (we only accept ItemStack, Tool's instance or 0 for air)");
+				throw new FoException("Unknown tool: " + unparsed + " (we only accept ItemStack, Tool's instance or 0 for air)");
 
 		} else
 			this.item = new ItemStack(Material.AIR);
@@ -228,9 +225,7 @@ final class ToggleableTool {
 
 	// Return the dummy placeholder tool when the player already has it
 	private ItemStack getToolWhenHas() {
-		return ItemCreator.of(item).enchant(new SimpleEnchant(Enchantment.ARROW_INFINITE, 1))
-			.flag(CompItemFlag.HIDE_ENCHANTS)
-			.lores(Arrays.asList("", "&cYou already have this item.", "&7Click to take it away.")).build().make();
+		return ItemCreator.of(item).enchant(new SimpleEnchant(Enchantment.ARROW_INFINITE, 1)).flag(CompItemFlag.HIDE_ENCHANTS).lores(Arrays.asList("", "&cYou already have this item.", "&7Click to take it away.")).build().make();
 	}
 
 	// Return the actual working tool in case player does not have it yet

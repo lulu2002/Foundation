@@ -1,10 +1,25 @@
 package org.mineacademy.fo;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import net.md_5.bungee.api.chat.TextComponent;
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -33,24 +48,17 @@ import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.exception.RegexTimeoutException;
 import org.mineacademy.fo.model.DiscordSender;
 import org.mineacademy.fo.model.LocalCommandSender;
-import org.mineacademy.fo.model.Message;
 import org.mineacademy.fo.model.Replacer;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.Remain;
 import org.mineacademy.fo.settings.SimpleLocalization;
 import org.mineacademy.fo.settings.SimpleSettings;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import net.md_5.bungee.api.chat.TextComponent;
 
 /**
  * Our main utility class hosting a large variety of different convenience
@@ -67,6 +75,11 @@ public final class Common {
 	 * Pattern used to match colors with & or {@link ChatColor#COLOR_CHAR}
 	 */
 	private static final Pattern COLOR_REGEX = Pattern.compile("(?i)(&|" + ChatColor.COLOR_CHAR + ")([0-9A-F])");
+
+	/**
+	 * Pattern used to match colors with {#HEX} code for MC 1.16+
+	 */
+	private static final Pattern RGB_HEX_COLOR_REGEX = Pattern.compile(Pattern.quote("{#") + "(.*?)" + Pattern.quote("}"));
 
 	/**
 	 * We use this to send messages with colors to yor console
@@ -89,9 +102,7 @@ public final class Common {
 	/**
 	 * Holds words that differ in their plural form (nominative case only)
 	 */
-	private static final SerializedMap PLURAL_EXCEPTIONS = SerializedMap.ofArray(
-		"life", "lives",
-		"wolf", "wolves");
+	private static final SerializedMap PLURAL_EXCEPTIONS = SerializedMap.ofArray("life", "lives", "wolf", "wolves");
 
 	// ------------------------------------------------------------------------------------------------------------
 	// Tell prefix
@@ -395,10 +406,6 @@ public final class Common {
 		Common.tell(sender, replacer.getReplacedMessage());
 	}
 
-	public static void tell(CommandSender sender, Message message) {
-		tell(sender, message.getContent());
-	}
-
 	/**
 	 * Send the sender a bunch of messages, colors & are supported
 	 *
@@ -441,9 +448,7 @@ public final class Common {
 		final boolean hasPrefix = message.contains("{prefix}");
 
 		// Add colors and replace player
-		message = Replacer.of(message)
-			.find("player", "plugin_name", "plugin.name", "plugin_version", "plugin.version")
-			.replace(Common.resolveSenderName(sender), SimplePlugin.getNamed(), SimplePlugin.getNamed(), SimplePlugin.getVersion(), SimplePlugin.getVersion()).getReplacedMessageJoined();
+		message = Replacer.of(message).find("player", "plugin_name", "plugin.name", "plugin_version", "plugin.version").replace(Common.resolveSenderName(sender), SimplePlugin.getNamed(), SimplePlugin.getNamed(), SimplePlugin.getVersion(), SimplePlugin.getVersion()).getReplacedMessageJoined();
 		message = Common.colorize(message);
 
 		// Send [JSON] prefixed messages as json component
@@ -458,7 +463,8 @@ public final class Common {
 
 		} else
 			for (final String part : Common.splitNewline(message)) {
-				final String toSend = (Common.ADD_TELL_PREFIX && !hasPrefix ? Common.removeSurroundingSpaces(Common.tellPrefix) + " " : "") + part;
+				final String prefix = Common.removeSurroundingSpaces(Common.tellPrefix);
+				final String toSend = (Common.ADD_TELL_PREFIX && !hasPrefix && !prefix.isEmpty() ? prefix + " " : "") + part;
 
 				if (Common.SEND_TELL_TO_CONVERSING && sender instanceof Conversable && ((Conversable) sender).isConversing())
 					((Conversable) sender).sendRawMessage(toSend);
@@ -543,37 +549,26 @@ public final class Common {
 	 * @return the colored message
 	 */
 	public static String colorize(final String message) {
-		String result = message == null || message.isEmpty() ? ""
-			: ChatColor.translateAlternateColorCodes('&', message
-			.replace("{prefix}", message.startsWith(Common.tellPrefix) ? "" : Common.removeSurroundingSpaces(Common.tellPrefix.trim()))
-			.replace("{server}", SimpleLocalization.SERVER_PREFIX)
-			.replace("{plugin.name}", SimplePlugin.getNamed().toLowerCase()));
+		if (message == null || message.isEmpty())
+			return "";
 
-		// Don't replace rgb colors when older than 1.16
-		if (!MinecraftVersion.newerThan(MinecraftVersion.V.v1_15))
-			return result;
+		String result = ChatColor.translateAlternateColorCodes('&', message
+				.replace("{prefix}", message.startsWith(Common.tellPrefix) ? "" : Common.removeSurroundingSpaces(Common.tellPrefix.trim()))
+				.replace("{server}", SimpleLocalization.SERVER_PREFIX)
+				.replace("{plugin.name}", SimplePlugin.getNamed().toLowerCase()));
+
 		// RGB colors
-		final Pattern pattern = Pattern.compile(Pattern.quote("{#") + "(.*?)" + Pattern.quote("}"));
-		final Matcher match = pattern.matcher(result);
-		while (match.find()) {
-			final String colorCode = match.group(1);
-			result = result.replaceAll("\\{#" + colorCode + "\\}", Common.getColor("#" + colorCode).toString());
+		if (MinecraftVersion.atLeast(MinecraftVersion.V.v1_16)) {
+			final Matcher match = RGB_HEX_COLOR_REGEX.matcher(result);
+
+			while (match.find()) {
+				final String colorCode = match.group(1);
+
+				result = result.replaceAll("\\{#" + colorCode + "\\}", net.md_5.bungee.api.ChatColor.of("#" + colorCode).toString());
+			}
 		}
+
 		return result;
-
-	}
-
-	private static net.md_5.bungee.api.ChatColor getColor(@NonNull final String message) {
-		Valid.checkBoolean(MinecraftVersion.newerThan(MinecraftVersion.V.v1_15), "Minecraft version must be newer than 1.15!");
-		try {
-			final Class<?> clazz = net.md_5.bungee.api.ChatColor.class;
-			final Method method = clazz.getMethod("of", String.class);
-			final Object object = method.invoke(null, message);
-			return (net.md_5.bungee.api.ChatColor) object;
-
-		} catch (final Exception e) {
-			return net.md_5.bungee.api.ChatColor.WHITE;
-		}
 	}
 
 	// Remove first and last spaces from the given message
@@ -607,6 +602,21 @@ public final class Common {
 	 */
 	public static String revertColorizing(final String message) {
 		return message.replaceAll("(?i)" + ChatColor.COLOR_CHAR + "([0-9a-fk-or])", "&$1");
+	}
+
+	/**
+	 * Remove all {@link ChatColor#COLOR_CHAR} as well as & letter colors from the messages
+	 *
+	 * @param messages
+	 * @return
+	 */
+	public static Collection<String> stripColors(final Collection<String> messages) {
+		final List<String> stripped = new ArrayList<>();
+
+		for (final String message : messages)
+			stripped.add(revertColorizing(message));
+
+		return stripped;
 	}
 
 	/**
@@ -780,8 +790,7 @@ public final class Common {
 	 * @param secondary
 	 * @return
 	 */
-	public static String formatList(final Collection<String> list, final ChatColor primary,
-	                                final ChatColor secondary) {
+	public static String formatList(final Collection<String> list, final ChatColor primary, final ChatColor secondary) {
 		String formatted = "";
 		boolean toggle = true;
 
@@ -871,8 +880,7 @@ public final class Common {
 	 * @param delimiterColor
 	 * @return
 	 */
-	public static String fancyBar(final int min, final char minChar, final int max, final char maxChar,
-	                              final ChatColor delimiterColor) {
+	public static String fancyBar(final int min, final char minChar, final int max, final char maxChar, final ChatColor delimiterColor) {
 		String formatted = "";
 
 		for (int i = 0; i < min; i++)
@@ -912,6 +920,26 @@ public final class Common {
 		Valid.checkNotNull(loc.getWorld(), "Cannot shorten a location with null world!");
 
 		return loc.getWorld().getName() + " [" + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ() + "]";
+	}
+
+	/**
+	 * A very simple helper for duplicating the given text the given amount of times.
+	 *
+	 * Example: duplicate("apple", 2) will produce "appleapple"
+	 *
+	 * @param text
+	 * @param nTimes
+	 * @return
+	 */
+	public static String duplicate(String text, int nTimes) {
+		Valid.checkBoolean(nTimes > 0, "Cannot duplicate 0 times!");
+
+		final String toDuplicate = new String(text);
+
+		for (int i = 1; i < nTimes; i++)
+			text += toDuplicate;
+
+		return text;
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -958,8 +986,7 @@ public final class Common {
 			return false;
 
 		if (!found.isEnabled())
-			Common.runLaterAsync(0, () -> Valid.checkBoolean(found.isEnabled(), SimplePlugin.getNamed() + " could not hook into " + pluginName + " as the plugin is disabled! (DO NOT REPORT THIS TO "
-				+ SimplePlugin.getNamed() + ", look for errors above and contact support " + pluginName + ")"));
+			Common.runLaterAsync(0, () -> Valid.checkBoolean(found.isEnabled(), SimplePlugin.getNamed() + " could not hook into " + pluginName + " as the plugin is disabled! (DO NOT REPORT THIS TO " + SimplePlugin.getNamed() + ", look for errors above and contact support " + pluginName + ")"));
 
 		return true;
 	}
@@ -974,8 +1001,7 @@ public final class Common {
 	 * @param playerReplacement
 	 * @param command
 	 */
-	public static void dispatchCommand(@Nullable final CommandSender playerReplacement,
-	                                   @NonNull final String command) {
+	public static void dispatchCommand(@Nullable final CommandSender playerReplacement, @NonNull final String command) {
 		if (command.isEmpty() || command.equalsIgnoreCase("none"))
 			return;
 
@@ -1285,10 +1311,7 @@ public final class Common {
 		} catch (final RegexTimeoutException ex) {
 			FileUtil.writeFormatted(FoConstants.File.ERRORS, null, "Matching timed out (bad regex?) (plugin ver. " + SimplePlugin.getVersion() + ")! \nString checked: " + ex.getCheckedMessage() + "\nRegex: " + (matcher != null ? matcher.pattern().pattern() : "null") + "");
 
-			Common.logFramed(false,
-				"&cRegex check took too long! (allowed: " + SimpleSettings.REGEX_TIMEOUT + "ms)",
-				"&cRegex:&f " + (matcher != null ? matcher.pattern().pattern() : matcher),
-				"&cMessage:&f " + ex.getCheckedMessage());
+			Common.logFramed(false, "&cRegex check took too long! (allowed: " + SimpleSettings.REGEX_TIMEOUT + "ms)", "&cRegex:&f " + (matcher != null ? matcher.pattern().pattern() : matcher), "&cMessage:&f " + ex.getCheckedMessage());
 
 			return false;
 		}
@@ -1314,10 +1337,7 @@ public final class Common {
 		} catch (final RegexTimeoutException ex) {
 			FileUtil.writeFormatted(FoConstants.File.ERRORS, null, "Regex check timed out (bad regex?) (plugin ver. " + SimplePlugin.getVersion() + ")! \nString checked: " + ex.getCheckedMessage() + "\nRegex: " + pattern.pattern() + "");
 
-			Common.throwError(ex,
-				"&cChecking a message took too long! (limit: " + SimpleSettings.REGEX_TIMEOUT + ")",
-				"&cReg-ex:&f " + pattern.pattern(),
-				"&cString:&f " + ex.getCheckedMessage());
+			Common.throwError(ex, "&cChecking a message took too long! (limit: " + SimpleSettings.REGEX_TIMEOUT + ")", "&cReg-ex:&f " + pattern.pattern(), "&cString:&f " + ex.getCheckedMessage());
 			return null;
 		}
 	}
@@ -1373,6 +1393,7 @@ public final class Common {
 	 * @param arrays
 	 * @return
 	 */
+	@SafeVarargs
 	public static <T> List<T> joinArrays(final Iterable<T>... arrays) {
 		final List<T> all = new ArrayList<>();
 
@@ -1390,6 +1411,7 @@ public final class Common {
 	 * @param lists
 	 * @return
 	 */
+	@SafeVarargs
 	public static <T> StrictList<T> join(final StrictList<T>... lists) {
 		final StrictList<T> joined = new StrictList<>();
 
@@ -1513,8 +1535,7 @@ public final class Common {
 	 * @param nameToIgnore
 	 * @return
 	 */
-	public static <T extends CommandSender> String joinPlayersExcept(final Iterable<T> array,
-	                                                                 final String nameToIgnore) {
+	public static <T extends CommandSender> String joinPlayersExcept(final Iterable<T> array, final String nameToIgnore) {
 		final Iterator<T> it = array.iterator();
 		String message = "";
 
@@ -1617,8 +1638,7 @@ public final class Common {
 	 * @param converter the converter;
 	 * @return the new list
 	 */
-	public static <OLD, NEW> List<NEW> convert(final Iterable<OLD> list,
-	                                           final TypeConverter<OLD, NEW> converter) {
+	public static <OLD, NEW> List<NEW> convert(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
 		final List<NEW> copy = new ArrayList<>();
 
 		for (final OLD old : list) {
@@ -1639,8 +1659,7 @@ public final class Common {
 	 * @param converter
 	 * @return
 	 */
-	public static <OLD, NEW> Set<NEW> convertSet(final Iterable<OLD> list,
-	                                             final TypeConverter<OLD, NEW> converter) {
+	public static <OLD, NEW> Set<NEW> convertSet(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
 		final Set<NEW> copy = new HashSet<>();
 
 		for (final OLD old : list)
@@ -1656,8 +1675,7 @@ public final class Common {
 	 * @param converter the converter
 	 * @return the new list
 	 */
-	public static <OLD, NEW> StrictList<NEW> convertStrict(final Iterable<OLD> list,
-	                                                       final TypeConverter<OLD, NEW> converter) {
+	public static <OLD, NEW> StrictList<NEW> convertStrict(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
 		final StrictList<NEW> copy = new StrictList<>();
 
 		for (final OLD old : list)
@@ -1677,8 +1695,7 @@ public final class Common {
 	 * @param converter
 	 * @return
 	 */
-	public static <OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> Map<NEW_KEY, NEW_VALUE> convert(
-		final Map<OLD_KEY, OLD_VALUE> oldMap, final MapToMapConverter<OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> converter) {
+	public static <OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> Map<NEW_KEY, NEW_VALUE> convert(final Map<OLD_KEY, OLD_VALUE> oldMap, final MapToMapConverter<OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> converter) {
 		final Map<NEW_KEY, NEW_VALUE> newMap = new HashMap<>();
 		oldMap.entrySet().forEach(e -> newMap.put(converter.convertKey(e.getKey()), converter.convertValue(e.getValue())));
 
@@ -1696,8 +1713,7 @@ public final class Common {
 	 * @param converter
 	 * @return
 	 */
-	public static <OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> StrictMap<NEW_KEY, NEW_VALUE> convertStrict(
-		final Map<OLD_KEY, OLD_VALUE> oldMap, final MapToMapConverter<OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> converter) {
+	public static <OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> StrictMap<NEW_KEY, NEW_VALUE> convertStrict(final Map<OLD_KEY, OLD_VALUE> oldMap, final MapToMapConverter<OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> converter) {
 		final StrictMap<NEW_KEY, NEW_VALUE> newMap = new StrictMap<>();
 		oldMap.entrySet().forEach(e -> newMap.put(converter.convertKey(e.getKey()), converter.convertValue(e.getValue())));
 
@@ -1714,8 +1730,7 @@ public final class Common {
 	 * @param converter
 	 * @return
 	 */
-	public static <LIST_KEY, OLD_KEY, OLD_VALUE> StrictList<LIST_KEY> convertToList(
-		final Map<OLD_KEY, OLD_VALUE> map, final MapToListConverter<LIST_KEY, OLD_KEY, OLD_VALUE> converter) {
+	public static <LIST_KEY, OLD_KEY, OLD_VALUE> StrictList<LIST_KEY> convertToList(final Map<OLD_KEY, OLD_VALUE> map, final MapToListConverter<LIST_KEY, OLD_KEY, OLD_VALUE> converter) {
 		final StrictList<LIST_KEY> list = new StrictList<>();
 
 		for (final Entry<OLD_KEY, OLD_VALUE> e : map.entrySet())
@@ -1733,8 +1748,7 @@ public final class Common {
 	 * @param converter
 	 * @return
 	 */
-	public static <OLD_TYPE, NEW_TYPE> List<NEW_TYPE> convert(final OLD_TYPE[] oldArray,
-	                                                          final TypeConverter<OLD_TYPE, NEW_TYPE> converter) {
+	public static <OLD_TYPE, NEW_TYPE> List<NEW_TYPE> convert(final OLD_TYPE[] oldArray, final TypeConverter<OLD_TYPE, NEW_TYPE> converter) {
 		final List<NEW_TYPE> newList = new ArrayList<>();
 
 		for (final OLD_TYPE old : oldArray)
@@ -1874,7 +1888,7 @@ public final class Common {
 			return Common.toArray(cast);
 		}
 
-		return new String[]{obj.toString()};
+		return new String[] { obj.toString() };
 	}
 
 	/**
@@ -2113,9 +2127,7 @@ public final class Common {
 		final BukkitScheduler scheduler = Bukkit.getScheduler();
 		final JavaPlugin instance = SimplePlugin.getInstance();
 
-		return Common.runIfDisabled(task) ? null
-			: delayTicks == 0 ? task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTask(instance) : scheduler.runTask(instance, task)
-			: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskLater(instance, delayTicks) : scheduler.runTaskLater(instance, task, delayTicks);
+		return Common.runIfDisabled(task) ? null : delayTicks == 0 ? task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTask(instance) : scheduler.runTask(instance, task) : task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskLater(instance, delayTicks) : scheduler.runTaskLater(instance, task, delayTicks);
 	}
 
 	/**
@@ -2157,11 +2169,7 @@ public final class Common {
 		final BukkitScheduler scheduler = Bukkit.getScheduler();
 		final JavaPlugin instance = SimplePlugin.getInstance();
 
-		return Common.runIfDisabled(task) ? null
-			: delayTicks == 0 ? task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskAsynchronously(instance)
-			: scheduler.runTaskAsynchronously(instance, task)
-			: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskLaterAsynchronously(instance, delayTicks)
-			: scheduler.runTaskLaterAsynchronously(instance, task, delayTicks);
+		return Common.runIfDisabled(task) ? null : delayTicks == 0 ? task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskAsynchronously(instance) : scheduler.runTaskAsynchronously(instance, task) : task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskLaterAsynchronously(instance, delayTicks) : scheduler.runTaskLaterAsynchronously(instance, task, delayTicks);
 	}
 
 	/**
@@ -2184,9 +2192,7 @@ public final class Common {
 	 * @return the bukkit task or null if error
 	 */
 	public static BukkitTask runTimer(final int delayTicks, final int repeatTicks, final Runnable task) {
-		return Common.runIfDisabled(task) ? null
-			: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskTimer(SimplePlugin.getInstance(), delayTicks, repeatTicks)
-			: Bukkit.getScheduler().runTaskTimer(SimplePlugin.getInstance(), task, delayTicks, repeatTicks);
+		return Common.runIfDisabled(task) ? null : task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskTimer(SimplePlugin.getInstance(), delayTicks, repeatTicks) : Bukkit.getScheduler().runTaskTimer(SimplePlugin.getInstance(), task, delayTicks, repeatTicks);
 	}
 
 	/**
@@ -2209,9 +2215,7 @@ public final class Common {
 	 * @return
 	 */
 	public static BukkitTask runTimerAsync(final int delayTicks, final int repeatTicks, final Runnable task) {
-		return Common.runIfDisabled(task) ? null
-			: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskTimerAsynchronously(SimplePlugin.getInstance(), delayTicks, repeatTicks)
-			: Bukkit.getScheduler().runTaskTimerAsynchronously(SimplePlugin.getInstance(), task, delayTicks, repeatTicks);
+		return Common.runIfDisabled(task) ? null : task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskTimerAsynchronously(SimplePlugin.getInstance(), delayTicks, repeatTicks) : Bukkit.getScheduler().runTaskTimerAsynchronously(SimplePlugin.getInstance(), task, delayTicks, repeatTicks);
 	}
 
 	// Check our plugin instance if it's enabled

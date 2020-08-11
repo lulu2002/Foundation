@@ -1,13 +1,28 @@
 package org.mineacademy.fo.command;
 
-import lombok.Getter;
-import lombok.NonNull;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-import org.mineacademy.fo.*;
+import org.mineacademy.fo.Common;
+import org.mineacademy.fo.Messenger;
+import org.mineacademy.fo.PlayerUtil;
+import org.mineacademy.fo.ReflectionUtil;
 import org.mineacademy.fo.ReflectionUtil.MissingEnumException;
+import org.mineacademy.fo.TabUtil;
+import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.StrictList;
 import org.mineacademy.fo.collection.expiringmap.ExpiringMap;
 import org.mineacademy.fo.exception.CommandException;
@@ -20,9 +35,8 @@ import org.mineacademy.fo.remain.CompMaterial;
 import org.mineacademy.fo.remain.Remain;
 import org.mineacademy.fo.settings.SimpleLocalization;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import lombok.Getter;
+import lombok.NonNull;
 
 /**
  * A simple command used to replace all Bukkit/Spigot command functionality
@@ -528,7 +542,7 @@ public abstract class SimpleCommand extends Command {
 	 * @throws CommandException
 	 */
 	protected final <T extends Enum<T>> T findEnum(
-		final Class<T> enumType, final String name, final String falseMessage) throws CommandException {
+			final Class<T> enumType, final String name, final String falseMessage) throws CommandException {
 		T found = null;
 
 		try {
@@ -734,14 +748,14 @@ public abstract class SimpleCommand extends Command {
 				Common.tell(sender, messages);
 			else
 				for (final String message : messages)
-					Common.tellNoPrefix(sender, tellPrefix + " " + message);
+					Common.tellNoPrefix(sender, (tellPrefix.isEmpty() ? "" : tellPrefix + " ") + message);
 		}
 	}
 
 	/**
 	 * Sends a no prefix message to the player
 	 *
-	 * @param messages
+	 * @param message
 	 */
 	protected final void tellSuccess(String message) {
 		if (message != null) {
@@ -754,7 +768,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Sends a no prefix message to the player
 	 *
-	 * @param messages
+	 * @param message
 	 */
 	protected final void tellInfo(String message) {
 		if (message != null) {
@@ -767,7 +781,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Sends a no prefix message to the player
 	 *
-	 * @param messages
+	 * @param message
 	 */
 	protected final void tellWarn(String message) {
 		if (message != null) {
@@ -780,7 +794,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Sends a no prefix message to the player
 	 *
-	 * @param messages
+	 * @param message
 	 */
 	protected final void tellError(String message) {
 		if (message != null) {
@@ -793,7 +807,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Sends a no prefix message to the player
 	 *
-	 * @param messages
+	 * @param message
 	 */
 	protected final void tellQuestion(String message) {
 		if (message != null) {
@@ -1249,7 +1263,9 @@ public abstract class SimpleCommand extends Command {
 	 */
 	@Override
 	public final String getUsage() {
-		return super.getUsage();
+		final String bukkitUsage = super.getUsage();
+
+		return bukkitUsage.equals("/" + label) ? "" : bukkitUsage;
 	}
 
 	/**
@@ -1294,7 +1310,7 @@ public abstract class SimpleCommand extends Command {
 	@Override
 	public boolean equals(final Object obj) {
 		return obj instanceof SimpleCommand ? ((SimpleCommand) obj).getLabel().equals(
-			getLabel()) && ((SimpleCommand) obj).getAliases().equals(getAliases()) : false;
+				getLabel()) && ((SimpleCommand) obj).getAliases().equals(getAliases()) : false;
 	}
 
 	@Override

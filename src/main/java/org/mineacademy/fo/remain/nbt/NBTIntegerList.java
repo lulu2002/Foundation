@@ -1,11 +1,10 @@
 package org.mineacademy.fo.remain.nbt;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 import org.mineacademy.fo.remain.nbt.nmsmappings.ClassWrapper;
 import org.mineacademy.fo.remain.nbt.nmsmappings.ReflectionMethod;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Integer implementation for NBTLists
@@ -24,8 +23,7 @@ public class NBTIntegerList extends NBTList<Integer> {
 			final Constructor<?> con = ClassWrapper.NMS_NBTTAGINT.getClazz().getDeclaredConstructor(int.class);
 			con.setAccessible(true);
 			return con.newInstance(object);
-		} catch (final InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-			| NoSuchMethodException | SecurityException e) {
+		} catch (final InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
 			throw new NbtApiException("Error while wrapping the Object " + object + " to it's NMS object!", e);
 		}
 	}

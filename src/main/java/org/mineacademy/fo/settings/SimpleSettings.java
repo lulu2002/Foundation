@@ -1,5 +1,7 @@
 package org.mineacademy.fo.settings;
 
+import java.util.List;
+
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.StrictList;
@@ -9,8 +11,6 @@ import org.mineacademy.fo.debug.LagCatcher;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.update.SpigotUpdater;
-
-import java.util.List;
 
 /**
  * A simple implementation of a typical main plugin settings
@@ -29,8 +29,6 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	 * make it load automatically
 	 */
 	private static boolean settingsClassCalled;
-	public static Boolean HOOK_PROTOCOLLIB = true;
-	public static Boolean USE_JAVA_SCRIPT_ENGINE = true;
 
 	// --------------------------------------------------------------------
 	// Loading

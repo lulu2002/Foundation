@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
@@ -301,10 +302,7 @@ public class YamlConfig implements ConfigSerializable {
 				onLoadFinish();
 
 			} catch (final Exception ex) {
-				Common.throwError(ex,
-						"Error loading configuration in " + getFileName() + "!",
-						"Problematic section: " + Common.getOrDefault(getPathPrefix(), "''"),
-						"Problem: " + ex + " (see below for more)");
+				Common.throwError(ex, "Error loading configuration in " + getFileName() + "!", "Problematic section: " + Common.getOrDefault(getPathPrefix(), "''"), "Problem: " + ex + " (see below for more)");
 
 				//Remain.sneaky(ex);
 			}
@@ -722,11 +720,12 @@ public class YamlConfig implements ConfigSerializable {
 	 *
 	 * @param path
 	 * @return
+	 *
+	 * @deprecated use {@link #getDouble(String)}
 	 */
+	@Deprecated
 	protected final Double getDoubleSafe(final String path) {
-		final Object raw = getObject(path);
-
-		return raw != null ? Double.parseDouble(raw.toString()) : null;
+		return getDouble(path);
 	}
 
 	/**
@@ -749,7 +748,9 @@ public class YamlConfig implements ConfigSerializable {
 	 * @return
 	 */
 	protected final Double getDouble(final String path) {
-		return getT(path, Double.class);
+		final Object raw = getObject(path);
+
+		return raw != null ? Double.parseDouble(raw.toString()) : null;
 	}
 
 	/**
@@ -983,9 +984,8 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param type
 	 * @return
 	 * @see #getList(String, Class), except that this method never returns null,
-	 *      instead, if the key is not present, we return an empty set instead of
-	 *      null
-	 *
+	 * instead, if the key is not present, we return an empty set instead of
+	 * null
 	 * @deprecated use {@link #getSet(String, Class)} for the same behavior
 	 */
 	@Deprecated
@@ -1184,7 +1184,7 @@ public class YamlConfig implements ConfigSerializable {
 	/**
 	 * Load a map with preserved order from the given path. Each key in the map
 	 * must match the given key/value type and will be deserialized
-	 *
+	 * <p>
 	 * We will add defaults if applicable
 	 *
 	 * @param <Key>
@@ -1193,7 +1193,6 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param keyType
 	 * @param valueType
 	 * @param valueParameter
-	 *
 	 * @return
 	 */
 	public final <Key, Value> LinkedHashMap<Key, Value> getMap(@NonNull String path, final Class<Key> keyType, final Class<Value> valueType) {
@@ -1239,7 +1238,6 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param path
 	 * @param listType
 	 * @return
-	 *
 	 * @deprecated platform-specific code
 	 */
 	@Deprecated
@@ -1500,14 +1498,7 @@ public class YamlConfig implements ConfigSerializable {
 		if (usingDefaults && getDefaults() != null && !isSetAbsolute(pathAbs)) {
 			final Object object = getDefaults().get(pathAbs);
 
-			Valid.checkNotNull(object,
-				"Default '"
-					+ getFileName()
-					+ "' lacks "
-					+ Common.article(type.getSimpleName())
-					+ " at '"
-					+ pathAbs
-					+ "'");
+			Valid.checkNotNull(object, "Default '" + getFileName() + "' lacks " + Common.article(type.getSimpleName()) + " at '" + pathAbs + "'");
 			checkAssignable(true, pathAbs, object, type);
 
 			checkAndFlagForSave(pathAbs, object);
@@ -1614,6 +1605,38 @@ public class YamlConfig implements ConfigSerializable {
 	 */
 	protected final String getPathPrefix() {
 		return pathPrefix;
+	}
+
+	/**
+	 * Get a map assuming each key contains a map of string and objects
+	 */
+	@Deprecated
+	protected final LinkedHashMap<String, LinkedHashMap<String, Object>> getValuesAndKeys_OLD(String path) {
+		Valid.checkNotNull(path, "Path cannot be null");
+		path = formPathPrefix(path);
+
+		// add default
+		if (getDefaults() != null && !getConfig().isSet(path)) {
+			Valid.checkBoolean(getDefaults().isSet(path), "Default '" + getFileName() + "' lacks a section at " + path);
+
+			for (final String name : getDefaults().getConfigurationSection(path).getKeys(false))
+				for (final String setting : getDefaults().getConfigurationSection(path + "." + name).getKeys(false))
+					addDefaultIfNotExist(path + "." + name + "." + setting, Object.class);
+		}
+
+		Valid.checkBoolean(getConfig().isSet(path), "Malfunction copying default section to " + path);
+
+		// key, values assigned to the key
+		final TreeMap<String, LinkedHashMap<String, Object>> groups = new TreeMap<>();
+
+		for (final String name : getConfig().getConfigurationSection(path).getKeys(false)) {
+			// type, value (UNPARSED)
+			final LinkedHashMap<String, Object> valuesRaw = getMap(path + "." + name, String.class, Object.class);
+
+			groups.put(name, valuesRaw);
+		}
+
+		return new LinkedHashMap<>(groups);
 	}
 
 	// ------------------------------------------------------------------------------------
@@ -1769,8 +1792,7 @@ public class YamlConfig implements ConfigSerializable {
 			}
 
 			if (values.length != 3)
-				throw new FoException(
-						"Malformed type, use format: 'second, seconds' OR 'sekundu, sekundy, sekund' (if your language has it)");
+				throw new FoException("Malformed type, use format: 'second, seconds' OR 'sekundu, sekundy, sekund' (if your language has it)");
 
 			akuzativSg = values[0];
 			akuzativPl = values[1];
@@ -1929,7 +1951,7 @@ class ConfigInstance {
 /**
  * A special class holding what enum values we have in our configuration
  * that are incompatible with older Minecraft version.
- *
+ * <p>
  * If those are loaded we just forgive them and do not throw an error.
  */
 final class LegacyEnum {

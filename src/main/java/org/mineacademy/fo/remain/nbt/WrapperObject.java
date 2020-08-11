@@ -1,10 +1,10 @@
 package org.mineacademy.fo.remain.nbt;
 
+import java.lang.reflect.Constructor;
+
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.MinecraftVersion;
 import org.mineacademy.fo.MinecraftVersion.V;
-
-import java.lang.reflect.Constructor;
 
 /**
  * This Enum wraps Constructors for NMS classes
@@ -14,8 +14,7 @@ import java.lang.reflect.Constructor;
 public enum WrapperObject {
 	NMS_NBTTAGCOMPOUND(null, null, WrapperClass.NMS_NBTTAGCOMPOUND.getClazz()),
 	NMS_BLOCKPOSITION(null, null, WrapperClass.NMS_BLOCKPOSITION.getClazz(), int.class, int.class, int.class),
-	NMS_COMPOUNDFROMITEM(MinecraftVersion.V.v1_11, null, WrapperClass.NMS_ITEMSTACK.getClazz(), WrapperClass.NMS_NBTTAGCOMPOUND.getClazz()),
-	;
+	NMS_COMPOUNDFROMITEM(MinecraftVersion.V.v1_11, null, WrapperClass.NMS_ITEMSTACK.getClazz(), WrapperClass.NMS_NBTTAGCOMPOUND.getClazz()),;
 
 	private Constructor<?> construct;
 	private Class<?> targetClass;

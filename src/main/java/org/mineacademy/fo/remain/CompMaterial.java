@@ -12,6 +12,7 @@ import org.mineacademy.fo.MinecraftVersion;
 import org.mineacademy.fo.MinecraftVersion.V;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.StrictSet;
+import org.mineacademy.fo.debug.Debugger;
 import org.mineacademy.fo.exception.FoException;
 
 import com.google.common.collect.Sets;
@@ -20,7 +21,7 @@ import lombok.Getter;
 
 /**
  * Heavily inspired by a library made by Hex_27.
- *
+ * <p>
  * Source:
  * https://www.spigotmc.org/threads/1-8-to-1-13-itemstack-material-version-support.329630/
  */
@@ -953,13 +954,71 @@ public enum CompMaterial {
 	LEATHER_HORSE_ARMOR("IRON_BARDING", "IRON_HORSE_ARMOR", 0),
 	RAVAGER_SPAWN_EGG("MONSTER_EGG", "SHEEP_SPAWN_EGG", 0),
 	PILLAGER_SPAWN_EGG("MONSTER_EGG", "SHEEP_SPAWN_EGG", 0),
-	// Added 06.25.2020 - MC 1.15
+	// Added 08.08.2020
+	SCAFFOLDING("LADDER"),
+	LANTERN("FLOWER_POT"),
+	LECTERN("BOOKSHELF"),
+	END_STONE_BRICK_SLAB("STEP","STONE_SLAB",0),
+	END_STONE_BRICK_STAIRS("COBBLESTONE_STAIRS", 0),
+	END_STONE_BRICK_WALL("COBBLESTONE_WALL"),
+	GRANITE_SLAB("STEP", "STONE_SLAB", 0),
+	GRANITE_STAIRS("COBBLESTONE_STAIRS", 0),
+	GRANITE_WALL("COBBLESTONE_WALL"),
+
+	FLETCHING_TABLE("CRAFTING_TABLE"),
+	FLOWER_BANNER_PATTERN("STONE"),
+	GLOBE_BANNER_PATTERN("STONE"),
+	FOX_SPAWN_EGG("PIG_SPAWN_EGG"),
+	GRINDSTONE("FURNACE"),
+	JIGSAW("STONE"),
+	Lmd23519269ILY_OF_THE_VALLEY("FLOWER", 10),
+	LOOM("CRAFTING_TABLE"),
+	MOJANG_BANNER_PATTERN("STONE"),
+	MOSSY_COBBLESTONE_SLAB("STEP", "COBBLESTONE_SLAB", 0),
+	MOSSY_COBBLESTONE_STAIRS("COBBLESTONE_STAIRS", 0),
+	MOSSY_STONE_BRICK_SLAB("STEP", "STONE_SLAB", 0),
+	MOSSY_STONE_BRICK_STAIRS("COBBLESTONE_STAIRS", 0),
+	MOSSY_STONE_BRICK_WALL("COBBLESTONE_WALL"),
+	NETHER_BRICK_WALL("COBBLESTONE_WALL"),
+	PANDA_SPAWN_EGG("PIG_SPAWN_EGG"),
+	POLISHED_ANDESITE_SLAB("STEP", "COBBLESTONE_SLAB", 0),
+	POLISHED_ANDESITE_STAIRS("COBBLESTONE_STAIRS", 0),
+	POLISHED_DIORITE_SLAB("STEP", "COBBLESTONE_SLAB", 0),
+	POLISHED_DIORITE_STAIRS("COBBLESTONE_STAIRS", 0),
+	POLISHED_GRANITE_SLAB("STEP", "COBBLESTONE_SLAB", 0),
+	POLISHED_GRANITE_STAIRS("COBBLESTONE_STAIRS", 0),
+	POTTED_BAMBOO("FLOWER_POT"),
+	POTTED_CORNFLOWER("FLOWER_POT"),
+	POTTED_LILY_OF_THE_VALLEY("FLOWER_POT"),
+	POTTED_WITHER_ROSE("FLOWER_POT"),
+	PRISMARINE_WALL("COBBLESTONE_WALL", 0),
+	RED_NETHER_BRICK_SLAB("STEP", "COBBLESTONE_SLAB", 0),
+	RED_NETHER_BRICK_STAIRS("COBBLESTONE_STAIRS", 0),
+	RED_NETHER_BRICK_WALL("COBBLESTONE_WALL"),
+	RED_SANDSTONE_WALL("COBBLESTONE_WALL"),
+	SANDSTONE_WALL("COBBLESTONE_WALL"),
+	SMITHING_TABLE("CRAFTING_TABLE"),
+	SMOKER("FURNACE"),
+	SMOOTH_QUARTZ_SLAB("STEP", "QUARTZ_SLAB", 0),
+	SMOOTH_QUARTZ_STAIRS("QUARTZ_STAIRS", 0),
+	SMOOTH_RED_SANDSTONE_SLAB("STEP", "SANDSTONE_SLAB", 0),
+	SMOOTH_RED_SANDSTONE_STAIRS("SANDSTONE_STAIRS", 0),
+	SMOOTH_SANDSTONE_SLAB("STEP", "SANDSTONE_SLAB", 0),
+	SMOOTH_SANDSTONE_STAIRS("COBBLESTONE_STAIRS", 0),
+	STONECUTTER("STONE"),
+	STONE_BRICK_WALL("COBBLESTONE_WALL"),
+	STONE_STAIRS("COBBLESTONE_STAIRS", 0),
+	SWEET_BERRY_BUSH("GRASS"),
+	TRADER_LLAMA_SPAWN_EGG("PIG_SPAWN_EGG"),
+	WANDERING_TRADER_SPAWN_EGG("VILLAGER_SPAWN_EGG"),
+
+	// Added 8.8.2020 - MC 1.15
 	BEEHIVE("STONE"),
 	BEE_NEST("STONE"),
-	HONEY_BLOCK("STONE"),
+	BEE_SPAWN_EGG("PIG_SPAWN_EGG"),
+	HONEYCOMB("STONE"),
 	HONEYCOMB_BLOCK("STONE"),
 	HONEY_BOTTLE("POTION"),
-	BEE_SPAWN_EGG("MONSTER_EGG", 98),
     // Added 07.01.2020 - MC 1.16
     ANCIENT_DEBRIS("STONE"),
     BASALT("STONE"),
@@ -1060,7 +1119,7 @@ public enum CompMaterial {
 	/**
 	 * The name of the material in Minecraft 1.12 and older (may or may not be the
 	 * same).
-	 *
+	 * <p>
 	 * Returns the closest alternative in case such material was non-existing in
 	 * that old version.
 	 */
@@ -1075,7 +1134,7 @@ public enum CompMaterial {
 
 	/**
 	 * Holds data value for legacy material name.
-	 *
+	 * <p>
 	 * For Minecraft 1.12 and older, some materials could only be obtained by their
 	 * data value (for example WOOL with data value 4 represents YELLOW_WOOL in
 	 * 1.13+).
@@ -1205,7 +1264,7 @@ public enum CompMaterial {
 
 	/**
 	 * Return true if the {@link #getMaterial()} and the given Material matches.
-	 *
+	 * <p>
 	 * NOT cross-version compatible. For this, use {@link #is(ItemStack)}
 	 *
 	 * @param mat
@@ -1243,7 +1302,7 @@ public enum CompMaterial {
 	 * @param data
 	 * @return
 	 */
-	public final boolean is(Material type, int data) {
+	public final boolean is(final Material type, final int data) {
 		if (MinecraftVersion.atLeast(V.v1_13))
 			return type == toMaterial();
 
@@ -1276,31 +1335,18 @@ public enum CompMaterial {
 	public static final boolean isDamageable(final CompMaterial type) {
 		switch (type.toString()) {
 			case "HELMET":
-				return true;
 			case "CHESTPLATE":
-				return true;
 			case "LEGGINGS":
-				return true;
 			case "BOOTS":
-				return true;
 			case "SWORD":
-				return true;
 			case "AXE":
-				return true;
 			case "PICKAXE":
-				return true;
 			case "SHOVEL":
-				return true;
 			case "HOE":
-				return true;
 			case "ELYTRA":
-				return true;
 			case "TURTLE_HELMET":
-				return true;
 			case "TRIDENT":
-				return true;
 			case "HORSE_ARMOR":
-				return true;
 			case "SHEARS":
 				return true;
 			default:
@@ -1397,7 +1443,7 @@ public enum CompMaterial {
 	 */
 	public static final boolean isWoodPressurePlate(final Material mat) {
 		return nameEquals(mat, "WOOD_PLATE", "ACACIA_PRESSURE_PLATE", "BIRCH_PRESSURE_PLATE", "DARK_OAK_PRESSURE_PLATE",
-						  "JUNGLE_PRESSURE_PLATE", "OAK_PRESSURE_PLATE", "SPRUCE_PRESSURE_PLATE");
+				"JUNGLE_PRESSURE_PLATE", "OAK_PRESSURE_PLATE", "SPRUCE_PRESSURE_PLATE");
 	}
 
 	/**
@@ -1587,7 +1633,7 @@ public enum CompMaterial {
 	/**
 	 * Attempts to convert an {@link EntityType} into a valid {@link CompMaterial}
 	 * representing a spawnable Monster Egg.
-	 *
+	 * <p>
 	 * In case the entity given is not a valid entity or does not have an egg, we
 	 * return Sheep Monster Egg instead.
 	 *
@@ -1595,22 +1641,29 @@ public enum CompMaterial {
 	 * @return the corresponding egg, or Sheep Monster Egg if does not exist
 	 */
 	public static CompMaterial makeMonsterEgg(final EntityType type) {
-		if (!COMPATIBLE)
-			return null;
+		try {
+			if (!COMPATIBLE)
+				return null;
 
-		String name = type.toString() + "_SPAWN_EGG";
+			String name = type.toString() + "_SPAWN_EGG";
 
-		// Special cases
-		if (type == EntityType.ZOMBIFIED_PIGLIN) // PIGMAN
-			name = "ZOMBIE_PIGMAN_SPAWN_EGG";
-		else if (type == EntityType.MUSHROOM_COW)
-			name = "MOOSHROOM_SPAWN_EGG";
+			// Special cases
+			if (MinecraftVersion.newerThan(V.v1_15) && type == EntityType.ZOMBIFIED_PIGLIN) // PIGMAN
+				name = "ZOMBIE_PIGMAN_SPAWN_EGG";
+			else if (type == EntityType.MUSHROOM_COW)
+				name = "MOOSHROOM_SPAWN_EGG";
 
-		// Parse normally, backwards compatible
-		final CompMaterial mat = fromString(name);
+			// Parse normally, backwards compatible
+			final CompMaterial mat = fromString(name);
+			if (mat == CompMaterial.STONE)
+				return CompMaterial.SHEEP_SPAWN_EGG;
 
-		// Return the egg or sheep egg if does not exist
-		return Common.getOrDefault(mat, CompMaterial.SHEEP_SPAWN_EGG);
+			// Return the egg or sheep egg if does not exist
+			return Common.getOrDefault(mat, CompMaterial.SHEEP_SPAWN_EGG);
+		} catch (final Throwable throwable) {
+			Debugger.saveError(throwable, "Something went wrong while creating spawn egg!", "Type: " + type);
+		}
+		return CompMaterial.SHEEP_SPAWN_EGG;
 	}
 
 	/**
@@ -1625,10 +1678,10 @@ public enum CompMaterial {
 		final String name = monsterEgg.toString().replace("_SPAWN_EGG", "");
 
 		// Special cases
-		if (name == "ZOMBIE_PIGMAN_SPAWN_EGG")
+		if (name.equals("ZOMBIE_PIGMAN_SPAWN_EGG"))
 			return EntityType.ZOMBIFIED_PIGLIN; // PIGMAN
 
-		else if (name == "MOOSHROOM_SPAWN_EGG")
+		else if (name.equals("MOOSHROOM_SPAWN_EGG"))
 			return EntityType.MUSHROOM_COW;
 
 		else
@@ -1805,7 +1858,7 @@ public enum CompMaterial {
 /**
  * A special class for some of our plugins that by default include
  * materials in their config files that do not exist in older MC versions.
- *
+ * <p>
  * For these materials, we simply return null and do not add them to settings
  * instead of throwing an error.
  *
@@ -1888,5 +1941,5 @@ class SoftMaterials {
 			"OBSERVER",
 			"PURPLE_SHULKER_BOX"
 
-																			  ));
+	));
 }

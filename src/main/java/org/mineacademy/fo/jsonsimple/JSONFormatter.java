@@ -203,7 +203,11 @@
  */
 package org.mineacademy.fo.jsonsimple;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
 
 /**
  * Can format and minimize JSON data.
@@ -353,8 +357,7 @@ public class JSONFormatter {
 		// Method now calls #format(Reader,Writer) because it is less code to maintain
 		// ====
 
-		try (StringReader reader = new StringReader(json);
-		     StringWriter writer = new StringWriter()) {
+		try (StringReader reader = new StringReader(json); StringWriter writer = new StringWriter()) {
 
 			this.format(reader, writer);
 			return writer.toString();
@@ -390,12 +393,7 @@ public class JSONFormatter {
 
 			final char character = (char) read;
 
-			if (character != '\n' &&
-				character != '\t' &&
-				character != '\r' &&
-				character != '\b' &&
-				character != '\0' &&
-				character != '\f') {
+			if (character != '\n' && character != '\t' && character != '\r' && character != '\b' && character != '\0' && character != '\f') {
 
 				if (character == '"')
 					inString = !(inString && lastChar != '\\');
@@ -421,8 +419,7 @@ public class JSONFormatter {
 		// Method now calls #minimize(Reader,Writer) because it is less code to maintain
 		// ====
 
-		try (StringReader reader = new StringReader(json);
-		     StringWriter writer = new StringWriter()) {
+		try (StringReader reader = new StringReader(json); StringWriter writer = new StringWriter()) {
 
 			this.minimize(reader, writer);
 			return writer.toString();

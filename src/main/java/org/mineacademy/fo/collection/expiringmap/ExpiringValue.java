@@ -105,14 +105,12 @@ public final class ExpiringValue<V> {
 			return false;
 
 		final ExpiringValue<?> that = (ExpiringValue<?>) o;
-		return !(value != null ? !value.equals(that.value) : that.value != null)
-			&& expirationPolicy == that.expirationPolicy && duration == that.duration && timeUnit == that.timeUnit;
+		return !(value != null ? !value.equals(that.value) : that.value != null) && expirationPolicy == that.expirationPolicy && duration == that.duration && timeUnit == that.timeUnit;
 
 	}
 
 	@Override
 	public String toString() {
-		return "ExpiringValue{" + "value=" + value + ", expirationPolicy=" + expirationPolicy + ", duration=" + duration
-			+ ", timeUnit=" + timeUnit + '}';
+		return "ExpiringValue{" + "value=" + value + ", expirationPolicy=" + expirationPolicy + ", duration=" + duration + ", timeUnit=" + timeUnit + '}';
 	}
 }

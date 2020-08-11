@@ -166,6 +166,11 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 		public static String RELOAD_FAIL = "&4Oups, &creloading failed! See the console for more information. Error: {error}";
 
 		/**
+		 * The message shown when there is a fatal error running this command
+		 */
+		public static Replacer ERROR = Replacer.of("&4&lOups! &cThe command failed :( Check the console and report the error.");
+
+		/**
 		 * The message shown when player has no permissions to view ANY subcommands in group command.
 		 */
 		public static String HELP_HEADER_NO_SUBCOMMANDS = "&cYou don't have permissions to view any subcommands.";
@@ -229,6 +234,9 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 
 			if (isSetDefault("Reload_Fail"))
 				RELOAD_FAIL = getString("Reload_Fail");
+
+			if (isSetDefault("Error"))
+				ERROR = getReplacer("Error");
 
 			if (isSetDefault("Header_No_Subcommands"))
 				HELP_HEADER_NO_SUBCOMMANDS = getString("Header_No_Subcommands");

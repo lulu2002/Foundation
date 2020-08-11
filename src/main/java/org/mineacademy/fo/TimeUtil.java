@@ -103,8 +103,7 @@ public final class TimeUtil {
 	 * to seconds.
 	 *
 	 * @param humanReadableTime the human readable time format: {time} {period}
-	 * 		  	   example: 5 seconds, 10 ticks, 7 minutes, 12 hours etc..
-	 *
+	 *                          example: 5 seconds, 10 ticks, 7 minutes, 12 hours etc..
 	 * @return the converted human time to seconds
 	 */
 	public static long toTicks(final String humanReadableTime) {

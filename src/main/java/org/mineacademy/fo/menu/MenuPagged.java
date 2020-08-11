@@ -1,8 +1,10 @@
 package org.mineacademy.fo.menu;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.val;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
@@ -17,10 +19,9 @@ import org.mineacademy.fo.menu.model.InventoryDrawer;
 import org.mineacademy.fo.menu.model.ItemCreator;
 import org.mineacademy.fo.remain.CompMaterial;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.val;
 
 /**
  * An advanced menu listing items with automatic page support
@@ -137,8 +138,9 @@ public abstract class MenuPagged<T> extends Menu {
 	 * @param pageSize
 	 * @param parent
 	 * @param pages
-	 * @param returnMakesNewInstance	 *
-	 * @deprecated we recommend you don't set the page size for the menu to autocalculate
+	 * @param returnMakesNewInstance *
+	 * @deprecated we recommend you don't set the page size for the menu to
+	 * autocalculate
 	 */
 	@Deprecated
 	protected MenuPagged(final int pageSize, final Menu parent, final Iterable<T> pages, final boolean returnMakesNewInstance) {
@@ -190,9 +192,7 @@ public abstract class MenuPagged<T> extends Menu {
 					final T page = allItems.get(valueIndex);
 
 					pageItems.add(page);
-				}
-
-				else
+				} else
 					break;
 
 			pages.put(i, pageItems);
@@ -202,7 +202,7 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	@SuppressWarnings("unused")
-	private final int getItemAmount(final Iterable<T> pages) {
+	private int getItemAmount(final Iterable<T> pages) {
 		int amount = 0;
 
 		for (final T t : pages)
@@ -212,7 +212,7 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	// Render the next/prev buttons
-	private final void setButtons() {
+	private void setButtons() {
 		final boolean hasPages = pages.size() > 1;
 
 		// Set previous button
@@ -222,7 +222,7 @@ public abstract class MenuPagged<T> extends Menu {
 			@Override
 			public void onClickedInMenu(final Player pl, final Menu menu, final ClickType click) {
 				if (canGo) {
-					MenuPagged.this.currentPage = MathUtil.range(currentPage - 1, 1, pages.size());
+					currentPage = MathUtil.range(currentPage - 1, 1, pages.size());
 
 					updatePage();
 				}
@@ -239,9 +239,9 @@ public abstract class MenuPagged<T> extends Menu {
 			final boolean canGo = currentPage < pages.size();
 
 			@Override
-			public void onClickedInMenu(Player pl, Menu menu, ClickType click) {
+			public void onClickedInMenu(final Player pl, final Menu menu, final ClickType click) {
 				if (canGo) {
-					MenuPagged.this.currentPage = MathUtil.range(currentPage + 1, 1, pages.size());
+					currentPage = MathUtil.range(currentPage + 1, 1, pages.size());
 
 					updatePage();
 				}
@@ -267,7 +267,7 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	// Reinits the menu and plays the anvil sound
-	private final void updatePage() {
+	private void updatePage() {
 		setButtons();
 		redraw();
 		registerButtons();
@@ -277,7 +277,7 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	// Compile title and page numbers
-	private final String compileTitle0() {
+	private String compileTitle0() {
 		final boolean canAddNumbers = addPageNumbers() && pages.size() > 1;
 
 		return getTitle() + (canAddNumbers ? " &8" + currentPage + "/" + pages.size() : "");
@@ -289,7 +289,7 @@ public abstract class MenuPagged<T> extends Menu {
 	 * @param
 	 */
 	@Override
-	protected final void onDisplay(final InventoryDrawer drawer) {
+	protected void onDisplay(final InventoryDrawer drawer) {
 		drawer.setTitle(compileTitle0());
 		onDisplayAndTitleSet(drawer);
 	}
@@ -300,7 +300,7 @@ public abstract class MenuPagged<T> extends Menu {
 
 	/**
 	 * Return the {@link ItemStack} representation of an item on a certain page
-	 *
+	 * <p>
 	 * Use {@link ItemCreator} for easy creation.
 	 *
 	 * @param item the given object, for example Arena
@@ -378,7 +378,7 @@ public abstract class MenuPagged<T> extends Menu {
 			final T obj = getCurrentPageItems().get(slot);
 
 			if (obj != null) {
-				val prevType = player.getOpenInventory().getType();
+				final val prevType = player.getOpenInventory().getType();
 				onPageClick(player, obj, click);
 
 				if (updateButtonOnClick() && prevType == player.getOpenInventory().getType())
@@ -400,7 +400,7 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	// Get all items in a page
-	private final List<T> getCurrentPageItems() {
+	private List<T> getCurrentPageItems() {
 		Valid.checkBoolean(pages.containsKey(currentPage - 1), "The menu has only " + pages.size() + " pages, not " + currentPage + "!");
 
 		return pages.get(currentPage - 1);

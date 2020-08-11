@@ -1,6 +1,12 @@
 package org.mineacademy.fo.model;
 
-import lombok.NonNull;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Pattern;
+
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
@@ -13,17 +19,17 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.mineacademy.fo.*;
+import org.mineacademy.fo.ChatUtil;
+import org.mineacademy.fo.Common;
+import org.mineacademy.fo.MathUtil;
+import org.mineacademy.fo.MinecraftVersion;
 import org.mineacademy.fo.MinecraftVersion.V;
+import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.Remain;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
+import lombok.NonNull;
+import net.md_5.bungee.api.ChatColor;
 
 /**
  * Represents a simple way of getting your own enchantments into Minecraft
@@ -321,10 +327,18 @@ public abstract class SimpleEnchantment extends Enchantment {
 			final List<String> originalLore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
 			final List<String> finalLore = new ArrayList<>();
 
+			final List<String> colorlessOriginals = new ArrayList<>();
+
+			for (final String original : originalLore)
+				colorlessOriginals.add(ChatColor.stripColor(Common.colorize(original)));
+
 			// Place our enchants
-			for (final String customEnchant : customEnchants)
-				if (!originalLore.contains(customEnchant))
+			for (final String customEnchant : customEnchants) {
+				final String colorlessEnchant = ChatColor.stripColor(Common.colorize(customEnchant));
+
+				if (!colorlessOriginals.contains(colorlessEnchant))
 					finalLore.add(customEnchant);
+			}
 
 			// Place the original lore at the bottom
 			finalLore.addAll(originalLore);

@@ -7,8 +7,6 @@
 .idea_modules/
 *.iml
 
-.m2/repository
-
 # IntelliJ
 out/
 
@@ -51,6 +49,7 @@ local.properties
 
 # Builder
 builder.xml
+build.xml
 
 #############
 ## Windows detritus
@@ -68,3 +67,4 @@ $RECYCLE.BIN/
 
 # Mac crap
 .DS_Store
+REBASE.bat
