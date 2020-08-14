@@ -16,26 +16,15 @@ public abstract class Tool {
      * Create a new tool
      */
     protected Tool() {
-
-        // A hacky way of automatically registering it AFTER the parent constructor, assuming all went okay
-//        new Thread() {
-//
-//            @Override
-//            public void run() {
-//
-//                try {
-//                    Thread.sleep(3);
-//                } catch (final InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//
-//                final Tool instance = Tool.this;
-//
-//                if (!ToolRegistry.isRegistered(instance))
-//                    ToolRegistry.register(instance);
-//            }
-//        }.start();
     }
+
+    protected final void register() {
+        final Tool instance = Tool.this;
+
+        if (!ToolRegistry.isRegistered(instance))
+            ToolRegistry.register(instance);
+    }
+
 
     /**
      * Evaluates the given itemstack whether it is this tool

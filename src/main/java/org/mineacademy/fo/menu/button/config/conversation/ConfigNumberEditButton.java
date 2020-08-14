@@ -28,11 +28,15 @@ public abstract class ConfigNumberEditButton<N extends Number> extends ConfigSav
             //整數無法case
             Method method = ReflectionUtil.getMethod(numberClass, "valueOf", String.class);
             number = ReflectionUtil.invokeStatic(method, input);
-            return true;
+            return isNumberValid(number);
         } catch (Exception e) {
             Common.tellConversing(getPlayer(), getInvalidNumberMsg());
             return false;
         }
+    }
+
+    protected boolean isNumberValid(N number) {
+        return true;
     }
 
     protected abstract String getInvalidNumberMsg();

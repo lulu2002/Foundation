@@ -557,7 +557,7 @@ public final class SerializedMap extends StrictCollection {
 	 * @param def
 	 * @return
 	 */
-	private <T> T get(final String key, final Class<T> type, final T def) {
+	public <T> T get(final String key, final Class<T> type, final T def) {
 		Object raw = map.get(key);
 
 		// Try to get the value by key with ignoring case
