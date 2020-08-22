@@ -355,6 +355,10 @@ public abstract class SimpleCommand extends Command {
 		return true;
 	}
 
+	protected void initialVariables() {
+
+	}
+
 	private void dynamicTellError(final String... messages) {
 		if (USE_MESSENGER)
 			for (final String message : messages)

@@ -489,7 +489,7 @@ public final class SerializedMap extends StrictCollection {
 	public <T> List<T> getListSafe(final String key, final Class<T> type) {
 		final List<T> list = getList(key, type);
 
-		return Common.getOrDefault(list, new ArrayList<>());
+		return Common.getOrDefault(list, new ArrayList<T>());
 	}
 
 	/**
@@ -504,7 +504,7 @@ public final class SerializedMap extends StrictCollection {
 	public <T> Set<T> getSetSafe(final String key, final Class<T> type) {
 		final Set<T> list = getSet(key, type);
 
-		return Common.getOrDefault(list, new HashSet<>());
+		return Common.getOrDefault(list, new HashSet<T>());
 	}
 
 	/**
