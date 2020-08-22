@@ -82,18 +82,16 @@ import org.mineacademy.fo.collection.SerializedMap;
 import org.mineacademy.fo.collection.StrictMap;
 import org.mineacademy.fo.debug.Debugger;
 import org.mineacademy.fo.exception.FoException;
-import org.mineacademy.fo.model.Replacer;
-import org.mineacademy.fo.model.UUIDtoNameConverter;
+import org.mineacademy.fo.model.UUIDToNameConverter;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.internal.BossBarInternals;
 import org.mineacademy.fo.remain.internal.ChatInternals;
-import org.mineacademy.fo.remain.internal.NBTInternals;
 import org.mineacademy.fo.remain.internal.ParticleInternals;
+import org.mineacademy.fo.remain.nbt.NBTInternals;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import lombok.NonNull;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -641,7 +639,7 @@ public final class Remain {
 		final StringBuilder text = new StringBuilder();
 
 		try {
-			for (final BaseComponent comp : Remain.parseSave(json)) {
+			for (final BaseComponent comp : ComponentSerializer.parse(json)) {
 				if ((comp.getHoverEvent() != null || comp.getClickEvent() != null) && denyEvents)
 					throw new InteractiveTextFoundException();
 
@@ -661,15 +659,6 @@ public final class Remain {
 		}
 
 		return text.toString();
-	}
-
-	private static BaseComponent[] parseSave(@NonNull final String json) {
-		try {
-			return ComponentSerializer.parse(json);
-		} catch (final Throwable throwable) {
-			Debugger.debug("Components", "Can't parse component: '" + json + "'");
-			return new BaseComponent[0];
-		}
 	}
 
 	/**
@@ -740,28 +729,21 @@ public final class Remain {
 		return ComponentSerializer.parse(json);
 	}
 
-	public static void sendJson(final CommandSender sender, final String json, SerializedMap placeholders) {
-		try {
-			final BaseComponent[] components = ComponentSerializer.parse(json);
-
-			replaceHexPlaceholders(Arrays.asList(components), placeholders);
-
-			Remain.sendComponent(sender, components);
-
-		} catch (final RuntimeException ex) {
-			Common.error(ex, "Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json);
-		}
-	}
-
 	/**
 	 * Sends JSON component to sender
 	 *
 	 * @param sender
 	 * @param json
+	 * @param placeholders
 	 */
-	public static void sendJson(final CommandSender sender, final String json) {
+	public static void sendJson(final CommandSender sender, final String json, SerializedMap placeholders) {
 		try {
-			Remain.sendComponent(sender, ComponentSerializer.parse(json));
+			final BaseComponent[] components = ComponentSerializer.parse(json);
+
+			if (MinecraftVersion.atLeast(V.v1_16))
+				replaceHexPlaceholders(Arrays.asList(components), placeholders);
+
+			Remain.sendComponent(sender, components);
 
 		} catch (final RuntimeException ex) {
 			Common.error(ex, "Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json);
@@ -782,7 +764,7 @@ public final class Remain {
 
 				for (final Map.Entry<String, Object> entry : placeholders.entrySet()) {
 					String key = entry.getKey();
-					String value = Replacer.simplify(entry.getValue());
+					String value = Common.simplify(entry.getValue());
 
 					// Detect HEX in placeholder
 					final Matcher match = RGB_HEX_ENCODED_REGEX.matcher(text);
@@ -810,6 +792,21 @@ public final class Remain {
 
 			if (component.getHoverEvent() != null)
 				replaceHexPlaceholders(Arrays.asList(component.getHoverEvent().getValue()), placeholders);
+		}
+	}
+
+	/**
+	 * Sends JSON component to sender
+	 *
+	 * @param sender
+	 * @param json
+	 */
+	public static void sendJson(final CommandSender sender, final String json) {
+		try {
+			Remain.sendComponent(sender, ComponentSerializer.parse(json));
+
+		} catch (final RuntimeException ex) {
+			Common.error(ex, "Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json);
 		}
 	}
 
@@ -1417,7 +1414,7 @@ public final class Remain {
 			return Bukkit.getOfflinePlayer(id);
 
 		} catch (final NoSuchMethodError err) {
-			final UUIDtoNameConverter f = new UUIDtoNameConverter(id);
+			final UUIDToNameConverter f = new UUIDToNameConverter(id);
 
 			try {
 				final String name = f.call();
@@ -2123,13 +2120,13 @@ class BungeeChatProvider {
 	}
 
 	private static void sendComponent0(final CommandSender sender, final BaseComponent... comps) {
-		String plainMessage = "";
+		final StringBuilder plainMessage = new StringBuilder();
 
 		for (final BaseComponent comp : comps)
-			plainMessage += comp.toLegacyText();
+			plainMessage.append(comp.toLegacyText().replaceAll(ChatColor.COLOR_CHAR + "x", ""));
 
 		if (!(sender instanceof Player)) {
-			BungeeChatProvider.tell0(sender, plainMessage);
+			BungeeChatProvider.tell0(sender, plainMessage.toString());
 
 			return;
 		}
@@ -2141,10 +2138,10 @@ class BungeeChatProvider {
 			if (MinecraftVersion.newerThan(V.v1_7))
 				Common.error(ex, "Error printing JSON message, sending as plain.");
 
-			BungeeChatProvider.tell0(sender, plainMessage);
+			BungeeChatProvider.tell0(sender, plainMessage.toString());
 
 		} catch (final Exception ex) {
-			BungeeChatProvider.tell0(sender, plainMessage);
+			BungeeChatProvider.tell0(sender, plainMessage.toString());
 		}
 	}
 

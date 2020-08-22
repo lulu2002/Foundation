@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -26,8 +25,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
-import org.mineacademy.fo.exception.FoException;
-import org.mineacademy.fo.remain.Remain;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -37,8 +34,20 @@ import com.google.gson.JsonParser;
  * bStats collects some data for plugin authors.
  * <p>
  * Check out https://bStats.org/ to learn more about bStats!
+ *
+ * ** IMPORTANT **
+ * DO NOT MODIFY ANY PARTS OR SECTIONS OF THIS CLASS
+ * THIS IS TOTALLY UNSUPPORTED AND MAY LEAD TO YOUR BSTATS
+ * ACCOUNT GETTING SUSPENDED
+ *
+ * ** LEGAL DISCLAIMER **
+ * The follow class is the works of Bastian Opperman and is included
+ * in good faith to help spread awareness of his amazing service
+ * and enable more people use bStats.
+ *
+ * See more at: https://bstats.org/getting-started/include-metrics
  */
-public class Metrics {
+public final class Metrics {
 
 	static {
 		// You can use the property to disable the check in your test environment
@@ -58,6 +67,9 @@ public class Metrics {
 
 	// The url to which the data is sent
 	private static final String URL = "https://bStats.org/submitData/bukkit";
+
+	// Is bStats enabled on this server?
+	private final boolean enabled;
 
 	// Should failed requests be logged?
 	private static boolean logFailedRequests;
@@ -80,26 +92,18 @@ public class Metrics {
 	/**
 	 * Class constructor.
 	 *
-	 * @param plugin The plugin which stats should be submitted.
-	 * @deprecated API has changed and this constructor no longer works, please use
-	 * the one with pluginId instead
-	 */
-	@Deprecated
-	public Metrics(final Plugin plugin) {
-		throw new FoException("Initializing Metrics without pluginId is no longer functional! Please use new Metrics(plugin, pluginId) instead.");
-	}
-
-	/**
-	 * Class constructor.
+	 * ** IMPORTANT DEVELOPER NOTICE **
+	 * DO NOT MODIFY ANY PARTS OR SECTIONS OF THIS CLASS
+	 * THIS IS TOTALLY UNSUPPORTED AND MAY LEAD TO YOUR BSTATS
+	 * ACCOUNT GETTING SUSPENDED
 	 *
-	 * @param plugin   The plugin which stats should be submitted.
+	 * @param plugin The plugin which stats should be submitted.
 	 * @param pluginId The id of the plugin.
 	 *                 It can be found at <a href="https://bstats.org/what-is-my-plugin-id">What is my plugin id?</a>
 	 */
-	public Metrics(final Plugin plugin, int pluginId) {
+	public Metrics(Plugin plugin, int pluginId) {
 		if (plugin == null)
 			throw new IllegalArgumentException("Plugin cannot be null!");
-
 		this.plugin = plugin;
 		this.pluginId = pluginId;
 
@@ -138,27 +142,48 @@ public class Metrics {
 		// Load the data
 		serverUUID = config.getString("serverUuid");
 		logFailedRequests = config.getBoolean("logFailedRequests", false);
+		enabled = config.getBoolean("enabled", true);
 		logSentData = config.getBoolean("logSentData", false);
 		logResponseStatusText = config.getBoolean("logResponseStatusText", false);
+		if (enabled) {
+			boolean found = false;
+			// Search for all other bStats Metrics classes to see if we are the first one
+			for (final Class<?> service : Bukkit.getServicesManager().getKnownServices())
+				try {
+					service.getField("B_STATS_VERSION"); // Our identifier :)
+					found = true; // We aren't the first
+					break;
+				} catch (final NoSuchFieldException ignored) {
+				}
+			// Register our service
+			Bukkit.getServicesManager().register(Metrics.class, this, plugin, ServicePriority.Normal);
+			if (!found)
+				// We are the first!
+				startSubmitting();
+		}
+	}
 
-		boolean found = false;
-		// Search for all other bStats Metrics classes to see if we are the first one
-		for (final Class<?> service : Bukkit.getServicesManager().getKnownServices())
-			try {
-				service.getField("B_STATS_VERSION"); // Our identifier :)
-				found = true; // We aren't the first
-				break;
-			} catch (final NoSuchFieldException ignored) {
-			}
-		// Register our service
-		Bukkit.getServicesManager().register(Metrics.class, this, plugin, ServicePriority.Normal);
-		if (!found)
-			// We are the first!
-			startSubmitting();
+	/**
+	 * Checks if bStats is enabled.
+	 *
+	 * 	 * ** IMPORTANT DEVELOPER NOTICE **
+	 * DO NOT MODIFY ANY PARTS OR SECTIONS OF THIS CLASS
+	 * THIS IS TOTALLY UNSUPPORTED AND MAY LEAD TO YOUR BSTATS
+	 * ACCOUNT GETTING SUSPENDED
+	 *
+	 * @return Whether bStats is enabled or not.
+	 */
+	public boolean isEnabled() {
+		return enabled;
 	}
 
 	/**
 	 * Starts the Scheduler which submits our data every 30 minutes.
+	 *
+	 * 	 * ** IMPORTANT DEVELOPER NOTICE **
+	 * DO NOT MODIFY ANY PARTS OR SECTIONS OF THIS CLASS
+	 * THIS IS TOTALLY UNSUPPORTED AND MAY LEAD TO YOUR BSTATS
+	 * ACCOUNT GETTING SUSPENDED
 	 */
 	private void startSubmitting() {
 		final Timer timer = new Timer(true); // We use a timer cause the Bukkit scheduler is affected by server lags
@@ -183,6 +208,11 @@ public class Metrics {
 	 * Gets the plugin specific data.
 	 * This method is called using Reflection.
 	 *
+	 * 	 * ** IMPORTANT DEVELOPER NOTICE **
+	 * DO NOT MODIFY ANY PARTS OR SECTIONS OF THIS CLASS
+	 * THIS IS TOTALLY UNSUPPORTED AND MAY LEAD TO YOUR BSTATS
+	 * ACCOUNT GETTING SUSPENDED
+	 *
 	 * @return The plugin specific data.
 	 */
 	public JsonObject getPluginData() {
@@ -202,6 +232,11 @@ public class Metrics {
 	/**
 	 * Gets the server specific data.
 	 *
+	 * 	 * ** IMPORTANT DEVELOPER NOTICE **
+	 * DO NOT MODIFY ANY PARTS OR SECTIONS OF THIS CLASS
+	 * THIS IS TOTALLY UNSUPPORTED AND MAY LEAD TO YOUR BSTATS
+	 * ACCOUNT GETTING SUSPENDED
+	 *
 	 * @return The server specific data.
 	 */
 	private JsonObject getServerData() {
@@ -215,10 +250,11 @@ public class Metrics {
 					? ((Collection<?>) onlinePlayersMethod.invoke(Bukkit.getServer())).size()
 					: ((Player[]) onlinePlayersMethod.invoke(Bukkit.getServer())).length;
 		} catch (final Exception e) {
-			playerAmount = Remain.getOnlinePlayers().size(); // Just use the new method if the Reflection failed
+			playerAmount = Bukkit.getOnlinePlayers().size(); // Just use the new method if the Reflection failed
 		}
 		final int onlineMode = Bukkit.getOnlineMode() ? 1 : 0;
 		final String bukkitVersion = Bukkit.getVersion();
+		final String bukkitName = Bukkit.getName();
 
 		// OS/Java specific data
 		final String javaVersion = System.getProperty("java.version");
@@ -234,6 +270,7 @@ public class Metrics {
 		data.addProperty("playerAmount", playerAmount);
 		data.addProperty("onlineMode", onlineMode);
 		data.addProperty("bukkitVersion", bukkitVersion);
+		data.addProperty("bukkitName", bukkitName);
 
 		data.addProperty("javaVersion", javaVersion);
 		data.addProperty("osName", osName);
@@ -246,6 +283,11 @@ public class Metrics {
 
 	/**
 	 * Collects the data and sends it afterwards.
+	 *
+	 * 	 * ** IMPORTANT DEVELOPER NOTICE **
+	 * DO NOT MODIFY ANY PARTS OR SECTIONS OF THIS CLASS
+	 * THIS IS TOTALLY UNSUPPORTED AND MAY LEAD TO YOUR BSTATS
+	 * ACCOUNT GETTING SUSPENDED
 	 */
 	private void submitData() {
 		final JsonObject data = getServerData();
@@ -275,7 +317,6 @@ public class Metrics {
 								// minecraft version 1.14+
 								if (logFailedRequests)
 									this.plugin.getLogger().log(Level.SEVERE, "Encountered unexpected exception ", e);
-								continue; // continue looping since we cannot do any other thing.
 							}
 					} catch (NullPointerException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
 					}
@@ -300,17 +341,22 @@ public class Metrics {
 	/**
 	 * Sends the data to the bStats server.
 	 *
+	 * 	 * ** IMPORTANT DEVELOPER NOTICE **
+	 * DO NOT MODIFY ANY PARTS OR SECTIONS OF THIS CLASS
+	 * THIS IS TOTALLY UNSUPPORTED AND MAY LEAD TO YOUR BSTATS
+	 * ACCOUNT GETTING SUSPENDED
+	 *
 	 * @param plugin Any plugin. It's just used to get a logger instance.
-	 * @param data   The data to send.
+	 * @param data The data to send.
 	 * @throws Exception If the request failed.
 	 */
-	private static void sendData(final Plugin plugin, final JsonObject data) throws Exception {
+	private static void sendData(Plugin plugin, JsonObject data) throws Exception {
 		if (data == null)
 			throw new IllegalArgumentException("Data cannot be null!");
 		if (Bukkit.isPrimaryThread())
 			throw new IllegalAccessException("This method must not be called from the main thread!");
 		if (logSentData)
-			plugin.getLogger().info("Sending data to bStats: " + data.toString());
+			plugin.getLogger().info("Sending data to bStats: " + data);
 		final HttpsURLConnection connection = (HttpsURLConnection) new URL(URL).openConnection();
 
 		// Compress the data to save bandwidth
@@ -327,25 +373,28 @@ public class Metrics {
 
 		// Send data
 		connection.setDoOutput(true);
-		final DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
-		outputStream.write(compressedData);
-		outputStream.flush();
-		outputStream.close();
-
-		final InputStream inputStream = connection.getInputStream();
-		final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+		try (DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream())) {
+			outputStream.write(compressedData);
+		}
 
 		final StringBuilder builder = new StringBuilder();
-		String line;
-		while ((line = bufferedReader.readLine()) != null)
-			builder.append(line);
-		bufferedReader.close();
+		try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+			String line;
+			while ((line = bufferedReader.readLine()) != null)
+				builder.append(line);
+		}
+
 		if (logResponseStatusText)
-			plugin.getLogger().info("Sent data to bStats and received response: " + builder.toString());
+			plugin.getLogger().info("Sent data to bStats and received response: " + builder);
 	}
 
 	/**
 	 * Gzips the given String.
+	 *
+	 * 	 * ** IMPORTANT DEVELOPER NOTICE **
+	 * DO NOT MODIFY ANY PARTS OR SECTIONS OF THIS CLASS
+	 * THIS IS TOTALLY UNSUPPORTED AND MAY LEAD TO YOUR BSTATS
+	 * ACCOUNT GETTING SUSPENDED
 	 *
 	 * @param str The string to gzip.
 	 * @return The gzipped String.
@@ -355,9 +404,9 @@ public class Metrics {
 		if (str == null)
 			return null;
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		final GZIPOutputStream gzip = new GZIPOutputStream(outputStream);
-		gzip.write(str.getBytes(StandardCharsets.UTF_8));
-		gzip.close();
+		try (GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
+			gzip.write(str.getBytes(StandardCharsets.UTF_8));
+		}
 		return outputStream.toByteArray();
 	}
 

@@ -277,13 +277,12 @@ public class YamlConfig implements ConfigSerializable {
 				YamlConfiguration defaultsConfig = null;
 
 				// We will have the default file to return to
-				// This enables auto config update
 				if (from != null) {
 					final InputStream is = FileUtil.getInternalResource(from);
 					Valid.checkNotNull(is, "Inbuilt resource not found: " + from);
 
 					defaultsConfig = Remain.loadConfiguration(is);
-					file = FileUtil.extract(false, from, to, line -> replaceVariables(line, FileUtil.getFileName(to)));
+					file = FileUtil.extract(from, to, line -> replaceVariables(line, FileUtil.getFileName(to)));
 
 				} else
 					file = FileUtil.getOrMakeFile(to);
@@ -345,16 +344,16 @@ public class YamlConfig implements ConfigSerializable {
 
 	/**
 	 * Replace variables in the destination file before it is copied. Variables
-	 * include {plugin.name} (lowercase), {file} and {file.lowercase} as well as
+	 * include {plugin_name} (lowercase), {file} and {file_lowercase} as well as
 	 * custom variables from {@link #replaceVariables(String)} method
 	 *
 	 * @param line
 	 * @param fileName
 	 */
 	private String replaceVariables(String line, final String fileName) {
-		line = line.replace("{plugin.name}", SimplePlugin.getNamed().toLowerCase());
+		line = line.replace("{plugin_name}", SimplePlugin.getNamed().toLowerCase());
 		line = line.replace("{file}", fileName);
-		line = line.replace("{file.lowercase}", fileName);
+		line = line.replace("{file_lowercase}", fileName);
 
 		return line;
 	}
@@ -1102,8 +1101,15 @@ public class YamlConfig implements ConfigSerializable {
 	 * @return the found list, or an empty list
 	 */
 	protected final List<String> getStringList(final String path) {
-		final List<Object> list = getList(path);
+		final Object raw = getObject(path);
 
+		if (raw instanceof String) {
+			final String output = (String) raw;
+
+			return "'[]'".equals(output) || "[]".equals(output) ? new ArrayList<>() : Arrays.asList(output);
+		}
+
+		final List<Object> list = getList(path);
 		return list != null ? fixYamlBooleansInList(list) : new ArrayList<>();
 	}
 
@@ -1143,14 +1149,14 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param path
 	 * @return
 	 */
-	protected final StrictList<Material> getMaterialList(final String path) {
-		final StrictList<Material> list = new StrictList<>();
+	protected final StrictList<CompMaterial> getMaterialList(final String path) {
+		final StrictList<CompMaterial> list = new StrictList<>();
 
 		for (final String raw : getStringList(path)) {
 			final CompMaterial mat = CompMaterial.fromStringCompat(raw);
 
 			if (mat != null)
-				list.add(mat.getMaterial());
+				list.add(mat);
 		}
 
 		return list;

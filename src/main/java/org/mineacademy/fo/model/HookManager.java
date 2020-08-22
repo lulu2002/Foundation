@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
@@ -56,6 +57,7 @@ import com.comphenix.protocol.events.PacketListener;
 import com.earth2me.essentials.Essentials;
 import com.earth2me.essentials.IUser;
 import com.earth2me.essentials.User;
+import com.earth2me.essentials.UserMap;
 import com.gmail.nossr50.datatypes.chat.ChatMode;
 import com.gmail.nossr50.datatypes.party.Party;
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
@@ -261,6 +263,22 @@ public final class HookManager {
 
 			}
 		}
+	}
+
+	/**
+	 * Removes packet listeners from ProtocolLib for a plugin
+	 *
+	 * @param plugin
+	 *
+	 * @deprecated internal use only, please do not call
+	 */
+	@Deprecated
+	public static void unloadDependencies(final Plugin plugin) {
+		if (isProtocolLibLoaded())
+			protocolLibHook.removePacketListeners(plugin);
+
+		if (isPlaceholderAPILoaded())
+			placeholderAPIHook.unregister();
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -634,7 +652,24 @@ public final class HookManager {
 		final String essNick = isEssentialsXLoaded() ? essentialsxHook.getNick(player.getName()) : null;
 		final String cmiNick = isCMILoaded() ? CMIHook.getNick(player) : null;
 
-		return nickyNick != null ? nickyNick : cmiNick != null ? cmiNick : essNick != null ? essNick : sender.getName();
+		final String nick = nickyNick != null ? nickyNick : cmiNick != null ? cmiNick : essNick != null ? essNick : sender.getName();
+
+		return Common.stripColors(nick.replace(ChatColor.COLOR_CHAR + "x", ""));
+	}
+
+	/**
+	 * Attempts to reverse lookup player name from his nick
+	 *
+	 * Only Essentials and CMI are supported
+	 *
+	 * @param nick
+	 * @return
+	 */
+	public static String getNameFromNick(@NonNull String nick) {
+		final String essNick = isEssentialsXLoaded() ? essentialsxHook.getNameFromNick(nick) : nick;
+		final String cmiNick = isCMILoaded() ? CMIHook.getNameFromNick(nick) : nick;
+
+		return !essNick.equals(nick) && !"".equals(essNick) ? essNick : !cmiNick.equals(nick) && !"".equals(cmiNick) ? cmiNick : nick;
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -823,24 +858,6 @@ public final class HookManager {
 	}
 
 	/**
-	 * Check to see if this user has the given permission node <br>
-	 * Note: Due to vault API Limitations, this will return false if the node is
-	 * false or undefined. Some permissions plugins don't load superperms into their
-	 * dataset, so this should not be relied on.
-	 *
-	 * @param online The player to check
-	 * @param perm   Permission node
-	 * @return true if permission is set and not denied
-	 * @deprecated use {@link PlayerUtil#hasPerm(org.bukkit.permissions.Permissible, String)}
-	 */
-	@Deprecated
-	public static boolean hasPermissionVault(final Player online, final String perm) {
-		return online != null && online.getUniqueId() != null
-				&& isVaultLoaded()
-				&& vaultHook.hasPerm(online.getWorld().getName(), online.getName(), perm);
-	}
-
-	/**
 	 * Checks if the given UUID has permission (uses Vault)
 	 *
 	 * @param id
@@ -880,7 +897,7 @@ public final class HookManager {
 			return has;
 		}
 
-		return player != null ? player.isOp() : false;
+		return player != null && player.isOp();
 	}
 
 	/**
@@ -1073,19 +1090,6 @@ public final class HookManager {
 		Valid.checkBoolean(isProtocolLibLoaded(), "Cannot add packet listeners if ProtocolLib isn't installed");
 
 		protocolLibHook.addPacketListener(adapter);
-	}
-
-	/**
-	 * Removes packet listeners from ProtocolLib for a plugin
-	 *
-	 * @param plugin
-	 * @deprecated no need to call this manually as we call this in {@link SimplePlugin} when
-	 * you restart or reload your plugin automatically
-	 */
-	@Deprecated
-	public static void removePacketListeners(final Plugin plugin) {
-		if (isProtocolLibLoaded())
-			protocolLibHook.removePacketListeners(plugin);
 	}
 
 	/**
@@ -1419,6 +1423,20 @@ class EssentialsHook {
 		return "".equals(essNick) ? null : essNick;
 	}
 
+	String getNameFromNick(final String nick) {
+		final UserMap users = ess.getUserMap();
+
+		if (users != null)
+			for (final UUID userId : users.getAllUniqueUsers()) {
+				final User user = users.getUser(userId);
+
+				if (user != null && user.getNickname() != null && Valid.colorlessEquals(user.getNickname().toLowerCase(), nick.toLowerCase()))
+					return Common.getOrDefault(user.getName(), nick);
+			}
+
+		return nick;
+	}
+
 	void setBackLocation(final String player, final Location loc) {
 		final User user = getUser(player);
 
@@ -1734,13 +1752,28 @@ class PlaceholderAPIHook {
 
 	private final Set<PAPIPlaceholder> placeholders = new HashSet<>();
 
+	private static volatile VariablesInjector injector;
+
 	PlaceholderAPIHook() {
+		unregister();
+
 		try {
-			new VariablesInjector().register();
+			injector = new VariablesInjector();
+			injector.register();
 
 		} catch (final Throwable throwable) {
 			Common.error(throwable, "Failed to inject our variables into PlaceholderAPI!");
 		}
+	}
+
+	final void unregister() {
+		if (injector != null)
+			try {
+				injector.unregister();
+
+			} catch (final Throwable t) {
+				// Silence, probably plugin got removed in the meantime
+			}
 	}
 
 	final void addPlaceholder(final PAPIPlaceholder placeholder) {
@@ -1961,8 +1994,8 @@ class MVdWPlaceholderHook {
 			final Class<?> placeholderAPI = ReflectionUtil.lookupClass("be.maximvdw.placeholderapi.PlaceholderAPI");
 			Valid.checkNotNull(placeholderAPI, "Failed to look up class be.maximvdw.placeholderapi.PlaceholderAPI");
 
-			final Method replacePlaceholders = ReflectionUtil.getMethod(placeholderAPI, "replacePlaceholders", Player.class, String.class);
-			Valid.checkNotNull(placeholderAPI, "Failed to look up method PlaceholderAPI#replacePlaceholders(Player, String)");
+			final Method replacePlaceholders = ReflectionUtil.getMethod(placeholderAPI, "replacePlaceholders", OfflinePlayer.class, String.class);
+			Valid.checkNotNull(replacePlaceholders, "Failed to look up method PlaceholderAPI#replacePlaceholders(Player, String)");
 
 			final String replaced = ReflectionUtil.invoke(replacePlaceholders, null, player, message);
 
@@ -2509,6 +2542,14 @@ class CMIHook {
 		final String nick = user == null ? null : user.getNickName();
 
 		return nick == null || "".equals(nick) ? null : nick;
+	}
+
+	String getNameFromNick(String nick) {
+		for (final CMIUser user : CMI.getInstance().getPlayerManager().getAllUsers().values())
+			if (user != null && user.getNickName() != null && Valid.colorlessEquals(user.getNickName().toLowerCase(), nick.toLowerCase()))
+				return Common.getOrDefault(user.getName(), nick);
+
+		return nick;
 	}
 
 	private CMIUser getUser(final Player player) {

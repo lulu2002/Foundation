@@ -9,18 +9,22 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.RandomUtil;
+import org.mineacademy.fo.ReflectionUtil;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.StrictList;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.settings.SimpleLocalization;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * A command group contains a set of different subcommands
  * associated with the main command, for example: /arena join, /arena leave etc.
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class SimpleCommandGroup {
 
 	/**
@@ -33,12 +37,6 @@ public abstract class SimpleCommandGroup {
 	 * The registered main command, if any
 	 */
 	protected SimpleCommand mainCommand;
-
-	/**
-	 * Create a new command group, only allow extending classes
-	 */
-	protected SimpleCommandGroup() {
-	}
 
 	// ----------------------------------------------------------------------
 	// Main functions
@@ -94,6 +92,18 @@ public abstract class SimpleCommandGroup {
 	}
 
 	/**
+	 * Scans all of your plugin's classes and registers commands extending the given class
+	 * automatically.
+	 *
+	 * @param <T>
+	 * @param ofClass
+	 */
+	protected final <T extends SimpleSubCommand> void autoRegisterSubcommands(Class<T> ofClass) {
+		for (final Class<? extends SimpleSubCommand> clazz : ReflectionUtil.getClasses(SimplePlugin.getInstance(), ofClass))
+			registerSubcommand(ReflectionUtil.instantiate(clazz));
+	}
+
+	/**
 	 * Extending method to register subcommands, call
 	 * {@link #registerSubcommand(SimpleSubCommand)} and {@link #registerHelpLine(String...)}
 	 * there for your command group.
@@ -137,6 +147,15 @@ public abstract class SimpleCommandGroup {
 		Valid.checkBoolean(isRegistered(), "Main command has not yet been set!");
 
 		return mainCommand.getMainLabel();
+	}
+
+	/**
+	 * Return aliases for the main command
+	 *
+	 * @return
+	 */
+	public final List<String> getAliases() {
+		return mainCommand.getAliases();
 	}
 
 	// ----------------------------------------------------------------------
@@ -326,6 +345,9 @@ public abstract class SimpleCommandGroup {
 		protected void tellSubcommandsHelp() {
 			tell(getHelpHeader());
 
+			if (subcommands.isEmpty())
+				return;
+
 			Integer shown = 0;
 
 			for (final SimpleSubCommand subcommand : subcommands)
@@ -344,7 +366,7 @@ public abstract class SimpleCommandGroup {
 				}
 
 			if (shown == 0)
-				tellNoPrefix(SimpleLocalization.Commands.HELP_HEADER_NO_SUBCOMMANDS);
+				tellNoPrefix(SimpleLocalization.Commands.HEADER_NO_SUBCOMMANDS);
 		}
 
 		/**

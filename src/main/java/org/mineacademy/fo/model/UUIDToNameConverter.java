@@ -1,22 +1,21 @@
 package org.mineacademy.fo.model;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import lombok.RequiredArgsConstructor;
+
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-
-import lombok.RequiredArgsConstructor;
-
 /**
  * Utility class for connecting to Mojang servers to get the players name from a
  * given UUID
  */
 @RequiredArgsConstructor
-public class UUIDtoNameConverter implements Callable<String> {
+public class UUIDToNameConverter implements Callable<String> {
 
 	/**
 	 * The URL to connect to

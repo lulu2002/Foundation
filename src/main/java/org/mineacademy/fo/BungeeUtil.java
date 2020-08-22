@@ -16,7 +16,6 @@ import org.mineacademy.fo.settings.SimpleSettings;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import com.google.common.primitives.Primitives;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -126,7 +125,7 @@ public final class BungeeUtil {
 		final ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
 		for (final Object data : datas) {
-			Valid.checkNotNull(data, "Bungee object in array is null! Array: " + Common.join(datas, ", ", (Stringer<Object>) t -> t == null ? "null" : t.toString() + "(" + t.getClass().getSimpleName() + ")"));
+			Valid.checkNotNull(data, "Bungee object in array is null! Array: " + Common.join(datas, ", ", t -> t == null ? "null" : t.toString() + "(" + t.getClass().getSimpleName() + ")"));
 
 			if (data instanceof Integer)
 				out.writeInt((Integer) data);
@@ -194,7 +193,6 @@ public final class BungeeUtil {
 
 		final Class<?>[] content = action.getContent();
 		Valid.checkBoolean(actionHead < content.length, "Head out of bounds! Max data size for " + action.name() + " is " + content.length + "! (Set Debug to [bungee] in settings.yml and report this issue along with the new console messages");
-		Valid.checkBoolean(Primitives.wrap(content[actionHead]) == typeOf, "Unexpected data type " + typeOf + ", expected " + content[actionHead] + " for " + action.name());
 
 		actionHead++;
 	}
