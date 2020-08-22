@@ -1,8 +1,8 @@
 package org.mineacademy.fo.collection;
 
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.mineacademy.fo.PlayerUtil;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -17,7 +17,7 @@ public class PlayerCollection extends HashSet<String> {
     }
 
     public boolean add(String playerName) {
-        Player player = PlayerUtil.getNickedNonVanishedPlayer(playerName);
+        Player player = Bukkit.getPlayer(playerName);
 
         if (player != null)
             return add(player);
@@ -30,7 +30,7 @@ public class PlayerCollection extends HashSet<String> {
     }
 
     public boolean remove(String nameOrUuid) {
-        Player player = PlayerUtil.getNickedNonVanishedPlayer(nameOrUuid);
+        Player player = Bukkit.getPlayer(nameOrUuid);
 
         if (player != null)
             return remove(player);
@@ -44,7 +44,7 @@ public class PlayerCollection extends HashSet<String> {
     }
 
     public boolean contains(String nameOrUuid) {
-        Player player = PlayerUtil.getNickedNonVanishedPlayer(nameOrUuid);
+        Player player = Bukkit.getPlayer(nameOrUuid);
 
         if (player != null)
             return contains(player);
