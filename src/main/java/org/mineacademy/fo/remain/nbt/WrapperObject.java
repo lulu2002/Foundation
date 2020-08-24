@@ -9,7 +9,7 @@ import org.mineacademy.fo.Common;
  *
  * @author tr7zw
  */
-enum WrapperObject {
+public enum WrapperObject {
 	NMS_NBTTAGCOMPOUND(null, null, WrapperClass.NMS_NBTTAGCOMPOUND.getClazz()),
 	NMS_BLOCKPOSITION(null, null, WrapperClass.NMS_BLOCKPOSITION.getClazz(), int.class, int.class, int.class),
 	NMS_COMPOUNDFROMITEM(WrapperVersion.MC1_11_R1, null, WrapperClass.NMS_ITEMSTACK.getClazz(), WrapperClass.NMS_NBTTAGCOMPOUND.getClazz()),;

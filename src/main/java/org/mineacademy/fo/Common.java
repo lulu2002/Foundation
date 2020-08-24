@@ -172,6 +172,7 @@ public final class Common {
 		broadcast(message.replace("{player}", playerReplacement));
 	}
 
+
 	/**
 	 * Broadcast the message to everyone and logs it
 	 *
@@ -185,6 +186,10 @@ public final class Common {
 
 				log(message);
 			}
+	}
+
+	public static void broadcast(final List<String> messages) {
+		broadcast(messages.toArray(new String[0]));
 	}
 
 	/**
