@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
@@ -241,32 +242,6 @@ public final class PlayerUtil {
 	// ------------------------------------------------------------------------------------------------------------
 	// Permissions
 	// ------------------------------------------------------------------------------------------------------------
-
-	/**
-	 * Checks if the given UUID has a certain permission, returns false if failed
-	 *
-	 * @param id
-	 * @param permission
-	 * @return
-	 * @deprecated returns false if failed for whatever reason
-	 */
-	@Deprecated
-	public static boolean hasPermUnsafe(final UUID id, final String permission) {
-		return HookManager.hasPermissionUnsafe(id, permission.replace("{plugin_name}", SimplePlugin.getNamed().toLowerCase()));
-	}
-
-	/**
-	 * Checks if the given name has a certain permission, returns false if failed
-	 *
-	 * @param playerName
-	 * @param permission
-	 * @return
-	 * @deprecated returns false if failed for whatever reason, also can connect to the internet for UUID lookup on the main thread
-	 */
-	@Deprecated
-	public static boolean hasPermUnsafe(final String playerName, final String permission) {
-		return HookManager.hasPermissionUnsafe(playerName, permission.replace("{plugin_name}", SimplePlugin.getNamed().toLowerCase()));
-	}
 
 	/**
 	 * Return if the given sender has a certain permission
@@ -505,7 +480,7 @@ public final class PlayerUtil {
 		int delta = Integer.MAX_VALUE;
 
 		for (final Player player : Remain.getOnlinePlayers()) {
-			final String nick = HookManager.getNick(player);
+			final String nick = HookManager.getNickColorless(player);
 
 			if (nick.toLowerCase().startsWith(name)) {
 				final int curDelta = Math.abs(nick.length() - name.length());
@@ -521,6 +496,20 @@ public final class PlayerUtil {
 		}
 
 		return found;
+	}
+
+	/**
+	 * Performs an async player lookup then runs the action in a sync runnable
+	 *
+	 * @param name
+	 * @param syncAction
+	 */
+	public static void lookupOfflinePlayerAsync(String name, Consumer<OfflinePlayer> syncAction) {
+		Common.runAsync(() -> {
+			final OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(name);
+
+			Common.runLater(() -> syncAction.accept(offlinePlayer));
+		});
 	}
 
 	// ----------------------------------------------------------------------------------------------------

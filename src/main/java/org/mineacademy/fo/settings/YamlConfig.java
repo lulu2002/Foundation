@@ -83,6 +83,12 @@ public class YamlConfig implements ConfigSerializable {
 	private static final StrictMap<ConfigInstance, List<YamlConfig>> loadedFiles = new StrictMap<>();
 
 	/**
+	 * Experimental flag to save comments and match local yaml file exactly with the one
+	 * in the jar
+	 */
+	public static boolean SAVE_COMMENTS = false;
+
+	/**
 	 * The config file instance this config belongs to.
 	 */
 	private ConfigInstance instance;
@@ -109,9 +115,9 @@ public class YamlConfig implements ConfigSerializable {
 
 	/**
 	 * Internal flag that can be toggled to disable working with default files.
+	 *
 	 */
-	@Setter
-	private boolean usingDefaults = true;
+	private boolean useDefaults = true;
 
 	/**
 	 * Internal flag to indicate whether you are calling this from
@@ -127,7 +133,9 @@ public class YamlConfig implements ConfigSerializable {
 	protected YamlConfig() {
 	}
 
-	/** Clear the list of loaded files */
+	/**
+	 * Clear the list of loaded files
+	 */
 	public static final void clearLoadedFiles() {
 		loadedFiles.clear();
 	}
@@ -176,6 +184,21 @@ public class YamlConfig implements ConfigSerializable {
 		loadedFiles.put(instance, existing);
 	}
 
+	/**
+	 * Return a copy of all loaded config files from the server/plugin reload
+	 *
+	 * @return
+	 */
+	public static List<YamlConfig> getLoadedFiles() {
+		final List<YamlConfig> copyOfLoadedFiles = new ArrayList<>();
+
+		for (final List<YamlConfig> loadedFilesList : loadedFiles.values())
+			for (final YamlConfig loadedFile : loadedFilesList)
+				copyOfLoadedFiles.add(loadedFile);
+
+		return Collections.unmodifiableList(copyOfLoadedFiles);
+	}
+
 	// ------------------------------------------------------------------------------------------------------------
 	// Main loading methods.
 	// ------------------------------------------------------------------------------------------------------------
@@ -216,7 +239,7 @@ public class YamlConfig implements ConfigSerializable {
 
 				Valid.checkBoolean(file != null && file.exists(), "Failed to load " + localePath + " from " + file);
 
-				instance = new ConfigInstance(file, config, defaultsConfig);
+				instance = new ConfigInstance(localePath, file, config, defaultsConfig);
 				addConfig(instance, this);
 			}
 
@@ -316,7 +339,7 @@ public class YamlConfig implements ConfigSerializable {
 	protected void saveIfNecessary() {
 
 		// We want to save the file if the save is pending or if there are no defaults
-		if (save || getDefaults() == null) {
+		if (save || SAVE_COMMENTS || getDefaults() == null) {
 			save();
 
 			save = false;
@@ -358,7 +381,9 @@ public class YamlConfig implements ConfigSerializable {
 		return line;
 	}
 
-	/** Called after the settings file has been loaded. */
+	/**
+	 * Called after the settings file has been loaded.
+	 */
 	protected void onLoadFinish() {
 	}
 
@@ -409,17 +434,23 @@ public class YamlConfig implements ConfigSerializable {
 		return FileUtil.getFileName(instance.getFile());
 	}
 
+	/**
+	 * Return the file corresponding with these settings
+	 *
+	 * @return
+	 */
+	public final File getFile() {
+		return instance.getFile();
+	}
+
 	// ------------------------------------------------------------------------------------
 	// Main manipulation methods
 	// ------------------------------------------------------------------------------------
 
 	/** Saves the content of this config into the file */
 	public final void save() {
-
 		if (loading) {
-			// If we are loading only set the flag to save to save it later together
-			if (!save)
-				save = true;
+			save = true;
 
 			return;
 		}
@@ -429,18 +460,35 @@ public class YamlConfig implements ConfigSerializable {
 		onSave();
 
 		// Automatically serialize on save
-		for (final Entry<String, Object> entry : serialize().entrySet())
-			setNoSave(entry.getKey(), entry.getValue());
+		final SerializedMap serialized = serialize();
+
+		// Make the map from serialize() override sections it is placed into
+		if (serialized != null) {
+			if (pathPrefix == null || pathPrefix.isEmpty()) {
+				if (serialized.isEmpty())
+					for (final String key : getConfig().getKeys(false))
+						getConfig().set(key, null);
+				else
+					for (final Entry<String, Object> entry : serialized.entrySet())
+						setNoSave(entry.getKey(), entry.getValue());
+
+			} else
+				setNoSave("", serialized.isEmpty() ? null : serialized);
+		}
 
 		instance.save(header != null ? header : file.equals(FoConstants.File.DATA) ? FoConstants.Header.DATA_FILE : FoConstants.Header.UPDATED_FILE);
 		rewriteVariablesIn(instance.getFile());
 	}
 
-	/** Called automatically when the file is saved */
+	/**
+	 * Called automatically when the file is saved
+	 */
 	protected void onSave() {
 	}
 
-	/** Removes the file on the disk */
+	/**
+	 * Removes the file on the disk
+	 */
 	public final void delete() {
 		instance.delete();
 	}
@@ -469,7 +517,7 @@ public class YamlConfig implements ConfigSerializable {
 	 */
 	@Override
 	public SerializedMap serialize() {
-		return new SerializedMap();
+		return null;
 	}
 
 	// ------------------------------------------------------------------------------------
@@ -507,7 +555,7 @@ public class YamlConfig implements ConfigSerializable {
 		Object raw = getConfig().get(path);
 
 		// Ensure that the default config actually did have the value, if used
-		if (getDefaults() != null)
+		if (useDefaults && getDefaults() != null)
 			Valid.checkNotNull(raw, "Failed to insert value at '" + path + "' from default config");
 
 		// Ensure the value is of the given type
@@ -1055,8 +1103,11 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param <T>
 	 * @param path
 	 * @param type
+	 *
 	 * @return
+	 * @deprecated this code is specifically targeted for our plugins only
 	 */
+	@Deprecated
 	protected final <T extends Enum<T>> List<T> getCompatibleEnumList(final String path, final Class<T> type) {
 		final StrictList<T> list = new StrictList<>();
 		final List<String> enumNames = getStringList(path);
@@ -1201,7 +1252,7 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param valueParameter
 	 * @return
 	 */
-	public final <Key, Value> LinkedHashMap<Key, Value> getMap(@NonNull String path, final Class<Key> keyType, final Class<Value> valueType) {
+	protected final <Key, Value> LinkedHashMap<Key, Value> getMap(@NonNull String path, final Class<Key> keyType, final Class<Value> valueType) {
 		// The map we are creating, preserve order
 		final LinkedHashMap<Key, Value> map = new LinkedHashMap<>();
 
@@ -1235,45 +1286,6 @@ public class YamlConfig implements ConfigSerializable {
 			}
 
 		return map;
-	}
-
-	/**
-	 * Get a list of enumerations
-	 *
-	 * @param <E>
-	 * @param path
-	 * @param listType
-	 * @return
-	 * @deprecated platform-specific code
-	 */
-	@Deprecated
-	protected final <E extends Enum<E>> StrictList<E> getEnumList_OLD(final String path, final Class<E> listType) {
-		final StrictList<E> list = new StrictList<>();
-
-		for (final String item : getStringList(path))
-			if (item.equals("*"))
-				return new StrictList<>();
-			else if (listType == Material.class) {
-				final Material mat = CompMaterial.fromStringCompat(item).getMaterial();
-
-				if (mat != null)
-					list.add((E) mat);
-
-			} else if (listType == CompMaterial.class) {
-				final CompMaterial mat = CompMaterial.fromStringCompat(item);
-
-				if (mat != null)
-					list.add((E) mat);
-
-			} else {
-				// Compatibility workaround because we have DROWNED in our default config but it does not exist in old MC
-				if (listType == SpawnReason.class && "DROWNED".equals(item) && MinecraftVersion.olderThan(V.v1_13))
-					continue;
-
-				list.add(ReflectionUtil.lookupEnum(listType, item));
-			}
-
-		return list;
 	}
 
 	// ------------------------------------------------------------------------------------
@@ -1317,6 +1329,10 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param value
 	 */
 	protected final void setNoSave(String path, Object value) {
+
+		if (loading)
+			Valid.checkBoolean(serialize() == null, "Cannot save data using setNoSave during onLoadFinish when you use serialize() because SerializeMap would override this anyways!");
+
 		path = formPathPrefix(path);
 		value = SerializeUtil.serialize(value);
 
@@ -1500,8 +1516,8 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param pathAbs
 	 * @param type
 	 */
-	public void addDefaultIfNotExist(final String pathAbs, final Class<?> type) {
-		if (usingDefaults && getDefaults() != null && !isSetAbsolute(pathAbs)) {
+	protected void addDefaultIfNotExist(final String pathAbs, final Class<?> type) {
+		if (useDefaults && getDefaults() != null && !isSetAbsolute(pathAbs)) {
 			final Object object = getDefaults().get(pathAbs);
 
 			Valid.checkNotNull(object, "Default '" + getFileName() + "' lacks " + Common.article(type.getSimpleName()) + " at '" + pathAbs + "'");
@@ -1524,7 +1540,7 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param path
 	 */
 	private void forceSingleDefaults(final String path) {
-		if (getDefaults() != null)
+		if (useDefaults && getDefaults() != null)
 			throw new FoException("Cannot use get method with default when getting " + formPathPrefix(path) + " and using a default config for " + getFileName());
 	}
 
@@ -1657,13 +1673,19 @@ public class YamlConfig implements ConfigSerializable {
 		// Dead class
 	}
 
-	/** Represents a list of locations in the config */
+	/**
+	 * Represents a list of locations in the config
+	 */
 	public static final class LocationList implements Iterable<Location> {
 
-		/** The settings where we have these points */
+		/**
+		 * The settings where we have these points
+		 */
 		private final YamlConfig settings;
 
-		/** The list of locations */
+		/**
+		 * The list of locations
+		 */
 		private final List<Location> points;
 
 		/**
@@ -1824,7 +1846,9 @@ public class YamlConfig implements ConfigSerializable {
 		}
 	}
 
-	/** A simple helper class for storing title messages */
+	/**
+	 * A simple helper class for storing title messages
+	 */
 	public final class TitleHelper {
 		private final String title, subtitle;
 
@@ -1837,12 +1861,16 @@ public class YamlConfig implements ConfigSerializable {
 			this.subtitle = Common.colorize(subtitle);
 		}
 
-		/** Duration: 4 seconds + 2 second fade in */
+		/**
+		 * Duration: 4 seconds + 2 second fade in
+		 */
 		public void playLong(final Player player, final Function<String, String> replacer) {
 			play(player, 5, 4 * 20, 15, replacer);
 		}
 
-		/** Duration: 2 seconds + 1 second fade in */
+		/**
+		 * Duration: 2 seconds + 1 second fade in
+		 */
 		public void playShort(final Player player, final Function<String, String> replacer) {
 			play(player, 3, 2 * 20, 5, replacer);
 		}
@@ -1859,17 +1887,28 @@ public class YamlConfig implements ConfigSerializable {
  * <p>
  * This represents the access to that file.
  */
-@Getter(value = AccessLevel.PROTECTED)
+//@Getter(value = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 class ConfigInstance {
 
-	/** The file this configuration belongs to. */
+	/**
+	 * The path where the default config lays
+	 */
+	private final String defaultsPath;
+
+	/**
+	 * The file this configuration belongs to.
+	 */
 	private final File file;
 
-	/** Our config we are manipulating. */
+	/**
+	 * Our config we are manipulating.
+	 */
 	private final YamlConfiguration config;
 
-	/** The default config we reach out to fill values from. */
+	/**
+	 * The default config we reach out to fill values from.
+	 */
 	private final YamlConfiguration defaultConfig;
 
 	/**
@@ -1885,22 +1924,35 @@ class ConfigInstance {
 		}
 
 		try {
-			config.save(file);
+			if (defaultsPath != null && YamlConfig.SAVE_COMMENTS)
+				ConfigUpdater.update(defaultsPath, file);
+
+			else {
+				config.save(file);
+
+				// Workaround: When saving maps, the config somehow stops
+				// recognizing them as sections so we must reload in order
+				// for all maps to be turned back into MemorySection to be reachable by get()
+				reload();
+			}
 
 		} catch (final NullPointerException ex) {
 			if (ex.getMessage() != null && ex.getMessage().contains("Nodes must be provided")) {
-				final Map<String, Object> dump = config.getValues(true);
+				final Map<String, Object> dump = config.getValues(false);
 
 				FileUtil.write("error_yaml.log", Common.configLine(), "Got null nodes error when saving " + file, "Please report this to plugin developers!", Common.configLine(), "Raw dump:", dump.toString());
 
-				// Split in case of an error there as well, at least we get the top part
-				FileUtil.write("error_yaml.log", "", "Serialized: ", SerializeUtil.serialize(dump).toString());
+				Common.log("Got 'Nodes must be provided error', scanning for null key-value pairs:");
 
+				for (final Map.Entry<String, Object> entry : dump.entrySet())
+					Common.log(entry.getKey() + ": " + entry.getValue());
+
+				Common.log("Enumeration ended. Please send this log to: " + SimplePlugin.getInstance().getDescription().getAuthors() + " on SpigotMC!");
 				Common.error(ex, "Failed to save " + file + ", please see error_yaml.log in your plugin folder and report this to plugin developers!");
 			} else
 				throw ex;
 
-		} catch (final IOException e) {
+		} catch (final IOException | InvalidConfigurationException e) {
 			Common.error(e, "Failed to save " + file.getName());
 		}
 	}
@@ -1910,15 +1962,33 @@ class ConfigInstance {
 	 *
 	 * @throws Exception
 	 */
-	protected void reload() throws Exception {
+	protected synchronized void reload() throws IOException, InvalidConfigurationException {
 		config.load(file);
 	}
 
-	/** Removes the config file from the disk */
-	protected void delete() {
+	/**
+	 * Removes the config file from the disk
+	 */
+	protected synchronized void delete() {
 		YamlConfig.unregisterLoadedFile(file);
 
 		file.delete();
+	}
+
+	public synchronized File getFile() {
+		return file;
+	}
+
+	public synchronized YamlConfiguration getConfig() {
+		return config;
+	}
+
+	public synchronized YamlConfiguration getDefaultConfig() {
+		return defaultConfig;
+	}
+
+	public synchronized String getDefaultsPath() {
+		return defaultsPath;
 	}
 
 	/**
@@ -1927,7 +1997,7 @@ class ConfigInstance {
 	 * @param file
 	 * @return
 	 */
-	public boolean equals(final File file) {
+	public synchronized boolean equals(final File file) {
 		return equals((Object) file);
 	}
 
@@ -1937,7 +2007,7 @@ class ConfigInstance {
 	 * @param fileName
 	 * @return
 	 */
-	public boolean equals(final String fileName) {
+	public synchronized boolean equals(final String fileName) {
 		return equals((Object) fileName);
 	}
 
@@ -1949,7 +2019,7 @@ class ConfigInstance {
 	 * @return
 	 */
 	@Override
-	public boolean equals(final Object obj) {
+	public synchronized boolean equals(final Object obj) {
 		return obj instanceof ConfigInstance ? ((ConfigInstance) obj).file.getName().equals(file.getName()) : obj instanceof File ? ((File) obj).getName().equals(file.getName()) : obj instanceof String ? ((String) obj).equals(file.getName()) : false;
 	}
 }

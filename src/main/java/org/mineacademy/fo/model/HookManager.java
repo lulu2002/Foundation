@@ -54,6 +54,7 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.server.TemporaryPlayer;
 import com.earth2me.essentials.Essentials;
 import com.earth2me.essentials.IUser;
 import com.earth2me.essentials.User;
@@ -636,7 +637,29 @@ public final class HookManager {
 	 * @param sender
 	 * @return
 	 */
-	public static String getNick(final CommandSender sender) {
+	public static String getNickColored(final CommandSender sender) {
+		return getNick(sender, false);
+	}
+
+	/**
+	 * Returns the nick for the given recipient from Essentials or Nicky, or if it's a console, their name
+	 *
+	 * @param sender
+	 * @return
+	 */
+	public static String getNickColorless(final CommandSender sender) {
+		return getNick(sender, true);
+	}
+
+	/**
+	 * Returns the nick for the given recipient from Essentials or Nicky, or if it's a console, their name
+	 *
+	 * @param sender
+	 * @param stripColors
+	 *
+	 * @return
+	 */
+	private static String getNick(final CommandSender sender, boolean stripColors) {
 		final Player player = sender instanceof Player ? (Player) sender : null;
 
 		if (player != null && isNPC(player)) {
@@ -654,7 +677,7 @@ public final class HookManager {
 
 		final String nick = nickyNick != null ? nickyNick : cmiNick != null ? cmiNick : essNick != null ? essNick : sender.getName();
 
-		return Common.stripColors(nick.replace(ChatColor.COLOR_CHAR + "x", ""));
+		return stripColors ? Common.stripColors(Common.revertColorizing(nick).replace(ChatColor.COLOR_CHAR + "x", "")) : nick;
 	}
 
 	/**
@@ -671,6 +694,16 @@ public final class HookManager {
 
 		return !essNick.equals(nick) && !"".equals(essNick) ? essNick : !cmiNick.equals(nick) && !"".equals(cmiNick) ? cmiNick : nick;
 	}
+
+	/**
+	 * Attempts to find UUID stored in the Essentials/userdata folder
+	 *
+	 * @param name
+	 * @return UUID with the name found or null if not stored
+	 */
+	/*public static Tuple<UUID, String> getEssentialsUUIDFromName(String name) {
+		return isEssentialsXLoaded() ? essentialsxHook.getUUIDfromName(name) : null;
+	}*/
 
 	// ------------------------------------------------------------------------------------------------------------
 	// EssentialsX
@@ -858,46 +891,34 @@ public final class HookManager {
 	}
 
 	/**
-	 * Checks if the given UUID has permission (uses Vault)
+	 * Checks if the given player has the given permission, safe to use
+	 * for instances where the player may be a {@link TemporaryPlayer} from
+	 * ProtocolLib where then we use Vault to check the players perm
 	 *
-	 * @param id
+	 * @param player
 	 * @param perm
 	 * @return
-	 * @deprecated use {@link PlayerUtil#hasPerm(org.bukkit.permissions.Permissible, String)}
 	 */
-	@Deprecated
-	public static boolean hasPermissionUnsafe(final UUID id, final String perm) {
-		final OfflinePlayer player = Remain.getOfflinePlayerByUUID(id);
-		final Boolean has = player != null && isVaultLoaded() ? vaultHook.hasPerm(player.getName(), perm) : null;
+	public static boolean hasProtocolLibPermission(Player player, String perm) {
+		if (isProtocolLibLoaded() && protocolLibHook.isTemporaryPlayer(player))
+			return hasVaultPermission(player.getName(), perm);
 
-		return hasPerm0(player, has);
+		return PlayerUtil.hasPerm(player, perm);
 	}
 
 	/**
 	 * Checks if the given player name has a certain permission using vault
+	 * Or throws an error if Vault is not present
 	 *
 	 * @param name
 	 * @param perm
+	 *
 	 * @return
-	 * @deprecated use {@link PlayerUtil#hasPerm(org.bukkit.permissions.Permissible, String)}
 	 */
-	@Deprecated
-	public static boolean hasPermissionUnsafe(final String name, final String perm) {
-		final OfflinePlayer player = Bukkit.getOfflinePlayer(name);
-		final Boolean has = player != null && player.getName() != null && isVaultLoaded() ? vaultHook.hasPerm(player.getName(), perm) : null;
+	public static boolean hasVaultPermission(final String name, final String perm) {
+		Valid.checkBoolean(isVaultLoaded(), "hasVaultPermission called - Please install Vault to enable this functionality!");
 
-		return hasPerm0(player, has);
-	}
-
-	private static boolean hasPerm0(final OfflinePlayer player, final Boolean has) {
-		if (has != null) {
-			if (!has && player != null)
-				return player.isOp();
-
-			return has;
-		}
-
-		return player != null && player.isOp();
+		return vaultHook.hasPerm(name, perm.contains("{plugin_name}") ? perm.replace("{plugin_name}", SimplePlugin.getNamed().toLowerCase()) : perm);
 	}
 
 	/**
@@ -1339,6 +1360,18 @@ class EssentialsHook {
 		ess = (Essentials) Bukkit.getPluginManager().getPlugin("Essentials");
 	}
 
+	/*Tuple<UUID, String> getUUIDfromName(String name) {
+		for (final File playerYml : new File(ess.getDataFolder(), "userdata").listFiles()) {
+			final YamlConfiguration playerConfig = FileUtil.loadConfigurationStrict(playerYml);
+			final String essName = playerConfig.getString("lastAccountName");
+	
+			if (name.equalsIgnoreCase(essName))
+				return new Tuple<>(UUID.fromString(playerYml.getName().replace(".yml", "")), essName);
+		}
+	
+		return null;
+	}*/
+
 	void setGodMode(final Player player, final boolean godMode) {
 		final User user = getUser(player.getName());
 
@@ -1617,6 +1650,15 @@ class ProtocolLibHook {
 
 		} catch (final InvocationTargetException e) {
 			Common.error(e, "Failed to send " + ((PacketContainer) packet).getType() + " packet to " + player.getName());
+		}
+	}
+
+	final boolean isTemporaryPlayer(Player player) {
+		try {
+			return player instanceof TemporaryPlayer;
+
+		} catch (final NoClassDefFoundError err) {
+			return false;
 		}
 	}
 }
