@@ -30,10 +30,6 @@ public class MenuSection extends YamlSectionConfig {
         return getConfigItem(buttonName).getItem();
     }
 
-    public String getFile() {
-        return getFileName();
-    }
-
     public ConfigItem getConfigItem(String buttonName) {
 
         ConfigItem configItem = new ConfigItem(new ItemPath(getFileName(), formPathPrefix("Buttons." + buttonName)));

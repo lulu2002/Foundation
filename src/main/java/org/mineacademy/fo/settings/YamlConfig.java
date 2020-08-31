@@ -23,6 +23,7 @@ import javax.annotation.Nullable;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -288,6 +289,8 @@ public class YamlConfig implements ConfigSerializable {
 
 		if (from != null)
 			Valid.checkBoolean(from.contains("."), "From path must contain file extension: " + from);
+		else
+			useDefaults = false;
 
 		try {
 			loading = true;
@@ -313,7 +316,7 @@ public class YamlConfig implements ConfigSerializable {
 				Valid.checkNotNull(file, "Failed to " + (from != null ? "copy settings from " + from + " to " : "read settings from ") + to);
 
 				config = FileUtil.loadConfigurationStrict(file);
-				instance = new ConfigInstance(file, config, defaultsConfig);
+				instance = new ConfigInstance(from == null ? to : from, file, config, defaultsConfig);
 
 				addConfig(instance, this);
 			}
@@ -325,9 +328,8 @@ public class YamlConfig implements ConfigSerializable {
 
 			} catch (final Exception ex) {
 				Common.throwError(ex, "Error loading configuration in " + getFileName() + "!", "Problematic section: " + Common.getOrDefault(getPathPrefix(), "''"), "Problem: " + ex + " (see below for more)");
-
-				//Remain.sneaky(ex);
 			}
+
 		} finally {
 			loading = false;
 		}
@@ -368,7 +370,7 @@ public class YamlConfig implements ConfigSerializable {
 	/**
 	 * Replace variables in the destination file before it is copied. Variables
 	 * include {plugin_name} (lowercase), {file} and {file_lowercase} as well as
-	 * custom variables from {@link #replaceVariables(String)} method
+	 * custom variables from {@link #replaceVariables(String, String)} (String)} method
 	 *
 	 * @param line
 	 * @param fileName
@@ -447,7 +449,9 @@ public class YamlConfig implements ConfigSerializable {
 	// Main manipulation methods
 	// ------------------------------------------------------------------------------------
 
-	/** Saves the content of this config into the file */
+	/**
+	 * Saves the content of this config into the file
+	 */
 	public final void save() {
 		if (loading) {
 			save = true;
@@ -1006,7 +1010,6 @@ public class YamlConfig implements ConfigSerializable {
 	 * Get a list of unknown values
 	 *
 	 * @param path
-	 * @param of
 	 * @return
 	 */
 	protected final List<Object> getList(final String path) {
@@ -1249,7 +1252,6 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param path
 	 * @param keyType
 	 * @param valueType
-	 * @param valueParameter
 	 * @return
 	 */
 	protected final <Key, Value> LinkedHashMap<Key, Value> getMap(@NonNull String path, final Class<Key> keyType, final Class<Value> valueType) {
@@ -1916,8 +1918,7 @@ class ConfigInstance {
 	 *
 	 * @param header
 	 */
-	protected void save(final String[] header) {
-
+	protected synchronized void save(final String[] header) {
 		if (header != null) {
 			config.options().copyHeader(true);
 			config.options().header(String.join("\n", header));

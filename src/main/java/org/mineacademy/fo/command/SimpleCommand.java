@@ -887,7 +887,7 @@ public abstract class SimpleCommand extends Command {
 		return message
 				.replace("{label}", getMainLabel())
 				.replace("{sublabel}", this instanceof SimpleSubCommand ? ((SimpleSubCommand) this).getSublabels()[0] : super.getLabel())
-				.replace("{plugin_name}", SimplePlugin.getNamed().toLowerCase());
+				.replace("{plugin_namㄇe}", SimplePlugin.getNamed().toLowerCase());
 	}
 
 	/**

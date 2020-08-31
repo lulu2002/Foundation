@@ -81,6 +81,6 @@ public abstract class ConfigMenu extends ClickUpdateMenu {
     }
 
     protected ItemPath getButtonPath(String buttonName) {
-        return new ItemPath(section.getFile(), section.getPath() + ".Buttons." + buttonName);
+        return new ItemPath(section.getFile().getName(), section.getPath() + ".Buttons." + buttonName);
     }
 }

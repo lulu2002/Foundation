@@ -22,6 +22,6 @@ public abstract class ConfigMenuPagged<E> extends MenuPagged<E> {
     }
 
     protected ItemPath getButtonPath(String buttonName) {
-        return new ItemPath(section.getFile(), section.getPath() + ".Buttons." + buttonName);
+        return new ItemPath(section.getFile().getName(), section.getPath() + ".Buttons." + buttonName);
     }
 }
