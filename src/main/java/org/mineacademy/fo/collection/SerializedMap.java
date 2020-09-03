@@ -1,13 +1,8 @@
 package org.mineacademy.fo.collection;
 
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -310,6 +305,10 @@ public final class SerializedMap extends StrictCollection {
 	 */
 	public Boolean getBoolean(final String key, final Boolean def) {
 		return get(key, Boolean.class, def);
+	}
+
+	public UUID getUUID(final String key) {
+		return UUID.fromString(getString(key));
 	}
 
 	/**

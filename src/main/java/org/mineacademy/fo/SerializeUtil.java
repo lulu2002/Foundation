@@ -141,7 +141,7 @@ public final class SerializeUtil {
 	 * @return
 	 */
 	public static String serializeLoc(final Location loc) {
-		return loc.getWorld().getName() + " " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + (loc.getPitch() != 0F || loc.getYaw() != 0F ? " " + Math.round(loc.getYaw()) + " " + Math.round(loc.getPitch()) : "");
+		return loc.getWorld().getName() + " " + loc.getX() + " " + loc.getY() + " " + loc.getZ() + (loc.getPitch() != 0F || loc.getYaw() != 0F ? " " + loc.getYaw() + " " + loc.getPitch() : "");
 	}
 
 	/**
@@ -310,7 +310,7 @@ public final class SerializeUtil {
 		if (bukkitWorld == null)
 			throw new InvalidWorldException("Location with invalid world '" + world + "': " + raw + " (Doesn't exist)");
 
-		final int x = Integer.parseInt(parts[1]), y = Integer.parseInt(parts[2]), z = Integer.parseInt(parts[3]);
+		final double x = Double.parseDouble(parts[1]), y = Double.parseDouble(parts[2]), z = Double.parseDouble(parts[3]);
 		final float yaw = Float.parseFloat(parts.length == 6 ? parts[4] : "0"), pitch = Float.parseFloat(parts.length == 6 ? parts[5] : "0");
 
 		return new Location(bukkitWorld, x, y, z, yaw, pitch);
