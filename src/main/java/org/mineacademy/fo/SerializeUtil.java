@@ -2,6 +2,7 @@ package org.mineacademy.fo;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -141,7 +142,19 @@ public final class SerializeUtil {
 	 * @return
 	 */
 	public static String serializeLoc(final Location loc) {
-		return loc.getWorld().getName() + " " + loc.getX() + " " + loc.getY() + " " + loc.getZ() + (loc.getPitch() != 0F || loc.getYaw() != 0F ? " " + loc.getYaw() + " " + loc.getPitch() : "");
+		return loc.getWorld().getName() + " " +
+                loc.getX() + " " +
+                loc.getY() + " " +
+                loc.getZ() +
+                (loc.getPitch() != 0F || loc.getYaw() != 0F ? " " + loc.getYaw() + " " + loc.getPitch() : "");
+	}
+
+	public static String serializeLocShort(final Location loc) {
+		return loc.getWorld().getName() + " " +
+				MathUtil.formatTwoDigitsD(loc.getX()) + " " +
+				MathUtil.formatTwoDigitsD(loc.getY()) + " " +
+				MathUtil.formatTwoDigitsD(loc.getZ()) +
+				(loc.getPitch() != 0F || loc.getYaw() != 0F ? " " + MathUtil.formatTwoDigitsD(loc.getYaw()) + " " + MathUtil.formatTwoDigitsD(loc.getPitch()) : "");
 	}
 
 	/**
