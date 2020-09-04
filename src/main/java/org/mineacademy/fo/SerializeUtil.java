@@ -125,7 +125,6 @@ public final class SerializeUtil {
 
 		else if (obj instanceof Integer || obj instanceof Double || obj instanceof Float || obj instanceof Long || obj instanceof Short
 				|| obj instanceof String || obj instanceof Boolean || obj instanceof Map
-				|| obj instanceof ItemStack
 				|| obj instanceof MemorySection)
 			return obj;
 
@@ -282,6 +281,9 @@ public final class SerializeUtil {
 
 			else if (Enum.class.isAssignableFrom(classOf))
 				object = ReflectionUtil.lookupEnum((Class<Enum>) classOf, object.toString());
+
+			else if (classOf == ItemStack.class)
+				object = ItemStack.deserialize(map.asMap());
 
 			else if (List.class.isAssignableFrom(classOf) && object instanceof List) {
 				// Good
