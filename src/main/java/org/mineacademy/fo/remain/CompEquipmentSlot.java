@@ -1,15 +1,19 @@
 package org.mineacademy.fo.remain;
 
+import org.bukkit.inventory.EquipmentSlot;
+
 /**
- * 2020-08-22 7:49 PM
+ * A wrapper for EquiptmentSlot for legacy bukkit
+ *
+ * @deprecated subject for removal, simply use {@link EquipmentSlot}
+ * 			   from the official API
  */
 public enum CompEquipmentSlot {
 
-    HAND,
-    OFF_HAND,
-    FEET,
-    LEGS,
-    CHEST,
-    HEAD
-
+	HAND,
+	OFF_HAND,
+	FEET,
+	LEGS,
+	CHEST,
+	HEAD
 }

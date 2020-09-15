@@ -101,6 +101,17 @@ public final class Valid {
 	}
 
 	/**
+	 * Throws an error if the given message is empty or null
+	 *
+	 * @param message
+	 * @param message
+	 */
+	public void checkNotEmpty(final String message, final String emptyMessage) {
+		if (message == null || message.length() == 0)
+			throw new IllegalArgumentException(emptyMessage);
+	}
+
+	/**
 	 * Checks if the player has the given permission, if false we send him {@link SimpleLocalization#NO_PERMISSION}
 	 * message and return false, otherwise no message is sent and we return true
 	 *
@@ -328,7 +339,7 @@ public final class Valid {
 	 * @return
 	 */
 	public boolean colorlessEquals(final String first, final String second) {
-		return Common.stripColors(first).equals(Common.stripColors(second));
+		return Common.stripColors(first).equalsIgnoreCase(Common.stripColors(second));
 	}
 
 	/**
@@ -339,7 +350,7 @@ public final class Valid {
 	 * @return
 	 */
 	public boolean colorlessEquals(final List<String> first, final List<String> second) {
-		return Valid.colorlessEquals(Common.toArray(first), Common.toArray(second));
+		return colorlessEquals(Common.toArray(first), Common.toArray(second));
 	}
 
 	/**
@@ -354,7 +365,7 @@ public final class Valid {
 			final String first = Common.stripColors(firstArray[i]);
 			final String second = i < secondArray.length ? Common.stripColors(secondArray[i]) : "";
 
-			if (!first.equals(second))
+			if (!first.equalsIgnoreCase(second))
 				return false;
 		}
 

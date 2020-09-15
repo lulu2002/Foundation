@@ -53,6 +53,7 @@ import org.mineacademy.fo.remain.Remain;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -82,12 +83,6 @@ public class YamlConfig implements ConfigSerializable {
 	 * All files that are currently loaded
 	 */
 	private static final StrictMap<ConfigInstance, List<YamlConfig>> loadedFiles = new StrictMap<>();
-
-	/**
-	 * Experimental flag to save comments and match local yaml file exactly with the one
-	 * in the jar
-	 */
-	public static boolean SAVE_COMMENTS = false;
 
 	/**
 	 * The config file instance this config belongs to.
@@ -240,7 +235,7 @@ public class YamlConfig implements ConfigSerializable {
 
 				Valid.checkBoolean(file != null && file.exists(), "Failed to load " + localePath + " from " + file);
 
-				instance = new ConfigInstance(localePath, file, config, defaultsConfig);
+				instance = new ConfigInstance(localePath, file, config, defaultsConfig, saveComments(), getUncommentedSections());
 				addConfig(instance, this);
 			}
 
@@ -316,7 +311,7 @@ public class YamlConfig implements ConfigSerializable {
 				Valid.checkNotNull(file, "Failed to " + (from != null ? "copy settings from " + from + " to " : "read settings from ") + to);
 
 				config = FileUtil.loadConfigurationStrict(file);
-				instance = new ConfigInstance(from == null ? to : from, file, config, defaultsConfig);
+				instance = new ConfigInstance(from == null ? to : from, file, config, defaultsConfig, saveComments(), getUncommentedSections());
 
 				addConfig(instance, this);
 			}
@@ -341,7 +336,7 @@ public class YamlConfig implements ConfigSerializable {
 	protected void saveIfNecessary() {
 
 		// We want to save the file if the save is pending or if there are no defaults
-		if (save || SAVE_COMMENTS || getDefaults() == null) {
+		if (save || saveComments() || getDefaults() == null) {
 			save();
 
 			save = false;
@@ -370,7 +365,7 @@ public class YamlConfig implements ConfigSerializable {
 	/**
 	 * Replace variables in the destination file before it is copied. Variables
 	 * include {plugin_name} (lowercase), {file} and {file_lowercase} as well as
-	 * custom variables from {@link #replaceVariables(String, String)} (String)} method
+	 * custom variables from {@link #replaceVariables(String)} method
 	 *
 	 * @param line
 	 * @param fileName
@@ -506,11 +501,41 @@ public class YamlConfig implements ConfigSerializable {
 			instance.reload();
 
 			onLoadFinish();
-			saveIfNecessary();
+			saveIfNecessary0();
 
 		} catch (final Exception e) {
 			Common.error(e, "Failed to reload " + getFileName());
 		}
+	}
+
+	/**
+	 * Experimental - Shall we attempt to save comments into this yaml config
+	 * and enforce the file to always look like the default one?
+	 *
+	 * You can exclude sections you do not want to symlink in {@link #getUncommentedSections()}
+	 *
+	 * Defaults to false.
+	 *
+	 * @return
+	 */
+	protected boolean saveComments() {
+		return false;
+	}
+
+	/**
+	 * If {@link #SAVE_COMMENTS} is on, what sections should we ignore from
+	 * being updated/enforced commands?
+	 *
+	 * E.g. In ChatControl people can add their own channels so we make the
+	 * "Channels.List" ignored so that peoples' channels (new sections) won't get
+	 * remove.
+	 *
+	 * None by default.
+	 *
+	 * @return
+	 */
+	protected List<String> getUncommentedSections() {
+		return null;
 	}
 
 	/**
@@ -939,10 +964,10 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param def
 	 * @return
 	 */
-	protected final SimpleTime getTime(final String path, final String def) {
+	protected final <T extends SimpleTime> T getTime(final String path, final String def) {
 		forceSingleDefaults(path);
 
-		return isSet(path) ? getTime(path) : SimpleTime.from(def);
+		return isSet(path) ? getTime(path) : (T) SimpleTime.from(def);
 	}
 
 	/**
@@ -951,11 +976,11 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param path
 	 * @return
 	 */
-	protected final SimpleTime getTime(final String path) {
+	protected final <T extends SimpleTime> T getTime(final String path) {
 		final Object obj = getObject(path);
 		Valid.checkNotNull(obj, "No time specified at the path '" + path + "' in " + getFileName());
 
-		return SimpleTime.from(obj.toString());
+		return (T) SimpleTime.from(obj.toString());
 	}
 
 	/**
@@ -1010,6 +1035,7 @@ public class YamlConfig implements ConfigSerializable {
 	 * Get a list of unknown values
 	 *
 	 * @param path
+	 * @param of
 	 * @return
 	 */
 	protected final List<Object> getList(final String path) {
@@ -1252,6 +1278,7 @@ public class YamlConfig implements ConfigSerializable {
 	 * @param path
 	 * @param keyType
 	 * @param valueType
+	 * @param valueParameter
 	 * @return
 	 */
 	protected final <Key, Value> LinkedHashMap<Key, Value> getMap(@NonNull String path, final Class<Key> keyType, final Class<Value> valueType) {
@@ -1668,11 +1695,27 @@ public class YamlConfig implements ConfigSerializable {
 	// ------------------------------------------------------------------------------------
 
 	/**
-	 * @deprecated use {@link SimpleTime} instead
+	 * @deprecated This class has been moved into {@link SimpleTime}.
+	 * 			   To migrate, simply rename TimeHelper into SimpleTime everywhere.
 	 */
 	@Deprecated
-	public static final class TimeHelper {
-		// Dead class
+	public static final class TimeHelper extends SimpleTime {
+
+		protected TimeHelper(String time) {
+			super(time);
+		}
+
+		/**
+		 * Generate new time. Valid examples: 15 ticks 1 second 25 minutes 3 hours etc.
+		 *
+		 * @deprecated use {@link SimpleTime#from(String)} that has now replaced this constructor
+		 * @param time
+		 * @return
+		 */
+		@Deprecated
+		public static TimeHelper from(final String time) {
+			return new TimeHelper(time);
+		}
 	}
 
 	/**
@@ -1901,32 +1944,46 @@ class ConfigInstance {
 	/**
 	 * The file this configuration belongs to.
 	 */
+	@Getter
 	private final File file;
 
 	/**
 	 * Our config we are manipulating.
 	 */
+	@Getter
 	private final YamlConfiguration config;
 
 	/**
 	 * The default config we reach out to fill values from.
 	 */
+	@Getter
 	private final YamlConfiguration defaultConfig;
+
+	/**
+	 * Experimental - Should we save comments for this config instance?
+	 */
+	private final boolean saveComments;
+
+	/**
+	 * If {@link YamlConfig#SAVE_COMMENTS} is on, we'll ignore these sections
+	 * from comments being set
+	 */
+	private final List<String> uncommentedSections;
 
 	/**
 	 * Saves the config instance with the given header, can be null
 	 *
 	 * @param header
 	 */
-	protected synchronized void save(final String[] header) {
+	protected void save(final String[] header) {
 		if (header != null) {
 			config.options().copyHeader(true);
 			config.options().header(String.join("\n", header));
 		}
 
 		try {
-			if (defaultsPath != null && YamlConfig.SAVE_COMMENTS)
-				ConfigUpdater.update(defaultsPath, file);
+			if (defaultsPath != null && saveComments)
+				ConfigUpdater.update(defaultsPath, file, Common.getOrDefault(uncommentedSections, new ArrayList<>()));
 
 			else {
 				config.save(file);
@@ -1963,33 +2020,17 @@ class ConfigInstance {
 	 *
 	 * @throws Exception
 	 */
-	protected synchronized void reload() throws IOException, InvalidConfigurationException {
+	protected void reload() throws IOException, InvalidConfigurationException {
 		config.load(file);
 	}
 
 	/**
 	 * Removes the config file from the disk
 	 */
-	protected synchronized void delete() {
+	protected void delete() {
 		YamlConfig.unregisterLoadedFile(file);
 
 		file.delete();
-	}
-
-	public synchronized File getFile() {
-		return file;
-	}
-
-	public synchronized YamlConfiguration getConfig() {
-		return config;
-	}
-
-	public synchronized YamlConfiguration getDefaultConfig() {
-		return defaultConfig;
-	}
-
-	public synchronized String getDefaultsPath() {
-		return defaultsPath;
 	}
 
 	/**
@@ -1998,7 +2039,7 @@ class ConfigInstance {
 	 * @param file
 	 * @return
 	 */
-	public synchronized boolean equals(final File file) {
+	public boolean equals(final File file) {
 		return equals((Object) file);
 	}
 
@@ -2008,7 +2049,7 @@ class ConfigInstance {
 	 * @param fileName
 	 * @return
 	 */
-	public synchronized boolean equals(final String fileName) {
+	public boolean equals(final String fileName) {
 		return equals((Object) fileName);
 	}
 
@@ -2020,7 +2061,7 @@ class ConfigInstance {
 	 * @return
 	 */
 	@Override
-	public synchronized boolean equals(final Object obj) {
+	public boolean equals(final Object obj) {
 		return obj instanceof ConfigInstance ? ((ConfigInstance) obj).file.getName().equals(file.getName()) : obj instanceof File ? ((File) obj).getName().equals(file.getName()) : obj instanceof String ? ((String) obj).equals(file.getName()) : false;
 	}
 }

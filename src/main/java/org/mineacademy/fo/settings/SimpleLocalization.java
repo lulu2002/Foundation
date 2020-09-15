@@ -1,8 +1,16 @@
 package org.mineacademy.fo.settings;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.mineacademy.fo.FileUtil;
+import org.mineacademy.fo.SerializeUtil;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.command.SimpleCommand;
 import org.mineacademy.fo.plugin.SimplePlugin;
+
+import lombok.Setter;
 
 /**
  * A simple implementation of a basic localization file.
@@ -13,10 +21,35 @@ import org.mineacademy.fo.plugin.SimplePlugin;
 @SuppressWarnings("unused")
 public abstract class SimpleLocalization extends YamlStaticConfig {
 
-/**
+	/**
+	 * A fallback localization is a file in your plugin's JAR we open and look values
+	 * in, when user-selected localization doesn't have them nor it has them in your JAR.
+	 * <br><br>
+	 * Example:<br>
+	 * 	messages_en.yml as fallback in the JAR<br>
+	 * 	messages_it.yml in the JAR<br>
+	 * 	messages_it.yml on the disk & used<br>
+	 * <br>
+	 * When there is a string missing from messages_it on the disk, we try to place the
+	 * default one from the same file in the JAR. However, when messages_it.yml in the
+	 * JAR also lacks this file, we then visit the fallback file.
+	 * <br>
+	 * This saves enormous amount of time since you don't have to copy-paste new
+	 * localization keys over all message files each time you make an update. Instead,
+	 * only place them into the fallback file, by default it's messages_en.yml.
+	 */
+	@Setter
+	private static String FALLBACK_LOCALIZATION_FILE = "localization/messages_en.yml";
+
+	/**
+	 * The fallback localization file config instance, see {@link #FALLBACK_LOCALIZATION_FILE}.
+	 */
+	private static YamlConfiguration fallbackLocalization;
+
+	/**
 	 * A flag indicating that this class has been loaded
-	 *
-	 * You can place this class to {@link SimplePlugin#getSettingsClasses()} to make
+	 * <p>
+	 * You can place this class to {@link SimplePlugin#getSettings()} to make
 	 * it load automatically
 	 */
 	private static boolean localizationClassCalled;
@@ -27,9 +60,9 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 
 	/**
 	 * Create and load the localization/messages_LOCALEPREFIX.yml file.
-	 *
+	 * <p>
 	 * See {@link SimpleSettings#LOCALE_PREFIX} for the locale prefix.
-	 *
+	 * <p>
 	 * The locale file is extracted from your plugins jar to the localization/ folder
 	 * if it does not exists, or updated if it is out of date.
 	 */
@@ -56,7 +89,7 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 	 * Set and update the config version automatically, however the {@link #VERSION} will
 	 * contain the older version used in the file on the disk so you can use
 	 * it for comparing in the init() methods
-	 *
+	 * <p>
 	 * Please call this as a super method when overloading this!
 	 */
 	@Override
@@ -69,16 +102,82 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 
 		if (isSetDefault("Error"))
 			ERROR = getString("Error");
+
+		// Load English localization file
+		fallbackLocalization = FileUtil.loadInternalConfiguration(FALLBACK_LOCALIZATION_FILE);
 	}
 
 	/**
 	 * Return the very latest config version
-	 *
+	 * <p>
 	 * Any changes here must also be made to the "Version" key in your settings file.
 	 *
 	 * @return
 	 */
 	protected abstract int getConfigVersion();
+
+	// --------------------------------------------------------------------
+	// Fallback
+	// --------------------------------------------------------------------
+
+	/**
+	 * Get a String from the localization file, utilizing
+	 * {@link #FALLBACK_LOCALIZATION_FILE} mechanics
+	 *
+	 * @param path
+	 * @return
+	 */
+	protected static final String getFallbackString(String path) {
+		return getFallback(path, String.class);
+	}
+
+	/**
+	 * Get a list from the localization file, utilizing
+	 * {@link #FALLBACK_LOCALIZATION_FILE} mechanics
+	 *
+	 * @param <T>
+	 * @param path
+	 * @param listType
+	 * @return
+	 */
+	protected static final <T> List<T> getFallbackList(String path, Class<T> listType) {
+		final List<T> list = new ArrayList<>();
+		final List<Object> objects = getFallback(path, List.class);
+
+		if (objects != null)
+			for (final Object object : objects)
+				list.add(object != null ? SerializeUtil.deserialize(listType, object) : null);
+
+		return list;
+	}
+
+	/**
+	 * Get a key from the localization file, utilizing
+	 * {@link #FALLBACK_LOCALIZATION_FILE} mechanics
+	 *
+	 * @param <T>
+	 * @param path
+	 * @param typeOf
+	 * @return
+	 */
+	protected static final <T> T getFallback(String path, Class<T> typeOf) {
+
+		// If string already exists, has a default path, or locale is set to english, use the native method
+		if (isSet(path) || isSetDefault(path) || "en".equals(SimpleSettings.LOCALE_PREFIX))
+			return get(path, typeOf);
+
+		// Try to pull the value from English localization
+		final String relativePath = formPathPrefix(path);
+		final Object key = fallbackLocalization.get(relativePath);
+
+		Valid.checkNotNull(key, "Neither " + getFileName() + ", the default one, nor " + FALLBACK_LOCALIZATION_FILE + " contained " + relativePath + "! Please report this to " + SimplePlugin.getNamed() + " developers!");
+		Valid.checkBoolean(key.getClass().isAssignableFrom(typeOf), "Expected " + typeOf + " at " + relativePath + " in " + FALLBACK_LOCALIZATION_FILE + " but got " + key.getClass() + ": " + key);
+
+		// Write it to the file being used
+		set(path, key);
+
+		return (T) key;
+	}
 
 	// --------------------------------------------------------------------
 	// Shared values
@@ -90,7 +189,7 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 	/**
 	 * Locale keys related to your plugin commands
 	 */
-	public static class Commands {
+	public static final class Commands {
 
 		/**
 		 * The message at "No_Console" key shown when console is denied executing a command.
@@ -106,21 +205,18 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 		 * The message shown when the player tries a command but inputs an
 		 * invalid first argument parameter. We suggest he types /{label} ? for help so make
 		 * sure you implement some help there as well.
-		 *
 		 */
 		public static String INVALID_ARGUMENT = "&cInvalid argument. Run &6/{label} ? &cfor help.";
 
 		/**
 		 * The message shown when the player tries a command but inputs an
 		 * invalid second argument parameter. We so suggest he types /{label} {0} for help
-		 *
 		 */
 		public static String INVALID_SUB_ARGUMENT = "&cInvalid argument. Run '/{label} {0}' for help.";
 
 		/**
 		 * The message shown on the same occasion as {@link #INVALID_ARGUMENT} however
 		 * this is shows when the command overrides {@link SimpleCommand#getMultilineUsageMessage()}
-		 *
 		 */
 		public static String INVALID_ARGUMENT_MULTILINE = "&cInvalid argument. Usage:";
 
@@ -262,7 +358,7 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 	/**
 	 * Key related to players
 	 */
-	public static class Player {
+	public static final class Player {
 
 		/**
 		 * Message shown when the player is not online on this server
@@ -283,7 +379,7 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 	/**
 	 * Key related to the GUI system
 	 */
-	public static class Menu {
+	public static final class Menu {
 
 		/**
 		 * Message shown when the player is not online on this server
@@ -304,7 +400,7 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 	/**
 	 * Keys related to updating the plugin
 	 */
-	public static class Update {
+	public static final class Update {
 
 		/**
 		 * The message if a new version is found but not downloaded

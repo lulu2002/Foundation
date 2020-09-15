@@ -503,10 +503,20 @@ public final class HookManager {
 	 * @return
 	 */
 	public static boolean isFAWELoaded() {
-		final Plugin worldEdit = Bukkit.getPluginManager().getPlugin("WorldEdit");
-		final String desc = worldEdit != null ? worldEdit.getDescription().getDescription() : null;
 
-		return "Fast Async WorldEdit plugin".equals(desc);
+		// Check for FAWE directly
+		final Plugin fawe = Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit");
+
+		if (fawe != null && fawe.isEnabled())
+			return true;
+
+		// Check for legacy FAWE installations
+		final Plugin worldEdit = Bukkit.getPluginManager().getPlugin("WorldEdit");
+
+		if (worldEdit != null && worldEdit.isEnabled() && "Fast Async WorldEdit plugin".equals(worldEdit.getDescription().getDescription()))
+			return true;
+
+		return false;
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -1360,18 +1370,6 @@ class EssentialsHook {
 		ess = (Essentials) Bukkit.getPluginManager().getPlugin("Essentials");
 	}
 
-	/*Tuple<UUID, String> getUUIDfromName(String name) {
-		for (final File playerYml : new File(ess.getDataFolder(), "userdata").listFiles()) {
-			final YamlConfiguration playerConfig = FileUtil.loadConfigurationStrict(playerYml);
-			final String essName = playerConfig.getString("lastAccountName");
-	
-			if (name.equalsIgnoreCase(essName))
-				return new Tuple<>(UUID.fromString(playerYml.getName().replace(".yml", "")), essName);
-		}
-	
-		return null;
-	}*/
-
 	void setGodMode(final Player player, final boolean godMode) {
 		final User user = getUser(player.getName());
 
@@ -1456,18 +1454,18 @@ class EssentialsHook {
 		return "".equals(essNick) ? null : essNick;
 	}
 
-	String getNameFromNick(final String nick) {
+	String getNameFromNick(final String maybeNick) {
 		final UserMap users = ess.getUserMap();
 
 		if (users != null)
 			for (final UUID userId : users.getAllUniqueUsers()) {
 				final User user = users.getUser(userId);
 
-				if (user != null && user.getNickname() != null && Valid.colorlessEquals(user.getNickname().toLowerCase(), nick.toLowerCase()))
-					return Common.getOrDefault(user.getName(), nick);
+				if (user != null && user.getNickname() != null && Valid.colorlessEquals(user.getNickname(), maybeNick))
+					return Common.getOrDefault(user.getName(), maybeNick);
 			}
 
-		return nick;
+		return maybeNick;
 	}
 
 	void setBackLocation(final String player, final Location loc) {
@@ -1846,7 +1844,15 @@ class PlaceholderAPIHook {
 		final Matcher matcher = Variables.BRACKET_PLACEHOLDER_PATTERN.matcher(text);
 
 		while (matcher.find()) {
-			final String format = matcher.group(1);
+			String format = matcher.group(1);
+			boolean addSpace = false;
+
+			if (format.endsWith("+")) {
+				addSpace = true;
+
+				format = format.substring(0, format.length() - 1);
+			}
+
 			final int index = format.indexOf("_");
 
 			if (index <= 0 || index >= format.length())
@@ -1856,10 +1862,13 @@ class PlaceholderAPIHook {
 			final String params = format.substring(index + 1);
 
 			if (hooks.containsKey(identifier)) {
-				final String value = hooks.get(identifier).onRequest(player, params);
+				String value = hooks.get(identifier).onRequest(player, params);
 
-				if (value != null)
-					text = text.replaceAll(Pattern.quote(matcher.group()), Matcher.quoteReplacement(Common.colorize(value)));
+				if (value != null) {
+					value = Matcher.quoteReplacement(Common.colorize(value));
+
+					text = text.replaceAll(Pattern.quote(matcher.group()), value + (addSpace && !value.isEmpty() ? " " : ""));
+				}
 			}
 		}
 
@@ -1882,7 +1891,6 @@ class PlaceholderAPIHook {
 	}
 
 	private String setRelationalPlaceholders(final Player one, final Player two, String text) {
-
 		final Map<String, PlaceholderHook> hooks = PlaceholderAPI.getPlaceholders();
 
 		if (hooks.isEmpty())

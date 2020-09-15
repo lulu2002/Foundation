@@ -79,6 +79,11 @@ public final class Common {
 	private static final Pattern RGB_HEX_COLOR_REGEX = Pattern.compile(Pattern.quote("{#") + "(.*?)" + Pattern.quote("}"));
 
 	/**
+	 * Pattern used to match colors with {#HEX} code for MC 1.16+
+	 */
+	private static final Pattern RGB_X_COLOR_REGEX = Pattern.compile("(" + ChatColor.COLOR_CHAR + "x)(" + ChatColor.COLOR_CHAR + "[0-9A-F]){6}");
+
+	/**
 	 * We use this to send messages with colors to your console
 	 */
 	private static final CommandSender CONSOLE_SENDER = Bukkit.getServer() != null ? Bukkit.getServer().getConsoleSender() : null;
@@ -582,6 +587,22 @@ public final class Common {
 	 * @return
 	 */
 	public static String lastColor(final String message) {
+
+		// RGB colors
+		if (MinecraftVersion.atLeast(MinecraftVersion.V.v1_16)) {
+			final int c = message.lastIndexOf(ChatColor.COLOR_CHAR);
+			final Matcher match = RGB_X_COLOR_REGEX.matcher(message);
+
+			String lastColor = null;
+
+			while (match.find())
+				lastColor = match.group(0);
+
+			if (lastColor != null)
+				if ((c == -1 || c < (message.lastIndexOf(lastColor) + lastColor.length())))
+					return lastColor;
+		}
+
 		final String andLetter = lastColorLetter(message);
 		final String colorChat = lastColorChar(message);
 
@@ -777,7 +798,8 @@ public final class Common {
 				"crisis", "crises",
 				"thesis", "theses",
 				"datum", "data",
-				"index", "indices");
+				"index", "indices",
+				"entry", "entries");
 
 		return exceptions.containsKey(ofWhat) ? count + " " + (count == 0 || count > 1 ? exceptions.getString(ofWhat) : ofWhat) : null;
 	}
@@ -1478,6 +1500,17 @@ public final class Common {
 	// ------------------------------------------------------------------------------------------------------------
 
 	/**
+	 * Return the last key in the list or null if null list or empty
+	 *
+	 * @param <T>
+	 * @param list
+	 * @return
+	 */
+	public static <T> T last(List<T> list) {
+		return list == null || list.isEmpty() ? null : list.get(list.size() - 1);
+	}
+
+	/**
 	 * Convenience method for getting a list of world names
 	 *
 	 * @return
@@ -1788,6 +1821,21 @@ public final class Common {
 	/**
 	 * Returns the value or its default counterpart in case it is null
 	 *
+	 * @param value
+	 * @param def
+	 *
+	 * @deprecated subject for removal, use {@link #getOrDefault(Object, Object)}
+	 * 			   as it works exactly the same now
+	 * @return
+	 */
+	@Deprecated
+	public static String getOrSupply(String value, String def) {
+		return getOrDefault(value, def);
+	}
+
+	/**
+	 * Returns the value or its default counterpart in case it is null
+	 *
 	 * @param value the primary value
 	 * @param def   the default value
 	 * @return the value, or default it the value is null
@@ -1866,7 +1914,7 @@ public final class Common {
 	 * @return
 	 */
 	public static String[] toArray(final Collection<String> array) {
-		return array.toArray(new String[array.size()]);
+		return array == null ? new String[0] : array.toArray(new String[array.size()]);
 	}
 
 	/**
@@ -1876,7 +1924,7 @@ public final class Common {
 	 * @return
 	 */
 	public static <T> ArrayList<T> toList(final T... array) {
-		return new ArrayList<>(Arrays.asList(array));
+		return array == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(array));
 	}
 
 	/**
@@ -1885,9 +1933,14 @@ public final class Common {
 	 * @param it the iterable
 	 * @return the new list
 	 */
-	public static <T> List<T> toList(final Iterable<T> it) {
+	public static <T> List<T> toList(@Nullable final Iterable<T> it) {
 		final List<T> list = new ArrayList<>();
-		it.forEach(el -> list.add(el));
+
+		if (it != null)
+			it.forEach(el -> {
+				if (el != null)
+					list.add(el);
+			});
 
 		return list;
 	}
