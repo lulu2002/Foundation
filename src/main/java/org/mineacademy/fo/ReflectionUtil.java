@@ -25,6 +25,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.mineacademy.fo.MinecraftVersion.V;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.remain.CompMaterial;
+import org.mineacademy.fo.settings.YamlConfig;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -295,13 +296,18 @@ public final class ReflectionUtil {
 	 * @param clazz
 	 * @return
 	 */
-	public static Field[] getAllFields(Class<?> clazz) {
+	public static Field[] getAllFields(@NonNull Class<?> clazz) {
 		final List<Field> list = new ArrayList<>();
 
-		do
-			list.addAll(Arrays.asList(clazz.getDeclaredFields()));
+		try {
+			do
+				list.addAll(Arrays.asList(clazz.getDeclaredFields()));
 
-		while (!(clazz = clazz.getSuperclass()).isAssignableFrom(Object.class));
+			while (!(clazz = clazz.getSuperclass()).isAssignableFrom(Object.class));
+
+		} catch (final NullPointerException ex) {
+			// Pass through - such as interfaces or object itself throw this
+		}
 
 		return list.toArray(new Field[0]);
 	}
@@ -805,9 +811,10 @@ public final class ReflectionUtil {
 		Valid.checkBoolean(JavaPlugin.class.isAssignableFrom(plugin.getClass()), "Plugin must be a JavaPlugin");
 
 		// Get the plugin .jar
-		final Method m = JavaPlugin.class.getDeclaredMethod("getFile");
-		m.setAccessible(true);
-		final File pluginFile = (File) m.invoke(plugin);
+		final Method getFileMethod = JavaPlugin.class.getDeclaredMethod("getFile");
+		getFileMethod.setAccessible(true);
+
+		final File pluginFile = (File) getFileMethod.invoke(plugin);
 
 		final TreeSet<Class<?>> classes = new TreeSet<>(Comparator.comparing(Class::toString));
 
@@ -822,13 +829,16 @@ public final class ReflectionUtil {
 
 					final Class<?> clazz;
 
-					// Workaround
-					if (name.startsWith("de.exceptionflug.protocolize.api"))
-						continue;
 					try {
+						YamlConfig.INVOKE_SAVE = false;
+
 						clazz = Class.forName(name);
+
 					} catch (final Throwable throwable) {
 						continue;
+
+					} finally {
+						YamlConfig.INVOKE_SAVE = true;
 					}
 
 					classes.add(clazz);

@@ -25,21 +25,19 @@ import org.mineacademy.fo.remain.Remain;
 import org.mineacademy.fo.settings.SimpleSettings;
 
 /**
- * A simple engine that replaces lots of variables in a message.
- * <p>
- * Utilizes {@link FileReader}
+ * A simple engine that replaces variables in a message.
  */
 public final class Variables {
 
 	/**
 	 * The pattern to find simple {} placeholders
 	 */
-	static final Pattern BRACKET_PLACEHOLDER_PATTERN = Pattern.compile("[{]([^{}]+)[}]");
+	static final Pattern BRACKET_PLACEHOLDER_PATTERN = Pattern.compile("[({|%)]([^{}]+)[(}|%)]");
 
 	/**
 	 * The patter to find simple {} placeholders starting with {rel_ (used for PlaceholderAPI)
 	 */
-	static final Pattern BRACKET_REL_PLACEHOLDER_PATTERN = Pattern.compile("[{](rel_)([^}]+)[}]");
+	static final Pattern BRACKET_REL_PLACEHOLDER_PATTERN = Pattern.compile("[({|%)](rel_)([^}]+)[(}|%)]");
 
 	/**
 	 * Player - [Original Message - Translated Message]
@@ -125,7 +123,7 @@ public final class Variables {
 	 * @param sender
 	 * @return
 	 */
-	public static String replace(String message, CommandSender sender) {
+	public static String replace(String message, @Nullable CommandSender sender) {
 		return replace(message, sender, null);
 	}
 
@@ -139,7 +137,7 @@ public final class Variables {
 	 * @param sender
 	 * @return
 	 */
-	public static String replace(String message, CommandSender sender, @Nullable Map<String, Object> replacements) {
+	public static String replace(String message, @Nullable CommandSender sender, @Nullable Map<String, Object> replacements) {
 		if (message == null || message.isEmpty())
 			return "";
 
@@ -219,7 +217,7 @@ public final class Variables {
 	 * @param message
 	 * @return
 	 */
-	private static String replaceHardVariables0(CommandSender sender, String message) {
+	private static String replaceHardVariables0(@Nullable CommandSender sender, String message) {
 		final Matcher matcher = Variables.BRACKET_PLACEHOLDER_PATTERN.matcher(message);
 		final Player player = sender instanceof Player ? (Player) sender : null;
 

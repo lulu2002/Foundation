@@ -99,16 +99,35 @@ public final class FileUtil {
 	public static File getOrMakeFile(String path) {
 		final File file = getFile(path);
 
-		return file.exists() ? file : createFile(path);
+		return file.exists() ? file : createIfNotExists(path);
 	}
 
-	/*
+	/**
+	 * Checks if the file exists and creates a new one if it does not
+	 *
+	 * @param file
+	 * @return
+	 */
+	public static File createIfNotExists(File file) {
+		if (!file.exists())
+			try {
+				file.createNewFile();
+			} catch (final Throwable t) {
+				Common.throwError(t, "Could not create new " + file + " due to " + t);
+			}
+
+		return file;
+	}
+
+	/**
 	 * Create a new file in our plugin folder, supporting multiple directory paths
 	 * <p>
 	 * Example: logs/admin/console.log or worlds/nether.yml are all valid paths
 	 *
+	 * @param path
+	 * @return
 	 */
-	private static File createFile(String path) {
+	public static File createIfNotExists(String path) {
 		final File datafolder = SimplePlugin.getInstance().getDataFolder();
 		final int lastIndex = path.lastIndexOf('/');
 		final File directory = new File(datafolder, path.substring(0, lastIndex >= 0 ? lastIndex : 0));
@@ -160,23 +179,6 @@ public final class FileUtil {
 		final String finalExtension = extension;
 
 		return dataFolder.listFiles((FileFilter) file -> !file.isDirectory() && file.getName().endsWith("." + finalExtension));
-	}
-
-	/**
-	 * Checks if the file exists and creates a new one if it does not
-	 *
-	 * @param file
-	 * @return
-	 */
-	public static File createIfNotExists(File file) {
-		if (!file.exists())
-			try {
-				file.createNewFile();
-			} catch (final Throwable t) {
-				Common.throwError(t, "Could not create new " + file + " due to " + t);
-			}
-
-		return file;
 	}
 
 	// ----------------------------------------------------------------------------------------------------
@@ -419,7 +421,7 @@ public final class FileUtil {
 		if (file.exists())
 			return file;
 
-		file = FileUtil.createFile(to);
+		file = createIfNotExists(to);
 
 		try {
 
@@ -457,7 +459,9 @@ public final class FileUtil {
 	public static void extractFolderFromJar(String folder, final String destination) {
 		Valid.checkBoolean(folder.endsWith("/"), "Folder must end with '/'! Given: " + folder);
 		Valid.checkBoolean(!folder.startsWith("/"), "Folder must not start with '/'! Given: " + folder);
-		Valid.checkBoolean(!getFile(folder).exists(), "Folder " + folder + " already exists!");
+
+		if (getFile(folder).exists())
+			return;
 
 		try (JarFile jarFile = new JarFile(SimplePlugin.getSource())) {
 			for (final Enumeration<JarEntry> it = jarFile.entries(); it.hasMoreElements();) {
@@ -503,6 +507,20 @@ public final class FileUtil {
 		return is;
 	}
 
+	/**
+	 * Remove the given file with all subfolders
+	 *
+	 * @param file
+	 */
+	public static void deleteRecursivelly(File file) {
+		if (file.isDirectory())
+			for (final File subfolder : file.listFiles())
+				deleteRecursivelly(subfolder);
+
+		if (file.exists())
+			Valid.checkBoolean(file.delete(), "Failed to delete file: " + file);
+	}
+
 	// ----------------------------------------------------------------------------------------------------
 	// Archiving
 	// ----------------------------------------------------------------------------------------------------
@@ -520,6 +538,7 @@ public final class FileUtil {
 	 * @return filepath from server root with the byte compressed file content array
 	 */
 	public static Tuple<String, byte[]> compress(@NonNull File file) {
+		Valid.checkBoolean(!file.isDirectory(), "Cannot compress a directory: " + file.getPath());
 		final List<String> lines = new ArrayList<>(readLines(file)); // ensure modifiable
 
 		// Add all parent directories until we reach the plugin's folder
@@ -546,27 +565,46 @@ public final class FileUtil {
 	}
 
 	/**
-	 * Decompresses and writes all content to the file found in the array,
+	 * Decompresses and writes all content to the file from the data array
 	 *
 	 * see {@link #compress(File)}
 	 *
 	 * @param data
+	 *
 	 * @return
 	 */
 	public static File decompressAndWrite(@NonNull byte[] data) {
+		return decompressAndWrite(null, data);
+	}
+
+	/**
+	 * Decompresses and writes all content to the file,
+	 *
+	 * see {@link #compress(File)}
+	 *
+	 * @param destination
+	 * @param data
+	 *
+	 * @return
+	 */
+	public static File decompressAndWrite(@Nullable File destination, @NonNull byte[] data) {
 		final Tuple<File, List<String>> tuple = decompress(data);
 
-		final File file = tuple.getKey();
+		if (destination == null)
+			destination = tuple.getKey();
+
 		final List<String> lines = tuple.getValue();
 
 		try {
-			Files.write(file.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+			FileUtil.createIfNotExists(destination);
+
+			Files.write(destination.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
 		} catch (final IOException e) {
-			Common.throwError(e, "Failed to write " + lines.size() + " lines into " + file);
+			Common.throwError(e, "Failed to write " + lines.size() + " lines into " + destination);
 		}
 
-		return file;
+		return destination;
 	}
 
 	/**
@@ -603,12 +641,17 @@ public final class FileUtil {
 	 */
 	public static void zip(String sourceDirectory, String to) throws IOException {
 		final File parent = SimplePlugin.getInstance().getDataFolder().getParentFile().getParentFile();
-		final Path pathTo = Files.createFile(Paths.get(new File(parent, to + ".zip").toURI()));
+		final File toFile = new File(parent, to + ".zip");
+
+		if (toFile.exists())
+			Valid.checkBoolean(toFile.delete(), "Failed to delete old file " + toFile);
+
+		final Path pathTo = Files.createFile(Paths.get(toFile.toURI()));
 
 		try (ZipOutputStream zs = new ZipOutputStream(Files.newOutputStream(pathTo))) {
 			final Path pathFrom = Paths.get(new File(parent, sourceDirectory).toURI());
 
-			Files.walk(pathFrom).filter(path -> !Files.isDirectory(path) && !path.toFile().getName().endsWith(".log")).forEach(path -> {
+			Files.walk(pathFrom).filter(path -> !Files.isDirectory(path)).forEach(path -> {
 				final ZipEntry zipEntry = new ZipEntry(pathFrom.relativize(path).toString());
 
 				try {

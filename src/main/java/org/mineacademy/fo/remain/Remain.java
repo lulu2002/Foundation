@@ -74,6 +74,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.EntityUtil;
+import org.mineacademy.fo.FileUtil;
 import org.mineacademy.fo.ItemUtil;
 import org.mineacademy.fo.MinecraftVersion;
 import org.mineacademy.fo.MinecraftVersion.V;
@@ -351,6 +352,14 @@ public final class Remain {
 			} catch (final NoSuchMethodException err) {
 				hasYamlReaderLoad = false;
 			}
+
+			// Initialize legacy material data now to avoid future lag
+			if (MinecraftVersion.atLeast(V.v1_16))
+				try {
+					Bukkit.getUnsafe().fromLegacy(Material.AIR);
+				} catch (final Throwable t) {
+					// Silence
+				}
 
 		} catch (final ReflectiveOperationException ex) {
 			throw new UnsupportedOperationException("Failed to set up reflection, " + SimplePlugin.getNamed() + " won't work properly", ex);
@@ -762,7 +771,7 @@ public final class Remain {
 	 * @param json
 	 * @param placeholders
 	 */
-	public static void sendJson(final CommandSender sender, final String json, SerializedMap placeholders) {
+	public static void sendJson(final CommandSender sender, final String json, final SerializedMap placeholders) {
 		try {
 			final BaseComponent[] components = ComponentSerializer.parse(json);
 
@@ -781,7 +790,7 @@ public final class Remain {
 	 *
 	 * BaseComponent does not support colors when in text, they must be set at the color level
 	 */
-	private static void replaceHexPlaceholders(List<BaseComponent> components, SerializedMap placeholders) {
+	private static void replaceHexPlaceholders(final List<BaseComponent> components, final SerializedMap placeholders) {
 
 		for (final BaseComponent component : components) {
 			if (component instanceof TextComponent) {
@@ -2004,11 +2013,27 @@ public final class Remain {
 		final Properties properties = new Properties();
 		final File props = new File(SimplePlugin.getData().getParentFile().getParentFile(), "server.properties");
 
+		// If user has Bungee_Server_Name in their settings, move it automatically
+		final File settingsFile = FileUtil.getFile("settings.yml");
+		String previousName = null;
+
+		if (settingsFile.exists()) {
+			final YamlConfiguration settings = FileUtil.loadConfigurationStrict(settingsFile);
+			final String previousNameRaw = settings.getString("Bungee_Server_Name");
+
+			if (previousNameRaw != null && !previousNameRaw.isEmpty() && !"none".equals(previousNameRaw) && !"undefined".equals(previousNameRaw)) {
+				Common.log("&eWarning: Detected Bungee_Server_Name being used in your settings.yml that is now located in server.properties." +
+						" It has been moved there and you can now delete this key from settings.yml if it was not deleted already.");
+
+				previousName = previousNameRaw;
+			}
+		}
+
 		try (final FileReader fileReader = new FileReader(props)) {
 			properties.load(fileReader);
 
-			if (!properties.containsKey("server-name")) {
-				properties.setProperty("server-name", "Undefined - see mineacademy.org/server-properties to configure");
+			if (!properties.containsKey("server-name") || previousName != null) {
+				properties.setProperty("server-name", previousName != null ? previousName : "Undefined - see mineacademy.org/server-properties to configure");
 
 				try (FileWriter fileWriter = new FileWriter(props)) {
 					properties.store(fileWriter, "Minecraft server properties\nModified by " + SimplePlugin.getNamed() + ", see mineacademy.org/server-properties for more information");
@@ -2028,7 +2053,7 @@ public final class Remain {
 	 * @return
 	 */
 	public static boolean isServerNameChanged() {
-		return !"Undefined - see mineacademy.org/server-properties to configure".equals(serverName) && !"Unknown Server".equals(serverName);
+		return !"Undefined - see mineacademy.org/server-properties to configure".equals(serverName) && !"undefined".equals(serverName) && !"Unknown Server".equals(serverName);
 	}
 
 	// ----------------------------------------------------------------------------------------------------
@@ -2117,6 +2142,15 @@ public final class Remain {
 	 */
 	public static boolean hasYamlReaderLoad() {
 		return hasYamlReaderLoad;
+	}
+
+	/**
+	 * Return if the MC version is 1.16+ that supports HEX RGB colors
+	 *
+	 * @return
+	 */
+	public static boolean hasHexColors() {
+		return MinecraftVersion.atLeast(V.v1_16);
 	}
 
 	// ------------------------ Legacy ------------------------
