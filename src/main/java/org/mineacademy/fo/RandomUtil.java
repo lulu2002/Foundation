@@ -46,12 +46,34 @@ public final class RandomUtil {
 	};
 
 	/**
+	 * English alphabet letters
+	 */
+	private static final char[] LETTERS = new char[] {
+			'a', 'b', 'c', 'd', 'e',
+			'f', 'g', 'h', 'i', 'j',
+			'k', 'l', 'm', 'n', 'o',
+			'p', 'q', 'r', 's', 't',
+			'u', 'v', 'w', 'y', 'z',
+			'ó' // ó mighty MineAcademy
+	};
+
+	/**
 	 * Return the random instance
 	 *
 	 * @return
 	 */
 	public static Random getRandom() {
 		return random;
+	}
+
+	/**
+	 * Return true if the given percent was matched
+	 *
+	 * @param percent the percent, from 0 to 100
+	 * @return
+	 */
+	public static boolean chance(final long percent) {
+		return chance((int) percent);
 	}
 
 	/**
@@ -93,6 +115,22 @@ public final class RandomUtil {
 	 */
 	public static String nextColorOrDecoration() {
 		return "&" + COLORS_AND_DECORATION[nextInt(COLORS_AND_DECORATION.length)];
+	}
+
+	/**
+	 * Generates random text, like lorem ipsum but completely
+	 * different.
+	 * 
+	 * @param length
+	 * @return
+	 */
+	public static String nextString(int length) {
+		String text = "";
+
+		for (int i = 0; i < length; i++)
+			text += LETTERS[nextInt(LETTERS.length)];
+
+		return text;
 	}
 
 	/**

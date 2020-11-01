@@ -1,6 +1,7 @@
 package org.mineacademy.fo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -12,16 +13,6 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TabUtil {
-
-	/**
-	 * A shortcut for completing player names from all players connected online
-	 *
-	 * @param partialName
-	 * @return
-	 */
-	public static List<String> completePlayerName(String partialName) {
-		return complete(partialName, Common.getPlayerNames());
-	}
 
 	/**
 	 * Return a list of tab completions for the given array,
@@ -39,10 +30,22 @@ public final class TabUtil {
 
 		for (final T s : all)
 			if (s != null) {
-				final boolean lowercase = s instanceof Enum;
-				final String parsed = SerializeUtil.serialize(s).toString();
+				if (s instanceof Iterable)
+					for (final Object iterable : (Iterable<?>) s)
+						clone.add(iterable instanceof Enum ? iterable.toString().toLowerCase() : SerializeUtil.serialize(iterable).toString());
 
-				clone.add(lowercase ? parsed.toLowerCase() : parsed);
+				// Trick: Automatically parse enum constants
+				else if (s instanceof Enum[])
+					for (final Object iterable : ((Enum[]) s)[0].getClass().getEnumConstants())
+						clone.add(iterable.toString().toLowerCase());
+
+				else {
+					final boolean lowercase = s instanceof Enum;
+					final String parsed = SerializeUtil.serialize(s).toString();
+
+					if (!"".equals(parsed))
+						clone.add(lowercase ? parsed.toLowerCase() : parsed);
+				}
 			}
 
 		return complete(partialName, clone);
@@ -69,6 +72,8 @@ public final class TabUtil {
 			if (!val.toLowerCase().startsWith(partialName))
 				iterator.remove();
 		}
+
+		Collections.sort(tab);
 
 		return tab;
 	}

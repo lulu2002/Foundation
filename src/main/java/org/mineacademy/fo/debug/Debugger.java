@@ -12,7 +12,6 @@ import org.bukkit.Bukkit;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.FileUtil;
 import org.mineacademy.fo.TimeUtil;
-import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.constants.FoConstants;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.plugin.SimplePlugin;
@@ -49,7 +48,7 @@ public final class Debugger {
 		if (new File(SimplePlugin.getData(), "debug.lock").exists()) {
 			debugModeEnabled = true;
 
-			System.out.println("Detected debug.lock file, debug features enabled!");
+			Bukkit.getLogger().info("Detected debug.lock file, debug features enabled!");
 
 		} else
 			debugModeEnabled = false;
@@ -71,15 +70,6 @@ public final class Debugger {
 					Common.log("[" + section + "] " + message);
 				else
 					System.out.println("[" + section + "] " + message);
-
-			/*if (SimplePlugin.hasInstance()) {
-				Common.runAsync(() -> {
-					synchronized (pendingMessages) {
-						for (final String message : messages)
-							FileUtil.writeFormatted(FoConstants.File.DEBUG, "[" + section + "]", message);
-					}
-				});
-			}*/
 		}
 	}
 
@@ -123,7 +113,9 @@ public final class Debugger {
 			return;
 
 		final List<String> parts = pendingMessages.remove(section);
-		Valid.checkNotNull(parts, "No messages to debug at section: " + section);
+
+		if (parts == null)
+			return;
 
 		final String whole = StringUtils.join(parts, "");
 
@@ -190,6 +182,9 @@ public final class Debugger {
 
 					final String trace = el.toString();
 
+					if (trace.contains("sun.reflect"))
+						continue;
+
 					if (count > 6 && trace.startsWith("net.minecraft.server"))
 						break;
 
@@ -231,6 +226,9 @@ public final class Debugger {
 		for (final StackTraceElement el : exception.getStackTrace()) {
 			final String[] classNames = el.getClassName().split("\\.");
 			final String className = classNames[classNames.length - 1];
+
+			if (el.toString().contains("net.minecraft.server") || el.toString().contains("org.bukkit.craftbukkit"))
+				break;
 
 			if (!paths.contains(className))
 				paths.add(className + (trackLineNumbers ? "#" + el.getLineNumber() : ""));

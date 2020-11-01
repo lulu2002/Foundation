@@ -9,9 +9,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,6 +33,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.MinecraftVersion;
 import org.mineacademy.fo.MinecraftVersion.V;
@@ -40,7 +42,6 @@ import org.mineacademy.fo.ReflectionUtil;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.debug.Debugger;
 import org.mineacademy.fo.exception.FoException;
-import org.mineacademy.fo.model.HookManager.PAPIPlaceholder;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.region.Region;
 import org.mineacademy.fo.remain.Remain;
@@ -55,6 +56,7 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.server.TemporaryPlayer;
+import com.earth2me.essentials.CommandSource;
 import com.earth2me.essentials.Essentials;
 import com.earth2me.essentials.IUser;
 import com.earth2me.essentials.User;
@@ -82,7 +84,6 @@ import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel;
 import github.scarsz.discordsrv.util.DiscordUtil;
 import lombok.AccessLevel;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -106,26 +107,30 @@ public final class HookManager {
 	// Store hook classes separately for below, avoiding no such method/field errors
 	// ------------------------------------------------------------------------------------------------------------
 
-	private static AuthMeHook authMe;
-	private static EssentialsHook essentialsxHook;
+	private static AuthMeHook authMeHook;
+	private static BanManagerHook banManagerHook;
+	private static BossHook bossHook;
+	private static CitizensHook citizensHook;
+	private static CMIHook CMIHook;
+	private static DiscordSRVHook discordSRVHook;
+	private static EssentialsHook essentialsHook;
+	private static FactionsHook factionsHook;
+	private static LocketteProHook locketteProHook;
+	private static LWCHook lwcHook;
+	private static McMMOHook mcmmoHook;
 	private static MultiverseHook multiverseHook;
+	private static MVdWPlaceholderHook MVdWPlaceholderHook;
+	private static MythicMobsHook mythicMobsHook;
+	private static NickyHook nickyHook;
+	private static PlaceholderAPIHook placeholderAPIHook;
+	private static PlotSquaredHook plotSquaredHook;
 	private static ProtocolLibHook protocolLibHook;
+	private static ResidenceHook residenceHook;
 	private static TownyHook townyHook;
 	private static VaultHook vaultHook;
-	private static PlaceholderAPIHook placeholderAPIHook;
-	private static FactionsHook factionsHook;
-	private static NickyHook nickyHook;
-	private static MVdWPlaceholderHook MVdWPlaceholderHook;
-	private static McMMOHook mcmmoHook;
-	private static LWCHook lwcHook;
-	private static LocketteProHook locketteProHook;
-	private static ResidenceHook residenceHook;
 	private static WorldEditHook worldeditHook;
 	private static WorldGuardHook worldguardHook;
-	private static PlotSquaredHook plotSquaredHook;
-	private static CMIHook CMIHook;
-	private static CitizensHook citizensHook;
-	private static DiscordSRVHook discordSRVHook;
+
 	private static boolean nbtAPIDummyHook = false;
 	private static boolean nuVotifierDummyHook = false;
 	private static boolean townyChatDummyHook = false;
@@ -139,60 +144,20 @@ public final class HookManager {
 	 */
 	public static void loadDependencies() {
 		if (Common.doesPluginExistSilently("AuthMe"))
-			authMe = new AuthMeHook();
+			authMeHook = new AuthMeHook();
 
-		if (Common.doesPluginExistSilently("Multiverse-Core"))
-			multiverseHook = new MultiverseHook();
+		if (Common.doesPluginExistSilently("BanManager"))
+			banManagerHook = new BanManagerHook();
 
-		if (Common.doesPluginExistSilently("Towny"))
-			townyHook = new TownyHook();
-
-		if (Common.doesPluginExistSilently("Vault"))
-			vaultHook = new VaultHook();
-
-		if (Common.doesPluginExistSilently("PlaceholderAPI"))
-			placeholderAPIHook = new PlaceholderAPIHook();
-
-		if (Common.doesPluginExistSilently("Nicky"))
-			nickyHook = new NickyHook();
-
-		if (Common.doesPluginExistSilently("MVdWPlaceholderAPI"))
-			MVdWPlaceholderHook = new MVdWPlaceholderHook();
-
-		if (Common.doesPluginExistSilently("LWC"))
-			lwcHook = new LWCHook();
-
-		if (Common.doesPluginExistSilently("Lockette"))
-			locketteProHook = new LocketteProHook();
-
-		if (Common.doesPluginExistSilently("Residence"))
-			residenceHook = new ResidenceHook();
-
-		if (Common.doesPluginExistSilently("WorldEdit"))
-			worldeditHook = new WorldEditHook();
-
-		if (Common.doesPluginExistSilently("WorldGuard"))
-			worldguardHook = new WorldGuardHook(worldeditHook);
-
-		if (Common.doesPluginExistSilently("mcMMO"))
-			mcmmoHook = new McMMOHook();
-
-		if (Common.doesPluginExistSilently("CMI"))
-			CMIHook = new CMIHook();
+		if (Common.doesPluginExistSilently("Boss"))
+			bossHook = new BossHook();
 
 		if (Common.doesPluginExistSilently("Citizens"))
 			citizensHook = new CitizensHook();
 
-		if (Common.doesPluginExistSilently("NBTAPI"))
-			nbtAPIDummyHook = true;
+		if (Common.doesPluginExistSilently("CMI"))
+			CMIHook = new CMIHook();
 
-		if (Common.doesPluginExistSilently("Votifier"))
-			nuVotifierDummyHook = true;
-
-		if (Common.doesPluginExistSilently("TownyChat"))
-			townyChatDummyHook = true;
-
-		// DiscordSRV
 		if (Common.doesPluginExistSilently("DiscordSRV"))
 			try {
 				Class.forName("github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel");
@@ -203,40 +168,8 @@ public final class HookManager {
 				Common.error(ex, "&c" + SimplePlugin.getNamed() + " failed to hook DiscordSRV because the plugin is outdated (1.18.x is supported)!");
 			}
 
-		// EssentialsX
-		if (Common.doesPluginExistSilently("Essentials")) {
-			final boolean isEssentialsX = Bukkit.getPluginManager().getPlugin("Essentials").getDescription().getAuthors().contains("drtshock");
-
-			if (isEssentialsX)
-				essentialsxHook = new EssentialsHook();
-			else
-				Common.log("Detected old Essentials. We only support EssentialsX, see https://spigotmc.org/resources/9089");
-		}
-
-		// Plotsquared
-		if (Common.doesPluginExistSilently("PlotSquared")) {
-			final String ver = Bukkit.getPluginManager().getPlugin("PlotSquared").getDescription().getVersion();
-
-			if (ver.startsWith("5."))
-				plotSquaredHook = new PlotSquaredHook();
-			else
-				Common.log("&eCould not hook into PlotSquared, version 5.x required, you have " + ver);
-		}
-
-		// ProtocolLib
-		if (Common.doesPluginExistSilently("ProtocolLib")) {
-			protocolLibHook = new ProtocolLibHook();
-
-			// Also check if the library is loaded properly
-			try {
-				if (MinecraftVersion.newerThan(V.v1_6))
-					Class.forName("com.comphenix.protocol.wrappers.WrappedChatComponent");
-			} catch (final Throwable t) {
-				protocolLibHook = null;
-
-				Common.throwError(t, "You are running an old and unsupported version of ProtocolLib, please update it.");
-			}
-		}
+		if (Common.doesPluginExistSilently("Essentials"))
+			essentialsHook = new EssentialsHook();
 
 		// Various kinds of Faction plugins
 		if (Common.doesPluginExistSilently("Factions")) {
@@ -264,6 +197,77 @@ public final class HookManager {
 
 			}
 		}
+
+		if (Common.doesPluginExistSilently("Lockette"))
+			locketteProHook = new LocketteProHook();
+
+		if (Common.doesPluginExistSilently("LWC"))
+			lwcHook = new LWCHook();
+
+		if (Common.doesPluginExistSilently("mcMMO"))
+			mcmmoHook = new McMMOHook();
+
+		if (Common.doesPluginExistSilently("Multiverse-Core"))
+			multiverseHook = new MultiverseHook();
+
+		if (Common.doesPluginExistSilently("MVdWPlaceholderAPI"))
+			MVdWPlaceholderHook = new MVdWPlaceholderHook();
+
+		if (Common.doesPluginExistSilently("MythicMobs"))
+			mythicMobsHook = new MythicMobsHook();
+
+		if (Common.doesPluginExistSilently("Nicky"))
+			nickyHook = new NickyHook();
+
+		if (Common.doesPluginExistSilently("PlaceholderAPI"))
+			placeholderAPIHook = new PlaceholderAPIHook();
+
+		if (Common.doesPluginExistSilently("PlotSquared")) {
+			final String ver = Bukkit.getPluginManager().getPlugin("PlotSquared").getDescription().getVersion();
+
+			if (ver.startsWith("5."))
+				plotSquaredHook = new PlotSquaredHook();
+			else
+				Common.log("&eCould not hook into PlotSquared, version 5.x required, you have " + ver);
+		}
+
+		if (Common.doesPluginExistSilently("ProtocolLib")) {
+			protocolLibHook = new ProtocolLibHook();
+
+			// Also check if the library is loaded properly
+			try {
+				if (MinecraftVersion.newerThan(V.v1_6))
+					Class.forName("com.comphenix.protocol.wrappers.WrappedChatComponent");
+			} catch (final Throwable t) {
+				protocolLibHook = null;
+
+				Common.throwError(t, "You are running an old and unsupported version of ProtocolLib, please update it.");
+			}
+		}
+
+		if (Common.doesPluginExistSilently("Residence"))
+			residenceHook = new ResidenceHook();
+
+		if (Common.doesPluginExistSilently("Towny"))
+			townyHook = new TownyHook();
+
+		if (Common.doesPluginExistSilently("Vault"))
+			vaultHook = new VaultHook();
+
+		if (Common.doesPluginExistSilently("WorldEdit") || Common.doesPluginExistSilently("FastAsyncWorldEdit"))
+			worldeditHook = new WorldEditHook();
+
+		if (Common.doesPluginExistSilently("WorldGuard"))
+			worldguardHook = new WorldGuardHook(worldeditHook);
+
+		if (Common.doesPluginExistSilently("NBTAPI"))
+			nbtAPIDummyHook = true;
+
+		if (Common.doesPluginExistSilently("Votifier"))
+			nuVotifierDummyHook = true;
+
+		if (Common.doesPluginExistSilently("TownyChat"))
+			townyChatDummyHook = true;
 	}
 
 	/**
@@ -292,7 +296,25 @@ public final class HookManager {
 	 * @return
 	 */
 	public static boolean isAuthMeLoaded() {
-		return authMe != null;
+		return authMeHook != null;
+	}
+
+	/**
+	 * Return if BanManager plugin is detected
+	 *
+	 * @return
+	 */
+	public static boolean isBanManagerLoaded() {
+		return banManagerHook != null;
+	}
+
+	/**
+	 * Return if Boss plugin is detected
+	 *
+	 * @return
+	 */
+	public static boolean isBossLoaded() {
+		return bossHook != null;
 	}
 
 	/**
@@ -318,8 +340,8 @@ public final class HookManager {
 	 *
 	 * @return
 	 */
-	public static boolean isEssentialsXLoaded() {
-		return essentialsxHook != null;
+	public static boolean isEssentialsLoaded() {
+		return essentialsHook != null;
 	}
 
 	/**
@@ -329,6 +351,15 @@ public final class HookManager {
 	 */
 	public static boolean isMultiverseCoreLoaded() {
 		return multiverseHook != null;
+	}
+
+	/**
+	 * Is MythicMobs loaded?
+	 *
+	 * @return
+	 */
+	public static boolean isMMythicMobsLoaded() {
+		return mythicMobsHook != null;
 	}
 
 	/**
@@ -449,7 +480,7 @@ public final class HookManager {
 	 * @return
 	 */
 	public static boolean isWorldEditLoaded() {
-		return worldeditHook != null;
+		return worldeditHook != null || isFAWELoaded();
 	}
 
 	/**
@@ -538,7 +569,33 @@ public final class HookManager {
 	 * @return
 	 */
 	public static boolean isLogged(final Player player) {
-		return !isAuthMeLoaded() || authMe.isLogged(player);
+		return !isAuthMeLoaded() || authMeHook.isLogged(player);
+	}
+
+	// ------------------------------------------------------------------------------------------------------------
+	// Boss-related plugins
+	// ------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Returns the Boss name from the given entity, if Boss plugin is installed and
+	 * the given entity is a Boss, otherwise returns null.
+	 *
+	 * @param entity
+	 * @return
+	 */
+	public static String getBossName(Entity entity) {
+		return isBossLoaded() ? bossHook.getBossName(entity) : null;
+	}
+
+	/**
+	 * Returns the name from the given entity, if MythicMobs plugin is installed and
+	 * the given entity is a mythic mob, otherwise returns null.
+	 *
+	 * @param entity
+	 * @return
+	 */
+	public static String getMythicMobName(Entity entity) {
+		return isMMythicMobsLoaded() ? mythicMobsHook.getBossName(entity) : null;
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -552,7 +609,7 @@ public final class HookManager {
 	 * @return
 	 */
 	public static boolean isAfk(final Player player) {
-		final boolean essAFK = isEssentialsXLoaded() && essentialsxHook.isAfk(player.getName());
+		final boolean essAFK = isEssentialsLoaded() && essentialsHook.isAfk(player.getName());
 		final boolean cmiAFK = isCMILoaded() && CMIHook.isAfk(player);
 
 		return essAFK || cmiAFK;
@@ -565,10 +622,13 @@ public final class HookManager {
 	 * @return
 	 */
 	public static boolean isVanished(final Player player) {
-		final boolean essVanish = isEssentialsXLoaded() ? essentialsxHook.isVanished(player.getName()) : false;
-		final boolean cmiVanish = isCMILoaded() ? CMIHook.isVanished(player) : false;
+		if (isEssentialsLoaded() && essentialsHook.isVanished(player.getName()))
+			return true;
 
-		return essVanish || cmiVanish;
+		if (isCMILoaded() && CMIHook.isVanished(player))
+			return true;
+
+		return false;
 	}
 
 	/**
@@ -578,10 +638,16 @@ public final class HookManager {
 	 * @return
 	 */
 	public static boolean isMuted(final Player player) {
-		final boolean isEssMuted = isEssentialsXLoaded() ? essentialsxHook.isMuted(player.getName()) : false;
-		final boolean isCMIMuted = isCMILoaded() ? CMIHook.isMuted(player) : false;
+		if (isEssentialsLoaded() && essentialsHook.isMuted(player.getName()))
+			return true;
 
-		return isEssMuted || isCMIMuted;
+		if (isCMILoaded() && CMIHook.isMuted(player))
+			return true;
+
+		if (isBanManagerLoaded() && banManagerHook.isMuted(player))
+			return true;
+
+		return false;
 	}
 
 	/**
@@ -591,8 +657,8 @@ public final class HookManager {
 	 * @param godMode
 	 */
 	public static void setGodMode(final Player player, final boolean godMode) {
-		if (isEssentialsXLoaded())
-			essentialsxHook.setGodMode(player, godMode);
+		if (isEssentialsLoaded())
+			essentialsHook.setGodMode(player, godMode);
 
 		if (isCMILoaded())
 			CMIHook.setGodMode(player, godMode);
@@ -605,8 +671,8 @@ public final class HookManager {
 	 * @param location
 	 */
 	public static void setBackLocation(final Player player, final Location location) {
-		if (isEssentialsXLoaded())
-			essentialsxHook.setBackLocation(player.getName(), location);
+		if (isEssentialsLoaded())
+			essentialsHook.setBackLocation(player.getName(), location);
 
 		if (isCMILoaded())
 			CMIHook.setLastTeleportLocation(player, location);
@@ -620,8 +686,8 @@ public final class HookManager {
 	 * @param ignore
 	 */
 	public static void setIgnore(final UUID player, final UUID who, final boolean ignore) {
-		if (isEssentialsXLoaded())
-			essentialsxHook.setIgnore(player, who, ignore);
+		if (isEssentialsLoaded())
+			essentialsHook.setIgnore(player, who, ignore);
 
 		if (isCMILoaded())
 			CMIHook.setIgnore(player, who, ignore);
@@ -638,7 +704,7 @@ public final class HookManager {
 		Valid.checkBoolean(player != null, "Player to check ignore from cannot be null/empty");
 		Valid.checkBoolean(who != null, "Player to check ignore to cannot be null/empty");
 
-		return isEssentialsXLoaded() ? essentialsxHook.isIgnoring(player, who) : isCMILoaded() ? CMIHook.isIgnoring(player, who) : false;
+		return isEssentialsLoaded() ? essentialsHook.isIgnoring(player, who) : isCMILoaded() ? CMIHook.isIgnoring(player, who) : false;
 	}
 
 	/**
@@ -682,7 +748,7 @@ public final class HookManager {
 			return sender.getName();
 
 		final String nickyNick = isNickyLoaded() ? nickyHook.getNick(player) : null;
-		final String essNick = isEssentialsXLoaded() ? essentialsxHook.getNick(player.getName()) : null;
+		final String essNick = isEssentialsLoaded() ? essentialsHook.getNick(player.getName()) : null;
 		final String cmiNick = isCMILoaded() ? CMIHook.getNick(player) : null;
 
 		final String nick = nickyNick != null ? nickyNick : cmiNick != null ? cmiNick : essNick != null ? essNick : sender.getName();
@@ -699,7 +765,7 @@ public final class HookManager {
 	 * @return
 	 */
 	public static String getNameFromNick(@NonNull String nick) {
-		final String essNick = isEssentialsXLoaded() ? essentialsxHook.getNameFromNick(nick) : nick;
+		final String essNick = isEssentialsLoaded() ? essentialsHook.getNameFromNick(nick) : nick;
 		final String cmiNick = isCMILoaded() ? CMIHook.getNameFromNick(nick) : nick;
 
 		return !essNick.equals(nick) && !"".equals(essNick) ? essNick : !cmiNick.equals(nick) && !"".equals(cmiNick) ? cmiNick : nick;
@@ -712,7 +778,7 @@ public final class HookManager {
 	 * @return UUID with the name found or null if not stored
 	 */
 	/*public static Tuple<UUID, String> getEssentialsUUIDFromName(String name) {
-		return isEssentialsXLoaded() ? essentialsxHook.getUUIDfromName(name) : null;
+		return isEssentialsLoaded() ? essentialsxHook.getUUIDfromName(name) : null;
 	}*/
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -726,7 +792,7 @@ public final class HookManager {
 	 * @return
 	 */
 	public static Player getReplyTo(final Player player) {
-		return isEssentialsXLoaded() ? essentialsxHook.getReplyTo(player.getName()) : null;
+		return isEssentialsLoaded() ? essentialsHook.getReplyTo(player.getName()) : null;
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -928,7 +994,11 @@ public final class HookManager {
 	public static boolean hasVaultPermission(final String name, final String perm) {
 		Valid.checkBoolean(isVaultLoaded(), "hasVaultPermission called - Please install Vault to enable this functionality!");
 
-		return vaultHook.hasPerm(name, perm.contains("{plugin_name}") ? perm.replace("{plugin_name}", SimplePlugin.getNamed().toLowerCase()) : perm);
+		// TODO remove checks below to increase method call performance
+		Valid.checkNotNull(perm, "Permission to check in vault cannot be null");
+		Valid.checkBoolean(!perm.contains("{plugin_name}"), "Replacing {plugin_name} in vault permissions is no longer supported!");
+
+		return vaultHook.hasPerm(name, perm);
 	}
 
 	/**
@@ -996,61 +1066,43 @@ public final class HookManager {
 	 *
 	 * @param one
 	 * @param two
-	 * @param msg
+	 * @param message
 	 * @return
 	 */
-	public static String replaceRelationPlaceholders(final Player one, final Player two, final String msg) {
-		if (msg == null || "".equals(msg.trim()))
-			return msg;
+	public static String replaceRelationPlaceholders(final Player one, final Player two, final String message) {
+		if (message == null || "".equals(message.trim()))
+			return message;
 
-		return isPlaceholderAPILoaded() ? placeholderAPIHook.replaceRelationPlaceholders(one, two, msg) : msg;
+		return isPlaceholderAPILoaded() ? placeholderAPIHook.replaceRelationPlaceholders(one, two, message) : message;
 	}
 
 	/**
 	 * If PlaceholderAPI is loaded, registers a new placeholder within it
 	 * with the given variable and value.
 	 * <p>
-	 * The variable is automatically prepended with your plugin name, lowercased + _,
-	 * such as chatcontrol_ or boss_ + your variable.
+	 * 		The variable is automatically prepended with your plugin name, lowercased + _,
+	 * 		such as chatcontrol_ or boss_ + your variable.
 	 * <p>
-	 * Example if the variable is player health in ChatControl plugin: "chatcontrol_health"
+	 * 		Example if the variable is player health in ChatControl plugin: "chatcontrol_health"
 	 * <p>
-	 * The value will be called against the given player and the variable you set initially
+	 * 		The value will be called against the given player
 	 * <p>
-	 * NB: In your chat formatting plugin you can append your variable with a "+" sign
-	 * to automatically insert a space after it in case it is not empty (NOT HERE, but in your
-	 * chat control plugin)
 	 *
 	 * @param variable
 	 * @param value
+	 *
+	 * @deprecated It still works, but we now have a new system where you register variables through {@link Variables#addExpansion(SimpleExpansion)}
+	 * 			   instead. It gives you better flexibility and, like PlaceholderAPI, you can replace different variables on the fly.
 	 */
 	@Deprecated
-	public static void addPlaceholder(final String variable, final BiFunction<Player, String, String> value) {
-		if (isPlaceholderAPILoaded())
-			placeholderAPIHook.addPlaceholder(new PAPIPlaceholder(variable, value));
-	}
-
-	/**
-	 * If PlaceholderAPI is loaded, registers a new placeholder within it
-	 * with the given variable and value.
-	 * <p>
-	 * The variable is automatically prepended with your plugin name, lowercased + _,
-	 * such as chatcontrol_ or boss_ + your variable.
-	 * <p>
-	 * Example if the variable is player health in ChatControl plugin: "chatcontrol_health"
-	 * <p>
-	 * The value will be called against the given player
-	 * <p>
-	 * NB: In your chat formatting plugin you can append your variable with a "+" sign
-	 * to automatically insert a space after it in case it is not empty (NOT HERE, but in your
-	 * chat control plugin)
-	 *
-	 * @param variable
-	 * @param value
-	 */
 	public static void addPlaceholder(final String variable, final Function<Player, String> value) {
-		if (isPlaceholderAPILoaded())
-			placeholderAPIHook.addPlaceholder(new PAPIPlaceholder(variable, (player, identifier) -> value.apply(player)));
+		Variables.addExpansion(new SimpleExpansion() {
+
+			@Override
+			protected String onReplace(@NonNull CommandSender sender, String identifier) {
+				return variable.equalsIgnoreCase(identifier) && sender instanceof Player ? value.apply((Player) sender) : null;
+			}
+		});
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -1292,10 +1344,10 @@ public final class HookManager {
 	 * @param channel
 	 * @param message
 	 */
-	public static void sendDiscordMessage(final String senderName, final String channel, final String message) {
+	/*public static void sendDiscordMessage(final String senderName, final String channel, final String message) {
 		if (isDiscordSRVLoaded())
 			discordSRVHook.sendMessage(senderName, channel, message);
-	}
+	}*/
 
 	/**
 	 * Sends a message from the given sender to a certain channel on Discord using DiscordSRV
@@ -1306,8 +1358,8 @@ public final class HookManager {
 	 * @param channel
 	 * @param message
 	 */
-	public static void sendDiscordMessage(final CommandSender sender, final String channel, final String message) {
-		if (isDiscordSRVLoaded())
+	public static void sendDiscordMessage(final CommandSender sender, final String channel, @NonNull final String message) {
+		if (isDiscordSRVLoaded() && !Common.stripColors(message).isEmpty())
 			discordSRVHook.sendMessage(sender, channel, message);
 	}
 
@@ -1317,8 +1369,8 @@ public final class HookManager {
 	 * @param channel
 	 * @param message
 	 */
-	public static void sendDiscordMessage(final String channel, final String message) {
-		if (isDiscordSRVLoaded())
+	public static void sendDiscordMessage(final String channel, @NonNull final String message) {
+		if (isDiscordSRVLoaded() && !Common.stripColors(message).isEmpty())
 			discordSRVHook.sendMessage(channel, message);
 	}
 
@@ -1334,12 +1386,12 @@ public final class HookManager {
 	 * <p>
 	 * and the value that is callable so that you can return updated value each time.
 	 */
-	@Data
+	/*@Data
 	static class PAPIPlaceholder {
-
+	
 		private final String variable;
 		private final BiFunction<Player, String, String> value;
-	}
+	}*/
 }
 
 // ------------------------------------------------------------------------------------------------------------
@@ -1382,10 +1434,8 @@ class EssentialsHook {
 			final com.earth2me.essentials.User user = ess.getUser(player);
 			final com.earth2me.essentials.User toIgnoreUser = ess.getUser(toIgnore);
 
-			if (ignore && user.isIgnoredPlayer(toIgnoreUser))
-				return;
-
-			user.setIgnoredPlayer(toIgnoreUser, ignore);
+			if (toIgnoreUser != null)
+				user.setIgnoredPlayer(toIgnoreUser, ignore);
 
 		} catch (final Throwable t) {
 		}
@@ -1427,15 +1477,30 @@ class EssentialsHook {
 		if (user == null)
 			return null;
 
-		try {
-			final String replyPlayer = user.getReplyRecipient().getName();
-			final Player bukkitPlayer = Bukkit.getPlayer(replyPlayer);
+		String replyPlayer = null;
 
-			if (bukkitPlayer != null && bukkitPlayer.isOnline())
-				return bukkitPlayer;
+		try {
+			replyPlayer = user.getReplyRecipient().getName();
 
 		} catch (final Throwable ex) {
+			try {
+				final Method getReplyTo = ReflectionUtil.getMethod(user.getClass(), "getReplyTo");
+
+				if (getReplyTo != null) {
+					final CommandSource commandSource = ReflectionUtil.invoke(getReplyTo, user);
+
+					replyPlayer = commandSource == null ? null : commandSource.getPlayer().getName();
+				}
+
+			} catch (final Throwable t) {
+				replyPlayer = null;
+			}
 		}
+
+		final Player bukkitPlayer = replyPlayer == null ? null : Bukkit.getPlayer(replyPlayer);
+
+		if (bukkitPlayer != null && bukkitPlayer.isOnline())
+			return bukkitPlayer;
 
 		return null;
 	}
@@ -1493,7 +1558,9 @@ class EssentialsHook {
 		if (user == null)
 			try {
 				user = ess.getUserMap().getUserFromBukkit(name);
+
 			} catch (final Throwable ex) {
+				user = ess.getUser(name);
 			}
 		return user;
 	}
@@ -1790,13 +1857,9 @@ class VaultHook {
 
 class PlaceholderAPIHook {
 
-	private final Set<PAPIPlaceholder> placeholders = new HashSet<>();
-
 	private static volatile VariablesInjector injector;
 
 	PlaceholderAPIHook() {
-		unregister();
-
 		try {
 			injector = new VariablesInjector();
 			injector.register();
@@ -1814,10 +1877,6 @@ class PlaceholderAPIHook {
 			} catch (final Throwable t) {
 				// Silence, probably plugin got removed in the meantime
 			}
-	}
-
-	final void addPlaceholder(final PAPIPlaceholder placeholder) {
-		placeholders.add(placeholder);
 	}
 
 	final String replacePlaceholders(final Player pl, final String msg) {
@@ -1845,10 +1904,17 @@ class PlaceholderAPIHook {
 
 		while (matcher.find()) {
 			String format = matcher.group(1);
-			boolean addSpace = false;
+			boolean frontSpace = false;
+			boolean backSpace = false;
+
+			if (format.startsWith("+")) {
+				frontSpace = true;
+
+				format = format.substring(1);
+			}
 
 			if (format.endsWith("+")) {
-				addSpace = true;
+				backSpace = true;
 
 				format = format.substring(0, format.length() - 1);
 			}
@@ -1858,16 +1924,38 @@ class PlaceholderAPIHook {
 			if (index <= 0 || index >= format.length())
 				continue;
 
-			final String identifier = format.substring(0, index).toLowerCase();
+			final String identifier = format.substring(0, index);
 			final String params = format.substring(index + 1);
 
 			if (hooks.containsKey(identifier)) {
+
+				// Wait 0.5 seconds then kill the thread to prevent server
+				// crashing on PlaceholderAPI variables hanging up on the main thread
+				final Thread currentThread = Thread.currentThread();
+				final BukkitTask watchDog = Common.runLater(20, () -> {
+					Common.logFramed(
+							"IMPORTANT: PREVENTED SERVER CRASH FROM PLACEHOLDERAPI",
+							"Replacing a variable using PlaceholderAPI took",
+							"longer than our maximum limit (1 second) and",
+							"was forcefully interrupted to prevent your",
+							"server from crashing. This is not error on",
+							"our end, please contact the expansion author.",
+							"",
+							"Variable: " + identifier,
+							"Player: " + player.getName());
+
+					currentThread.stop();
+				});
+
 				String value = hooks.get(identifier).onRequest(player, params);
+
+				// Indicate we no longer have to kill the thread
+				watchDog.cancel();
 
 				if (value != null) {
 					value = Matcher.quoteReplacement(Common.colorize(value));
 
-					text = text.replaceAll(Pattern.quote(matcher.group()), value + (addSpace && !value.isEmpty() ? " " : ""));
+					text = text.replaceAll(Pattern.quote(matcher.group()), value.isEmpty() ? "" : (frontSpace ? " " : "") + value + (backSpace ? " " : ""));
 				}
 			}
 		}
@@ -1875,18 +1963,19 @@ class PlaceholderAPIHook {
 		return text;
 	}
 
-	final String replaceRelationPlaceholders(final Player one, final Player two, final String msg) {
+	final String replaceRelationPlaceholders(final Player one, final Player two, final String message) {
 		try {
-			return setRelationalPlaceholders(one, two, msg);
+			return setRelationalPlaceholders(one, two, message);
+
 		} catch (final Throwable t) {
 			Common.error(t,
 					"PlaceholderAPI failed to replace relation variables!",
 					"Player one: " + one,
 					"Player two: " + two,
-					"Message: " + msg,
+					"Message: " + message,
 					"Error: %error");
 
-			return msg;
+			return message;
 		}
 	}
 
@@ -1896,16 +1985,16 @@ class PlaceholderAPIHook {
 		if (hooks.isEmpty())
 			return text;
 
-		final Matcher m = Variables.BRACKET_REL_PLACEHOLDER_PATTERN.matcher(text);
+		final Matcher matcher = Variables.BRACKET_REL_PLACEHOLDER_PATTERN.matcher(text);
 
-		while (m.find()) {
-			final String format = m.group(2);
+		while (matcher.find()) {
+			final String format = matcher.group(2);
 			final int index = format.indexOf("_");
 
 			if (index <= 0 || index >= format.length())
 				continue;
 
-			final String identifier = format.substring(0, index).toLowerCase();
+			final String identifier = format.substring(0, index);
 			final String params = format.substring(index + 1);
 
 			if (hooks.containsKey(identifier)) {
@@ -1916,7 +2005,7 @@ class PlaceholderAPIHook {
 				final String value = one != null && two != null ? rel.onPlaceholderRequest(one, two, params) : "";
 
 				if (value != null)
-					text = text.replaceAll(Pattern.quote(m.group()), Matcher.quoteReplacement(Common.colorize(value)));
+					text = text.replaceAll(Pattern.quote(matcher.group()), Matcher.quoteReplacement(Common.colorize(value)));
 			}
 		}
 
@@ -1986,29 +2075,48 @@ class PlaceholderAPIHook {
 			return SimplePlugin.getInstance().getDescription().getVersion();
 		}
 
+		/**
+		 * Replace Foundation variables but with our plugin name added as prefix
+		 *
+		 * We return null if an invalid placeholder (f.e. %ourplugin_nonexistingplaceholder%) is provided
+		 */
 		@Override
 		public String onRequest(OfflinePlayer offlinePlayer, @NonNull String identifier) {
-			final boolean insertSpace = identifier.endsWith("+");
-			identifier = insertSpace ? identifier.substring(0, identifier.length() - 1) : identifier;
+			final Player player = offlinePlayer.getPlayer();
 
-			for (final PAPIPlaceholder replacer : placeholders)
-				if (identifier.equalsIgnoreCase(replacer.getVariable()))
-					try {
+			if (player == null || !player.isOnline())
+				return null;
 
-						final Player player = offlinePlayer.getPlayer();
+			final boolean frontSpace = identifier.startsWith("+");
+			final boolean backSpace = identifier.endsWith("+");
 
-						if (player == null)
-							return null;
+			identifier = frontSpace ? identifier.substring(1) : identifier;
+			identifier = backSpace ? identifier.substring(0, identifier.length() - 1) : identifier;
 
-						final String value = Common.getOrEmpty(replacer.getValue().apply(player, identifier));
+			final Function<CommandSender, String> variable = Variables.getVariable(identifier);
 
-						return value + (!value.isEmpty() && insertSpace ? " " : "");
+			try {
+				if (variable != null) {
+					final String value = variable.apply(player);
 
-					} catch (final Exception e) {
-						Common.error(e, "Failed to replace your '" + identifier + "' variable for " + offlinePlayer.getName());
-					}
+					if (value != null)
+						return value;
+				}
 
-			// We return null if an invalid placeholder (f.e. %someplugin_placeholder3%) was provided
+				for (final SimpleExpansion expansion : Variables.getExpansions()) {
+					final String value = expansion.replacePlaceholders(player, identifier);
+
+					if (value != null)
+						return (!value.isEmpty() && frontSpace ? " " : "") + value + (!value.isEmpty() && backSpace ? " " : "");
+				}
+
+			} catch (final Exception ex) {
+				Common.error(ex,
+						"Error replacing PlaceholderAPI variables",
+						"Identifier: " + identifier,
+						"Player: " + player.getName());
+			}
+
 			return null;
 		}
 	}
@@ -2027,7 +2135,8 @@ class NickyHook {
 		if (nickname != null) {
 			final Method formatMethod = ReflectionUtil.getMethod(nick.getClass(), "format", String.class);
 
-			nickname = ReflectionUtil.invoke(formatMethod, nick, nickname);
+			if (formatMethod != null)
+				nickname = ReflectionUtil.invoke(formatMethod, nick, nickname);
 		}
 
 		return nickname != null && !nickname.isEmpty() ? nickname : null;
@@ -2596,7 +2705,7 @@ class CMIHook {
 
 	String getNameFromNick(String nick) {
 		for (final CMIUser user : CMI.getInstance().getPlayerManager().getAllUsers().values())
-			if (user != null && user.getNickName() != null && Valid.colorlessEquals(user.getNickName().toLowerCase(), nick.toLowerCase()))
+			if (user != null && user.getNickName() != null && Valid.colorlessEquals(user.getNickName(), nick))
 				return Common.getOrDefault(user.getName(), nick);
 
 		return nick;
@@ -2622,11 +2731,11 @@ class DiscordSRVHook implements Listener {
 		return DiscordSRV.getPlugin().getChannels().keySet();
 	}
 
-	boolean sendMessage(final String sender, final String channel, final String message) {
+	/*boolean sendMessage(final String sender, final String channel, final String message) {
 		final DiscordSender discordSender = new DiscordSender(sender);
-
+	
 		return sendMessage(discordSender, channel, message);
-	}
+	}*/
 
 	boolean sendMessage(final String channel, final String message) {
 		return sendMessage((CommandSender) null, channel, message);
@@ -2661,6 +2770,7 @@ class DiscordSRVHook implements Listener {
 
 					try {
 						instance.processChatMessage((Player) sender, message, channel, false);
+
 					} finally {
 						discordConfig.set(outMessageKey, outMessageOldValue);
 					}
@@ -2668,10 +2778,85 @@ class DiscordSRVHook implements Listener {
 			}
 
 		} else {
-			Debugger.debug("discord", "[MC->Discord] " + (sender == null ? "No given sender " : sender.getName() + " (generic)") + "sent message to '" + channel + "' channel. Message: '" + message + "'");
+			Debugger.debug("discord", "[MC->Discord] " + (sender == null ? "No sender " : sender.getName() + " (generic)") + "sent message to '" + channel + "' channel. Message: '" + message + "'");
 
 			DiscordUtil.sendMessage(textChannel, message);
 		}
 		return true;
+	}
+}
+
+class BanManagerHook {
+
+	/*
+	 * Return true if the given player is muted
+	 */
+	boolean isMuted(final Player player) {
+		try {
+			final Class<?> api = ReflectionUtil.lookupClass("me.confuser.banmanager.common.api.BmAPI");
+			final Method isMuted = ReflectionUtil.getMethod(api, "isMuted", UUID.class);
+
+			return ReflectionUtil.invoke(isMuted, null, player.getUniqueId());
+
+		} catch (final Throwable t) {
+			if (!t.toString().contains("Could not find class"))
+				Common.log("Unable to check if " + player.getName() + " is muted at BanManager. Is the API hook outdated? Got: " + t);
+
+			return false;
+		}
+	}
+}
+
+class BossHook {
+
+	/*
+	 * Return the Boss name if the given player is a Boss or null
+	 */
+	String getBossName(final Entity entity) {
+		try {
+			final Class<?> api = ReflectionUtil.lookupClass("org.mineacademy.boss.api.BossAPI");
+			final Method getBoss = ReflectionUtil.getMethod(api, "getBoss", Entity.class);
+
+			final Object boss = ReflectionUtil.invoke(getBoss, null, entity);
+
+			if (boss != null) {
+				final Method getName = ReflectionUtil.getMethod(boss.getClass(), "getName");
+
+				return ReflectionUtil.invoke(getName, boss);
+			}
+
+		} catch (final Throwable t) {
+			Common.log("Unable to check if " + entity + " is a BOSS. Is the API hook outdated? Got: " + t);
+		}
+
+		return null;
+	}
+}
+
+class MythicMobsHook {
+
+	/*
+	 * Attempt to return a MythicMob name from the given entity
+	 * or null if the entity is not a MythicMob
+	 */
+	final String getBossName(Entity entity) {
+		try {
+			final Class<?> mythicMobs = ReflectionUtil.lookupClass("io.lumine.xikage.mythicmobs.MythicMobs");
+			final Object instance = ReflectionUtil.invokeStatic(mythicMobs, "inst");
+			final Object mobManager = ReflectionUtil.invoke("getMobManager", instance);
+			final Optional<Object> activeMob = ReflectionUtil.invoke(ReflectionUtil.getMethod(mobManager.getClass(), "getActiveMob", UUID.class), mobManager, entity.getUniqueId());
+			final Object mob = activeMob != null && activeMob.isPresent() ? activeMob.get() : null;
+
+			if (mob != null) {
+				final Object mythicEntity = ReflectionUtil.invoke("getEntity", mob);
+
+				if (mythicEntity != null)
+					return (String) ReflectionUtil.invoke("getName", mythicEntity);
+			}
+
+		} catch (final NoSuchElementException ex) {
+		}
+
+		return null;
 	}
 }

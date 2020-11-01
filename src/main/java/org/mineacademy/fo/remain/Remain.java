@@ -65,6 +65,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
@@ -114,6 +115,11 @@ public final class Remain {
 	 * Pattern used to match encoded HEX colors &x&F&F&F&F&F&F
 	 */
 	private static final Pattern RGB_HEX_ENCODED_REGEX = Pattern.compile("(?i)(§x)((§[0-9A-F]){6})");
+
+	/**
+	 * The Google Json instance
+	 */
+	private final static Gson gson = new Gson();
 
 	// ----------------------------------------------------------------------------------------------------
 	// Methods below
@@ -209,6 +215,11 @@ public final class Remain {
 	private static boolean bungeeApiPresent = true;
 
 	/**
+	 * Is org/bukkit/inventory/meta/ItemMeta class present? MC 1.4.7+
+	 */
+	private static boolean hasItemMeta = true;
+
+	/**
 	 * Stores player cooldowns for old MC versions
 	 */
 	private final static StrictMap<UUID /*Player*/, StrictMap<Material, Integer>> cooldowns = new StrictMap<>();
@@ -247,34 +258,28 @@ public final class Remain {
 			getNMSClass("Entity");
 
 		} catch (final Throwable t) {
-			System.out.println("** COMPATIBILITY TEST FAILED - THIS PLUGIN WILL NOT FUNCTION **");
-			System.out.println("** YOUR MINECRAFT VERSION APPEARS UNSUPPORTED: " + MinecraftVersion.getCurrent() + " **");
+			Bukkit.getLogger().severe("** COMPATIBILITY TEST FAILED - THIS PLUGIN WILL NOT FUNCTION PROPERLY **");
+			Bukkit.getLogger().severe("** YOUR MINECRAFT VERSION APPEARS UNSUPPORTED: " + MinecraftVersion.getCurrent() + " **");
 
 			t.printStackTrace();
 
-			System.out.println("***************************************************************");
-			throw new FoException("(This is a proxy exception, look for errors above)");
+			Bukkit.getLogger().severe("***************************************************************");
 		}
 
 		try {
 
-			// Test for very old CraftBukkit (older than 1.3.2)
-			try {
-				Class.forName("org.bukkit.Sound");
-			} catch (final ClassNotFoundException ex) {
-				throw new UnsupportedOperationException("Minecraft 1.2.5 is not supported.");
-			}
+			final boolean hasNMS = MinecraftVersion.atLeast(V.v1_4);
 
 			// Load optional parts
 			try {
 				getHandle = getOBCClass("entity.CraftPlayer").getMethod("getHandle");
-				fieldPlayerConnection = getNMSClass("EntityPlayer").getField("playerConnection");
-				sendPacket = getNMSClass("PlayerConnection").getMethod("sendPacket", getNMSClass("Packet"));
+				fieldPlayerConnection = getNMSClass("EntityPlayer").getField(hasNMS ? "playerConnection" : "netServerHandler");
+				sendPacket = getNMSClass(hasNMS ? "PlayerConnection" : "NetServerHandler").getMethod("sendPacket", getNMSClass("Packet"));
 
 			} catch (final Throwable t) {
-				System.out.println("Unable to find setup some parts of reflection. Plugin will still function.");
-				System.out.println("Error: " + t.getClass().getSimpleName() + ": " + t.getMessage());
-				System.out.println("Ignore this if using Cauldron. Otherwise check if your server is compatibible.");
+				Bukkit.getLogger().warning("Unable to find setup some parts of reflection. Plugin will still function.");
+				Bukkit.getLogger().warning("Error: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+				Bukkit.getLogger().warning("Ignore this if using Cauldron. Otherwise check if your server is compatibible.");
 
 				fieldPlayerConnection = null;
 				sendPacket = null;
@@ -351,6 +356,13 @@ public final class Remain {
 
 			} catch (final NoSuchMethodException err) {
 				hasYamlReaderLoad = false;
+			}
+
+			try {
+				Class.forName("org.bukkit.inventory.meta.ItemMeta");
+
+			} catch (final Exception ex) {
+				hasItemMeta = false;
 			}
 
 			// Initialize legacy material data now to avoid future lag
@@ -588,6 +600,25 @@ public final class Remain {
 	}
 
 	/**
+	 * Return NMS copy of the given itemstack
+	 *
+	 * @param itemStack
+	 * @return
+	 */
+	public static Object asNMSCopy(ItemStack itemStack) {
+		try {
+			final Method asNmsCopy = getOBCClass("inventory.CraftItemStack").getMethod("asNMSCopy", ItemStack.class);
+
+			return asNmsCopy.invoke(null, itemStack);
+
+		} catch (final ReflectiveOperationException ex) {
+			Common.throwError(ex, "Unable to convert item to NMS item: " + itemStack);
+
+			return null;
+		}
+	}
+
+	/**
 	 * Sets a data of a block in the world.
 	 *
 	 * @param block
@@ -673,6 +704,10 @@ public final class Remain {
 		Valid.checkBoolean(bungeeApiPresent, "(Un)packing chat requires Spigot 1.7.10 or newer");
 		final StringBuilder text = new StringBuilder();
 
+		// Translate options does not want to work well with ChatControl
+		if (json.contains("\"translate\""))
+			return text.append("").toString();
+
 		try {
 			for (final BaseComponent comp : ComponentSerializer.parse(json)) {
 				if ((comp.getHoverEvent() != null || comp.getClickEvent() != null) && denyEvents)
@@ -694,6 +729,27 @@ public final class Remain {
 		}
 
 		return text.toString();
+	}
+
+	/**
+	 * Return the given list as JSON
+	 *
+	 * @param list
+	 * @return
+	 */
+	public static String toJson(final Collection<String> list) {
+		return gson.toJson(list);
+	}
+
+	/**
+	 * Convert the given json into list
+	 *
+	 * @param json
+	 * @param typeOf
+	 * @return
+	 */
+	public static List<String> fromJsonList(String json) {
+		return gson.fromJson(json, List.class);
 	}
 
 	/**
@@ -734,7 +790,7 @@ public final class Remain {
 	 * @param item the item to convert
 	 * @return the Json string representation of the item
 	 */
-	public static String toJson(final ItemStack item) {
+	public static String toJson(ItemStack item) {
 		// ItemStack methods to get a net.minecraft.server.ItemStack object for serialization
 		final Class<?> craftItemstack = ReflectionUtil.getOBCClass("inventory.CraftItemStack");
 		final Method asNMSCopyMethod = ReflectionUtil.getMethod(craftItemstack, "asNMSCopy", ItemStack.class);
@@ -761,7 +817,17 @@ public final class Remain {
 	public static BaseComponent[] toComponent(final String json) {
 		Valid.checkBoolean(bungeeApiPresent, "(Un)packing chat requires Spigot 1.7.10 or newer");
 
-		return ComponentSerializer.parse(json);
+		try {
+			return ComponentSerializer.parse(json);
+
+		} catch (final Throwable t) {
+			Common.throwError(t,
+					"Failed to call toComponent!",
+					"Json: " + json,
+					"Error: %error%");
+
+			return null;
+		}
 	}
 
 	/**
@@ -1086,8 +1152,12 @@ public final class Remain {
 		}
 	}
 
-	// Return servers command map
-	private static SimpleCommandMap getCommandMap() {
+	/**
+	 * Return the server's command map
+	 *
+	 * @return
+	 */
+	public static SimpleCommandMap getCommandMap() {
 		try {
 			return (SimpleCommandMap) getOBCClass("CraftServer").getDeclaredMethod("getCommandMap").invoke(Bukkit.getServer());
 
@@ -1253,6 +1323,37 @@ public final class Remain {
 	}
 
 	/**
+	 * Opens the book for the player given the book is a WRITTEN_BOOK
+	 *
+	 * @param player
+	 * @param book
+	 */
+	public static void openBook(Player player, ItemStack book) {
+		Valid.checkBoolean(MinecraftVersion.atLeast(V.v1_8), "Opening books is only supported on MC 1.8 and greater");
+
+		try {
+			player.openBook(book);
+
+		} catch (final NoSuchMethodError ex) {
+			final ItemStack oldItem = player.getItemInHand();
+
+			// Set the book temporarily to hands
+			player.setItemInHand(book);
+
+			final Object craftPlayer = getHandleEntity(player);
+			final Object nmsItemstack = asNMSCopy(book);
+
+			Common.runLater(() -> {
+				final Method openInventory = ReflectionUtil.getMethod(craftPlayer.getClass(), "openBook", nmsItemstack.getClass());
+				ReflectionUtil.invoke(openInventory, craftPlayer, nmsItemstack);
+
+				// Reset hands
+				player.setItemInHand(oldItem);
+			});
+		}
+	}
+
+	/**
 	 * Update the player's inventory title without closing the window
 	 *
 	 * @param player the player
@@ -1262,47 +1363,51 @@ public final class Remain {
 	@Deprecated
 	public static void updateInventoryTitle(final Player player, String title) {
 		try {
-			if (MinecraftVersion.olderThan(V.v1_8))
-				return;
-
-			if (MinecraftVersion.olderThan(V.v1_9) && title.length() > 16)
-				title = title.substring(0, 15);
+			if (MinecraftVersion.olderThan(V.v1_9) && title.length() > 32)
+				title = title.substring(0, 32);
 
 			final Object entityPlayer = player.getClass().getMethod("getHandle").invoke(player);
 
 			final Object activeContainer = entityPlayer.getClass().getField("activeContainer").get(entityPlayer);
-			final Constructor<?> chatMessageConst = getNMSClass("ChatMessage").getConstructor(String.class, Object[].class);
-
 			final Object windowId = activeContainer.getClass().getField("windowId").get(activeContainer);
-			final Object chatMessage = chatMessageConst.newInstance(ChatColor.translateAlternateColorCodes('&', title), new Object[0]);
 
 			final Object packet;
 
-			if (MinecraftVersion.newerThan(V.v1_13)) {
-				final Class<?> containersClass = getNMSClass("Containers");
-				final Constructor<?> packetConst = getNMSClass("PacketPlayOutOpenWindow").getConstructor(/*windowID*/int.class, /*containers*/containersClass, /*msg*/getNMSClass("IChatBaseComponent"));
+			if (MinecraftVersion.atLeast(V.v1_8)) {
+				final Constructor<?> chatMessageConst = getNMSClass("ChatMessage").getConstructor(String.class, Object[].class);
+				final Object chatMessage = chatMessageConst.newInstance(ChatColor.translateAlternateColorCodes('&', title), new Object[0]);
 
-				final int inventorySize = player.getOpenInventory().getTopInventory().getSize() / 9;
+				if (MinecraftVersion.newerThan(V.v1_13)) {
+					final int inventorySize = player.getOpenInventory().getTopInventory().getSize() / 9;
 
-				if (inventorySize < 1 || inventorySize > 6) {
-					Common.log("Cannot update title for " + player.getName() + " as their inventory has non typical size: " + inventorySize + " rows");
+					if (inventorySize < 1 || inventorySize > 6) {
+						Common.log("Cannot update title for " + player.getName() + " as their inventory has non typical size: " + inventorySize + " rows");
 
-					return;
+						return;
+					}
+
+					final Class<?> containersClass = getNMSClass("Containers");
+					final Constructor<?> packetConst = getNMSClass("PacketPlayOutOpenWindow").getConstructor(/*windowID*/int.class, /*containers*/containersClass, /*msg*/getNMSClass("IChatBaseComponent"));
+					final Object container = containersClass.getField("GENERIC_9X" + inventorySize).get(null);
+
+					packet = packetConst.newInstance(windowId, container, chatMessage);
+
+				} else {
+					final Constructor<?> packetConst = getNMSClass("PacketPlayOutOpenWindow").getConstructor(int.class, String.class, getNMSClass("IChatBaseComponent"), int.class);
+
+					packet = packetConst.newInstance(windowId, "minecraft:chest", chatMessage, player.getOpenInventory().getTopInventory().getSize());
 				}
-
-				final Object container = containersClass.getField("GENERIC_9X" + inventorySize).get(null);
-
-				packet = packetConst.newInstance(windowId, container, chatMessage);
-
 			} else {
-				final Constructor<?> packetConst = getNMSClass("PacketPlayOutOpenWindow").getConstructor(int.class, String.class, getNMSClass("IChatBaseComponent"), int.class);
+				final Constructor<?> openWindow = ReflectionUtil.getConstructor(
+						getNMSClass(MinecraftVersion.atLeast(V.v1_7) ? "PacketPlayOutOpenWindow" : "Packet100OpenWindow"), int.class, int.class, String.class, int.class, boolean.class);
 
-				packet = packetConst.newInstance(windowId, "minecraft:chest", chatMessage, player.getOpenInventory().getTopInventory().getSize());
+				packet = ReflectionUtil.instantiate(openWindow, windowId, 0, ChatColor.translateAlternateColorCodes('&', title), player.getOpenInventory().getTopInventory().getSize(), true);
 			}
 
 			sendPacket(player, packet);
 
 			entityPlayer.getClass().getMethod("updateInventory", getNMSClass("Container")).invoke(entityPlayer, activeContainer);
+
 		} catch (final ReflectiveOperationException ex) {
 			Common.error(ex, "Error updating " + player.getName() + " inventory title to '" + title + "'");
 		}
@@ -1363,7 +1468,9 @@ public final class Remain {
 	 * @return
 	 */
 	public static int getPlaytimeMinutes(final Player player) {
-		return player.getStatistic(getPlayTimeStatisticName()) / (isPlaytimeStatisticTicks() ? 20 : 1);
+		final Statistic stat = getPlayTimeStatisticName();
+
+		return player.getStatistic(stat) / (stat.name().contains("TICK") ? 20 * 60 : 60 * 60);
 	}
 
 	/**
@@ -1509,6 +1616,82 @@ public final class Remain {
 		final InventoryView view = e.getView();
 
 		return slot < 0 ? null : view.getTopInventory() != null && slot < view.getTopInventory().getSize() ? view.getTopInventory() : view.getBottomInventory();
+	}
+
+	/**
+	 * Return a list of pages (new MC also will expose interactive elements)
+	 * in a book
+	 *
+	 * @param meta
+	 * @return
+	 */
+	public static List<BaseComponent[]> getPages(BookMeta meta) {
+		try {
+			return meta.spigot().getPages();
+
+		} catch (final NoSuchMethodError ex) {
+			final List<BaseComponent[]> list = new ArrayList<>();
+
+			for (final String page : meta.getPages())
+				list.add(TextComponent.fromLegacyText(page));
+
+			return list;
+		}
+	}
+
+	/**
+	 * Attempts to set the book pages from the given list
+	 *
+	 * @param meta
+	 * @param pages
+	 */
+	public static void setPages(BookMeta meta, List<BaseComponent[]> pages) {
+		try {
+			meta.spigot().setPages(pages);
+
+		} catch (final NoSuchMethodError ex) {
+			/*final List<String> list = new ArrayList<>();
+
+			for (final BaseComponent[] page : pages)
+				list.add(TextComponent.toLegacyText(page));
+
+			meta.setPages(list);*/
+
+			try {
+				final List<Object> chatComponentPages = (List<Object>) ReflectionUtil.getFieldContent(ReflectionUtil.getOBCClass("inventory.CraftMetaBook"), "pages", meta);
+
+				for (final BaseComponent[] text : pages)
+					chatComponentPages.add(toIChatBaseComponent(text));
+
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * Return IChatBaseComponent from the given JSON
+	 *
+	 * @param baseComponents
+	 * @return
+	 */
+	public static Object toIChatBaseComponent(BaseComponent[] baseComponents) {
+		return toIChatBaseComponent(toJson(baseComponents));
+	}
+
+	/**
+	 * Return IChatBaseComponent from the given JSON
+	 *
+	 * @param json
+	 * @return
+	 */
+	public static Object toIChatBaseComponent(String json) {
+		Valid.checkBoolean(MinecraftVersion.atLeast(V.v1_7), "Serializing chat components requires Minecraft 1.7.10 and greater");
+
+		final Class<?> chatSerializer = ReflectionUtil.getNMSClass((MinecraftVersion.equals(V.v1_7) ? "" : "IChatBaseComponent$") + "ChatSerializer");
+		final Method a = ReflectionUtil.getMethod(chatSerializer, "a", String.class);
+
+		return ReflectionUtil.invoke(a, null, json);
 	}
 
 	/**
@@ -1810,23 +1993,8 @@ public final class Remain {
 	 * @param level
 	 */
 	public static void setPotion(final ItemStack item, final PotionEffectType type, final int level) {
-		final PotionType wrapped = PotionType.getByEffect(type);
-		final org.bukkit.inventory.meta.PotionMeta meta = (org.bukkit.inventory.meta.PotionMeta) item.getItemMeta();
-
-		try {
-			final org.bukkit.potion.PotionData data = new org.bukkit.potion.PotionData(level > 0 && wrapped != null ? wrapped : PotionType.WATER);
-
-			if (level > 0 && wrapped == null)
-				meta.addEnchant(Enchantment.DURABILITY, 1, true);
-
-			meta.setBasePotionData(data);
-
-		} catch (final NoSuchMethodError | NoClassDefFoundError ex) {
-			meta.setMainEffect(type);
-			meta.addCustomEffect(new PotionEffect(type, Integer.MAX_VALUE, level - 1), true);
-		}
-
-		item.setItemMeta(meta);
+		if (hasItemMeta)
+			PotionSetter.setPotion(item, type, level);
 	}
 
 	/**
@@ -2145,6 +2313,15 @@ public final class Remain {
 	}
 
 	/**
+	 * Return if this MC is likely 1.3.2 and greater
+	 *
+	 * @return
+	 */
+	public static boolean hasItemMeta() {
+		return hasItemMeta;
+	}
+
+	/**
 	 * Return if the MC version is 1.16+ that supports HEX RGB colors
 	 *
 	 * @return
@@ -2226,7 +2403,6 @@ class SneakyThrow {
 class BungeeChatProvider {
 
 	static void sendComponent(final CommandSender sender, final Object comps) {
-
 		if (comps instanceof TextComponent)
 			sendComponent0(sender, (TextComponent) comps);
 
@@ -2247,15 +2423,24 @@ class BungeeChatProvider {
 		}
 
 		try {
-			((Player) sender).spigot().sendMessage(comps);
+			if (MinecraftVersion.equals(V.v1_7)) {
+				final Class<?> chatBaseComponentClass = ReflectionUtil.getNMSClass("IChatBaseComponent");
+				final Class<?> packetClass = ReflectionUtil.getNMSClass("PacketPlayOutChat");
 
-		} catch (final NoClassDefFoundError | NoSuchMethodError ex) {
-			if (MinecraftVersion.newerThan(V.v1_7))
-				Common.error(ex, "Error printing JSON message, sending as plain.");
+				final Object chatBaseComponent = Remain.toIChatBaseComponent(comps);
+				final Object packet = ReflectionUtil.instantiate(ReflectionUtil.getConstructor(packetClass, chatBaseComponentClass), chatBaseComponent);
 
-			tell0(sender, plainMessage.toString());
+				Remain.sendPacket((Player) sender, packet);
 
-		} catch (final Exception ex) {
+			} else
+				((Player) sender).spigot().sendMessage(comps);
+
+		} catch (final Throwable ex) {
+
+			// This is the minimum MC version that supports interactive chat
+			if (MinecraftVersion.atLeast(V.v1_7))
+				Common.throwError(ex, "Failed to send component: " + plainMessage.toString() + " to " + sender.getName());
+
 			tell0(sender, plainMessage.toString());
 		}
 	}
@@ -2283,7 +2468,7 @@ class AdvancementAccessor {
 	private final String message;
 
 	AdvancementAccessor(final String message, final String icon) {
-		this.key = new NamespacedKey(SimplePlugin.getInstance(), "" + System.nanoTime() / 1000);
+		this.key = new NamespacedKey(SimplePlugin.getInstance(), UUID.randomUUID().toString());
 		this.message = message;
 		this.icon = icon;
 	}
@@ -2353,5 +2538,35 @@ class AdvancementAccessor {
 
 	private Advancement getAdvancement() {
 		return Bukkit.getAdvancement(key);
+	}
+}
+
+class PotionSetter {
+
+	/**
+	 * Attempts to insert a certain potion to the given item
+	 *
+	 * @param item
+	 * @param type
+	 * @param level
+	 */
+	public static void setPotion(final ItemStack item, final PotionEffectType type, final int level) {
+		final PotionType wrapped = PotionType.getByEffect(type);
+		final org.bukkit.inventory.meta.PotionMeta meta = (org.bukkit.inventory.meta.PotionMeta) item.getItemMeta();
+
+		try {
+			final org.bukkit.potion.PotionData data = new org.bukkit.potion.PotionData(level > 0 && wrapped != null ? wrapped : PotionType.WATER);
+
+			if (level > 0 && wrapped == null)
+				meta.addEnchant(Enchantment.DURABILITY, 1, true);
+
+			meta.setBasePotionData(data);
+
+		} catch (final NoSuchMethodError | NoClassDefFoundError ex) {
+			meta.setMainEffect(type);
+			meta.addCustomEffect(new PotionEffect(type, Integer.MAX_VALUE, level - 1), true);
+		}
+
+		item.setItemMeta(meta);
 	}
 }

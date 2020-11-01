@@ -44,6 +44,7 @@ public class ChatInternals {
 	}
 
 	static {
+
 		// New MC versions have native API's
 		if (MinecraftVersion.olderThan(V.v1_12) && MinecraftVersion.newerThan(V.v1_6))
 			try {
@@ -82,9 +83,14 @@ public class ChatInternals {
 				}
 
 			} catch (final Exception t) {
-				t.printStackTrace();
+				if (MinecraftVersion.olderThan(V.v1_8))
+					Common.log("Error initiating Chat/Title/ActionBAR API. Assuming Thermos or modded. Some features will not work.");
 
-				throw new ReflectionException("Error initiating Chat/Title/ActionBAR API (incompatible Craftbukkit? - " + Bukkit.getVersion() + " / " + Bukkit.getBukkitVersion() + " / " + MinecraftVersion.getServerVersion() + ")", t);
+				else {
+					t.printStackTrace();
+
+					throw new ReflectionException("Error initiating Chat/Title/ActionBAR API (incompatible Craftbukkit? - " + Bukkit.getVersion() + " / " + Bukkit.getBukkitVersion() + " / " + MinecraftVersion.getServerVersion() + ")", t);
+				}
 			}
 	}
 

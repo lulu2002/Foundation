@@ -1,13 +1,14 @@
 package org.mineacademy.fo;
 
+import java.awt.Color;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -19,20 +20,28 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.mineacademy.fo.MinecraftVersion.V;
 import org.mineacademy.fo.collection.SerializedMap;
 import org.mineacademy.fo.collection.StrictCollection;
 import org.mineacademy.fo.collection.StrictMap;
+import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.exception.InvalidWorldException;
 import org.mineacademy.fo.menu.model.ItemCreator;
 import org.mineacademy.fo.model.ConfigSerializable;
 import org.mineacademy.fo.model.IsInList;
+import org.mineacademy.fo.model.SimpleSound;
 import org.mineacademy.fo.model.SimpleTime;
+import org.mineacademy.fo.remain.CompChatColor;
 import org.mineacademy.fo.remain.CompMaterial;
+import org.mineacademy.fo.remain.Remain;
 import org.mineacademy.fo.settings.YamlConfig;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.HoverEvent;
 
 /**
  * Utility class for serializing objects to writeable YAML data and back.
@@ -62,6 +71,15 @@ public final class SerializeUtil {
 
 		else if (obj instanceof ChatColor)
 			return ((ChatColor) obj).name();
+
+		else if (obj instanceof CompChatColor)
+			return ((CompChatColor) obj).getName();
+
+		else if (obj instanceof net.md_5.bungee.api.ChatColor) {
+			final net.md_5.bungee.api.ChatColor color = ((net.md_5.bungee.api.ChatColor) obj);
+
+			return MinecraftVersion.atLeast(V.v1_16) ? color.toString() : color.name();
+		}
 
 		else if (obj instanceof CompMaterial)
 			return obj.toString();
@@ -93,6 +111,30 @@ public final class SerializeUtil {
 		else if (obj instanceof SimpleTime)
 			return ((SimpleTime) obj).getRaw();
 
+		else if (obj instanceof SimpleSound)
+			return ((SimpleSound) obj).toString();
+
+		else if (obj instanceof Color)
+			return "#" + ((Color) obj).getRGB();
+
+		else if (obj instanceof BaseComponent)
+			return Remain.toJson((BaseComponent) obj);
+
+		else if (obj instanceof BaseComponent[])
+			return Remain.toJson((BaseComponent[]) obj);
+
+		else if (obj instanceof HoverEvent) {
+			final HoverEvent event = (HoverEvent) obj;
+
+			return SerializedMap.ofArray("Action", event.getAction(), "Value", event.getValue()).serialize();
+		}
+
+		else if (obj instanceof ClickEvent) {
+			final ClickEvent event = (ClickEvent) obj;
+
+			return SerializedMap.ofArray("Action", event.getAction(), "Value", event.getValue()).serialize();
+		}
+
 		else if (obj instanceof Iterable || obj.getClass().isArray() || obj instanceof IsInList) {
 			final List<Object> serialized = new ArrayList<>();
 
@@ -114,7 +156,7 @@ public final class SerializeUtil {
 			return newMap;
 		} else if (obj instanceof Map) {
 			final Map<Object, Object> oldMap = (Map<Object, Object>) obj;
-			final Map<Object, Object> newMap = new HashMap<>();
+			final Map<Object, Object> newMap = new LinkedHashMap<>();
 
 			for (final Map.Entry<Object, Object> entry : oldMap.entrySet())
 				newMap.put(serialize(entry.getKey()), serialize(entry.getValue()));
@@ -125,7 +167,9 @@ public final class SerializeUtil {
 
 		else if (obj instanceof Integer || obj instanceof Double || obj instanceof Float || obj instanceof Long || obj instanceof Short
 				|| obj instanceof String || obj instanceof Boolean || obj instanceof Map
-				|| obj instanceof MemorySection)
+				|| obj instanceof ItemStack
+				|| obj instanceof MemorySection
+				|| obj instanceof Pattern)
 			return obj;
 
 		else if (obj instanceof ConfigurationSerializable)
@@ -276,16 +320,51 @@ public final class SerializeUtil {
 			else if (classOf == SimpleTime.class)
 				object = SimpleTime.from(object.toString());
 
+			else if (classOf == SimpleSound.class)
+				object = new SimpleSound(object.toString());
+
+			else if (classOf == net.md_5.bungee.api.ChatColor.class)
+				throw new FoException("Instead of net.md_5.bungee.api.ChatColor, use our CompChatColor");
+
+			else if (classOf == CompChatColor.class)
+				object = CompChatColor.of(object.toString());
+
 			else if (classOf == UUID.class)
 				object = UUID.fromString(object.toString());
+
+			else if (classOf == BaseComponent.class) {
+				final BaseComponent[] deserialized = Remain.toComponent(object.toString());
+				Valid.checkBoolean(deserialized.length == 1, "Failed to deserialize into singular BaseComponent: " + object);
+
+				object = deserialized[0];
+
+			} else if (classOf == BaseComponent[].class)
+				object = Remain.toComponent(object.toString());
+
+			else if (classOf == HoverEvent.class) {
+				final SerializedMap serialized = SerializedMap.of(object);
+				final HoverEvent.Action action = serialized.get("Action", HoverEvent.Action.class);
+				final BaseComponent[] value = serialized.get("Value", BaseComponent[].class);
+
+				object = new HoverEvent(action, value);
+			}
+
+			else if (classOf == ClickEvent.class) {
+				final SerializedMap serialized = SerializedMap.of(object);
+
+				final ClickEvent.Action action = serialized.get("Action", ClickEvent.Action.class);
+				final String value = serialized.getString("Value");
+
+				object = new ClickEvent(action, value);
+			}
 
 			else if (Enum.class.isAssignableFrom(classOf))
 				object = ReflectionUtil.lookupEnum((Class<Enum>) classOf, object.toString());
 
-			else if (classOf == ItemStack.class)
-				object = ItemStack.deserialize(map.asMap());
+			else if (Color.class.isAssignableFrom(classOf)) {
+				object = CompChatColor.of(object.toString()).getColor();
 
-			else if (List.class.isAssignableFrom(classOf) && object instanceof List) {
+			} else if (List.class.isAssignableFrom(classOf) && object instanceof List) {
 				// Good
 
 			} else if (Map.class.isAssignableFrom(classOf) && object instanceof Map) {
@@ -310,12 +389,14 @@ public final class SerializeUtil {
 	 * @param raw
 	 * @return
 	 */
-	public static Location deserializeLocation(final Object raw) {
+	public static Location deserializeLocation(Object raw) {
 		if (raw == null)
 			return null;
 
 		if (raw instanceof Location)
 			return (Location) raw;
+
+		raw = raw.toString().replace("\"", "");
 
 		final String[] parts = raw.toString().contains(", ") ? raw.toString().split(", ") : raw.toString().split(" ");
 		Valid.checkBoolean(parts.length == 4 || parts.length == 6, "Expected location (String) but got " + raw.getClass().getSimpleName() + ": " + raw);
@@ -323,9 +404,9 @@ public final class SerializeUtil {
 		final String world = parts[0];
 		final World bukkitWorld = Bukkit.getWorld(world);
 		if (bukkitWorld == null)
-			throw new InvalidWorldException("Location with invalid world '" + world + "': " + raw + " (Doesn't exist)");
+			throw new InvalidWorldException("Location with invalid world '" + world + "': " + raw + " (Doesn't exist)", world);
 
-		final double x = Double.parseDouble(parts[1]), y = Double.parseDouble(parts[2]), z = Double.parseDouble(parts[3]);
+		final int x = Integer.parseInt(parts[1]), y = Integer.parseInt(parts[2]), z = Integer.parseInt(parts[3]);
 		final float yaw = Float.parseFloat(parts.length == 6 ? parts[4] : "0"), pitch = Float.parseFloat(parts.length == 6 ? parts[5] : "0");
 
 		return new Location(bukkitWorld, x, y, z, yaw, pitch);

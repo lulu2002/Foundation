@@ -30,6 +30,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.annotation.Nullable;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.mineacademy.fo.exception.FoException;
@@ -140,7 +141,7 @@ public final class FileUtil {
 			destination.createNewFile();
 
 		} catch (final IOException ex) {
-			System.out.println("Failed to create a new file " + path);
+			Bukkit.getLogger().severe("Failed to create a new file " + path);
 
 			ex.printStackTrace();
 		}
@@ -195,24 +196,18 @@ public final class FileUtil {
 		Valid.checkNotNull(file, "File cannot be null");
 		Valid.checkBoolean(file.exists(), "File: " + file + " does not exists!");
 
-		try {
-			return Files.readAllLines(Paths.get(file.toURI()), StandardCharsets.UTF_8);
+		// Older method, missing libraries
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+			final List<String> lines = new ArrayList<>();
+			String line;
 
-		} catch (final IOException ex) {
+			while ((line = br.readLine()) != null)
+				lines.add(line);
 
-			// Older method, missing libraries
-			try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
-				final List<String> lines = new ArrayList<>();
-				String line;
+			return lines;
 
-				while ((line = br.readLine()) != null)
-					lines.add(line);
-
-				return lines;
-
-			} catch (final IOException ee) {
-				throw new FoException(ee, "Could not read lines from " + file.getName());
-			}
+		} catch (final IOException ee) {
+			throw new FoException(ee, "Could not read lines from " + file.getName());
 		}
 	}
 
@@ -243,7 +238,8 @@ public final class FileUtil {
 		final YamlConfiguration conf = new YamlConfiguration();
 
 		try {
-			checkFileForKnownErrors(file);
+			if (file.exists())
+				checkFileForKnownErrors(file);
 
 			conf.load(file);
 
@@ -268,7 +264,7 @@ public final class FileUtil {
 	 * Check file for known errors
 	 */
 	private static void checkFileForKnownErrors(File file) throws IOException {
-		for (final String line : Files.readAllLines(file.toPath()))
+		for (final String line : readLines(file))
 			if (line.contains("[*]"))
 				throw new FoException("Found [*] in your .yml file " + file + ". Please replace it with ['*'] instead.");
 	}
@@ -320,6 +316,16 @@ public final class FileUtil {
 	}
 
 	/**
+	 * Write lines to a file, creating the file if not exist appending lines at the end
+	 *
+	 * @param to
+	 * @param lines
+	 */
+	public static void write(File to, String... lines) {
+		write(createIfNotExists(to), Arrays.asList(lines), StandardOpenOption.APPEND);
+	}
+
+	/**
 	 * Write lines to a file path in our plugin directory,
 	 * creating the file if it does not exist, appending lines at the end
 	 *
@@ -342,6 +348,9 @@ public final class FileUtil {
 			final Path path = Paths.get(to.toURI());
 
 			try {
+				if (!to.exists())
+					createIfNotExists(to);
+
 				Files.write(path, lines, StandardCharsets.UTF_8, options);
 
 			} catch (final ClosedByInterruptException ex) {
@@ -355,7 +364,7 @@ public final class FileUtil {
 			}
 
 		} catch (final Exception ex) {
-			System.out.println("Failed to write to " + to);
+			Bukkit.getLogger().severe("Failed to write to " + to);
 
 			ex.printStackTrace(); // do not throw our exception since it would cause an infinite loop if there is a problem due to error writing
 		}

@@ -15,10 +15,12 @@ import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.settings.YamlConfig;
 
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
  * A special class that can store loaded {@link YamlConfig} files
+ *
+ * DOES NOT INVOKE {@link YamlConfig#loadConfiguration(String, String)}
+ * for you, you must invoke it by yourself as you otherwise normally would!
  *
  * @param <T>
  */
@@ -49,17 +51,6 @@ public final class ConfigItems<T extends YamlConfig> {
 	private final Class<T> prototypeClass;
 
 	/**
-	 * Shall we log each item loaded? True by default
-	 */
-	@Setter
-	private boolean verbose = true;
-
-	/**
-	 * Do we have a default file (a prototype) to copy default settings from?
-	 */
-	private boolean hasDefaults = true;
-
-	/**
 	 * Are all items stored in a single file?
 	 */
 	private boolean singleFile = false;
@@ -73,28 +64,37 @@ public final class ConfigItems<T extends YamlConfig> {
 	 * @param hasDefaultPrototype
 	 * @param singleFile
 	 */
-	private ConfigItems(String type, String folder, Class<T> prototypeClass, boolean singleFile, boolean hasDefaults) {
+	private ConfigItems(String type, String folder, Class<T> prototypeClass, boolean singleFile) {
 		this.type = type;
 		this.folder = folder;
 		this.prototypeClass = prototypeClass;
 		this.singleFile = singleFile;
-		this.hasDefaults = hasDefaults;
 	}
 
+	/**
+	 * Load items from the given folder
+	 *
+	 * @param <P>
+	 * @param name - the name of what we are loading, used for error messages such as "class", "format"
+	 * @param folder
+	 * @param prototypeClass
+	 * @return
+	 */
 	public static <P extends YamlConfig> ConfigItems<P> fromFolder(String name, String folder, Class<P> prototypeClass) {
-		return fromFolder(name, folder, prototypeClass, true);
+		return new ConfigItems<>(name, folder, prototypeClass, false);
 	}
 
-	public static <P extends YamlConfig> ConfigItems<P> fromFolder(String name, String folder, Class<P> prototypeClass, boolean hasDefaults) {
-		return new ConfigItems<>(name, folder, prototypeClass, false, hasDefaults);
-	}
-
+	/**
+	 * Load items from the given YAML file path
+	 *
+	 * @param <P>
+	 * @param path
+	 * @param file
+	 * @param prototypeClass
+	 * @return
+	 */
 	public static <P extends YamlConfig> ConfigItems<P> fromFile(String path, String file, Class<P> prototypeClass) {
-		return fromFile(path, file, prototypeClass, true);
-	}
-
-	public static <P extends YamlConfig> ConfigItems<P> fromFile(String path, String file, Class<P> prototypeClass, boolean hasDefaults) {
-		return new ConfigItems<>(path, file, prototypeClass, true, hasDefaults);
+		return new ConfigItems<>(path, file, prototypeClass, true);
 	}
 
 	/**
@@ -106,8 +106,9 @@ public final class ConfigItems<T extends YamlConfig> {
 		loadedItems.clear();
 
 		if (singleFile) {
-			final File file = FileUtil.getOrMakeFile(this.folder);
+			final File file = FileUtil.extract(this.folder);
 			final YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+			Valid.checkBoolean(config.isSet(this.type), "Unable to locate configuration section " + this.type + " in " + file);
 
 			for (final String name : config.getConfigurationSection(this.type).getKeys(false))
 				loadOrCreateItem(name);
@@ -137,7 +138,6 @@ public final class ConfigItems<T extends YamlConfig> {
 	 * @return
 	 */
 	private void loadOrCreateItem(final String name) {
-		Valid.checkBoolean(!isItemLoaded(name), WordUtils.capitalize(type) + name + " is already loaded: " + getItemNames());
 
 		try {
 			Constructor<T> constructor;
@@ -155,19 +155,18 @@ public final class ConfigItems<T extends YamlConfig> {
 			constructor.setAccessible(true);
 
 			// Create a new instance of our item
-			final T item = nameConstructor ? constructor.newInstance(name) : constructor.newInstance();
+			final T item;
 
-			// Automatically load configuration and paste prototype
-			item.loadConfiguration(hasDefaults ? "prototype/" + type + ".yml" : YamlConfig.NO_DEFAULT, singleFile ? folder : folder + "/" + name + ".yml");
+			if (nameConstructor)
+				item = constructor.newInstance(name);
+			else
+				item = constructor.newInstance();
 
 			// Register
 			loadedItems.add(item);
 
-			if (verbose && !singleFile)
-				Common.log("[+] Loaded " + (type.endsWith("s") ? type.substring(0, type.length() - 1).toLowerCase() : type) + " " + item.getName());
-
 		} catch (final Throwable t) {
-			Common.throwError(t, "Failed to load " + type + " " + name + " from " + folder);
+			Common.throwError(t, "Failed to load" + (type == null ? "" : " " + type) + " " + name + " from " + folder);
 		}
 	}
 

@@ -1,5 +1,7 @@
 package org.mineacademy.fo.settings;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import org.mineacademy.fo.Common;
@@ -11,7 +13,6 @@ import org.mineacademy.fo.debug.LagCatcher;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.model.SpigotUpdater;
 import org.mineacademy.fo.plugin.SimplePlugin;
-import org.mineacademy.fo.remain.Remain;
 
 /**
  * A simple implementation of a typical main plugin settings
@@ -89,6 +90,11 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	// --------------------------------------------------------------------
 
 	/**
+	 * The {timestamp} format.
+	 */
+	public static DateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+
+	/**
 	 * What debug sections should we enable in {@link Debugger} ? When you call {@link Debugger#debug(String, String...)}
 	 * those that are specified in this settings are logged into the console, otherwise no message is shown.
 	 * <p>
@@ -145,31 +151,6 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	public static String LOCALE_PREFIX = "en";
 
 	/**
-	 * The server name used in {server_name} variable or BungeeCord, if your plugin supports either of those.
-	 * <p>
-	 * Typically for ChatControl:
-	 * <p>
-	 * Server_Name: "My ChatControl Server"
-	 * <p>
-	 * // NOT MANDATORY //
-	 */
-	public static String SERVER_NAME = "Server";
-
-	/**
-	 * The server name identifier
-	 * <p>
-	 * Mandatory if using BungeeCord
-	 */
-	public static String BUNGEE_SERVER_NAME = "Server";
-
-	/**
-	 * Antipiracy stuff for our protected software, leave empty to Serialization: ""
-	 *
-	 * // NOT MANDATORY //
-	 */
-	public static String SECRET_KEY = "";
-
-	/**
 	 * Should we check for updates from SpigotMC and notify the console and users with permission?
 	 * <p>
 	 * See {@link SimplePlugin#getUpdateCheck()} that you can make to return {@link SpigotUpdater} with your Spigot plugin ID.
@@ -191,6 +172,14 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 		pathPrefix(null);
 		upgradeOldSettings();
 
+		if (isSetDefault("Timestamp_Format"))
+			try {
+				TIMESTAMP_FORMAT = new SimpleDateFormat(getString("Timestamp_Format"));
+
+			} catch (final IllegalArgumentException ex) {
+				Common.throwError(ex, "Wrong 'Timestamp_Format '" + getString("Timestamp_Format") + "', see https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html for examples'");
+			}
+
 		if (isSetDefault("Prefix"))
 			PLUGIN_PREFIX = getString("Prefix");
 
@@ -208,24 +197,9 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 		if (isSetDefault("Regex_Timeout_Milis"))
 			REGEX_TIMEOUT = getInteger("Regex_Timeout_Milis");
 
-		if (isSetDefault("Server_Name"))
-			SERVER_NAME = Common.colorize(getString("Server_Name"));
-
-		if (isSetDefault("Serialization"))
-			SECRET_KEY = getString("Serialization");
-
 		// -------------------------------------------------------------------
 		// Load maybe-mandatory values
 		// -------------------------------------------------------------------
-
-		{ // Load Bungee server name
-			if (isSet("Bungee_Server_Name"))
-				throw new FoException("Detected 'Bungee_Server_Name' that has been moved to 'server-name' in server.properties file. *DO NOT REPORT THIS*, simply set server-name to '"
-						+ getString("Bungee_Server_Name") + "' in server.properties and remove it from " + getFileName());
-
-			if (SimplePlugin.getInstance().getBungeeCord() != null)
-				Valid.checkBoolean(Remain.isServerNameChanged(), "Please set a unique server name for server-name in your server.properties");
-		}
 
 		{ // Load localization
 			final boolean hasLocalization = hasLocalization();
@@ -250,9 +224,6 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 		{ // Load updates notifier
 
 			final boolean keySet = isSetDefault("Notify_Updates");
-
-			//if (SimplePlugin.getInstance().getUpdateCheck() != null && !keySet)
-			//	throw new FoException("Since you override getUpdateCheck in your main plugin class you must set the 'Notify_Updates' key in " + getFileName());
 
 			NOTIFY_UPDATES = keySet ? getBoolean("Notify_Updates") : NOTIFY_UPDATES;
 		}

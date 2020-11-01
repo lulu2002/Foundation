@@ -188,7 +188,6 @@ public abstract class SimpleEnchantment extends Enchantment {
 	 */
 	@Override
 	public EnchantmentTarget getItemTarget() {
-		//return EnchantmentTarget.ALL; TODO
 		return EnchantmentTarget.BREAKABLE;
 	}
 
@@ -284,6 +283,12 @@ public abstract class SimpleEnchantment extends Enchantment {
 
 		try {
 			vanilla = item.hasItemMeta() ? item.getItemMeta().getEnchants() : new HashMap<>();
+		} catch (final NoSuchMethodError err) {
+			if (Remain.hasItemMeta())
+				err.printStackTrace();
+
+			return map;
+
 		} catch (final NullPointerException ex) {
 			// Caused if any associated enchant is null, probably by a third party plugin
 			return map;

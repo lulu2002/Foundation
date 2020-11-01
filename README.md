@@ -1,29 +1,56 @@
-# Do you want to code using this library?
-[![MineAcademy Logo](https://i.imgur.com/SuIyaDV.png)](https://mineacademy.org/gh-join)
+<p align="center">
+  Do you want to code using this library?
+  <a href="https://mineacademy.org/gh-join">
+    <img src="https://i.imgur.com/SuIyaDV.png" />
+  </a>
+</p>
 
 ### Foundation is a library for bootstrapping Minecraft plugins.
+[![](https://jitpack.io/v/kangarko/Foundation.svg)](https://jitpack.io/#kangarko/Foundation)
 
 Thousands of servers are running on Foundation since 2013. It has been battle tested and proven in plugins ChatControl, Boss, CoreArena, Confiscate, AutoPlay, Puncher, Winter, AnimeX and others.
 
 Foundation has never been publicly released before MineAcademy. We decided to release its sources to the public and teach it to enable people develop plugins faster, saving boilerplate code and thus focus on what matters the most, putting their ideas out there.
 
-### Import using [Maven](https://maven.apache.org/)
-Make sure to have the following repository added to your pom.xml file
-```XML
+### Compiling and using
+
+We use JitPack to automatically compile and host the latest release of Foundation for you.
+
+#### a) Alternative A: If you don't have Foundation on your computer:
+
+To install Foundation with Maven, open your pom.xml, locate the `<repositories>` section and place this repository within it:
+
+```xml
 <repository>
-    <id>mineacademy-repo</id>
-    <url>https://repo.mineacademy.org/repository/maven-public/</url>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
 </repository>
 ```
-You will also need to add foundation as a dependency. Replace VERSION with the
-latest version listed [here](https://git.mineacademy.org/libraries/foundation/-/releases)
-```XML
+
+Then locate the `<dependencies>` section of your pom.xml and place the following inside of it. Replace the "REPLACE_WITH_LATEST_VERSION" string with the latest version from: https://github.com/kangarko/Foundation/releases
+
+```xml
 <dependency>
-    <groupId>org.mineacademy.libraries</groupId>
-    <artifactId>foundation</artifactId>
-    <version>VERSION</version>
+    <groupId>com.github.kangarko</groupId>
+    <artifactId>Foundation</artifactId>
+    <version>REPLACE_WITH_LATEST_VERSION</version>
 </dependency>
 ```
+
+For more information, including how to use Foundation with other tools than Maven, please visit: https://jitpack.io/#kangarko/Foundation/
+
+#### b) Alternative B: If you have Foundation on your computer:
+
+If you downloaded Foundation to your disk, do not place any repository to your pom.xml file, instead, only place the following dependency. Notice the groupId is different. You can use the LATEST keyword to automatically synchronize changes you make to your local copy of Foundation with your plugin source code (now that's fast!).
+
+```xml
+<dependency>
+    <groupId>org.mineacademy</groupId>
+    <artifactId>Foundation</artifactId>
+    <version>LATEST</version>
+</dependency>
+```
+
 ### Important Licencing Information
 
 2013 - 2020 © MineAcademy.org

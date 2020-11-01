@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.command.CommandSender;
 import org.mineacademy.fo.Common;
@@ -204,6 +206,21 @@ public final class Replacer {
 	 * Replace all variables in the {@link SerializedMap#ofArray(Object...)} format
 	 * adding {} to them if they do not contain it already
 	 *
+	 * @param list
+	 * @param replacements
+	 * @return
+	 */
+	public static List<String> replaceArray(List<String> list, Object... replacements) {
+		String joined = String.join("%FLPV%", list);
+		joined = replaceArray(joined, replacements);
+
+		return java.util.Arrays.asList(joined.split("%FLPV%"));
+	}
+
+	/**
+	 * Replace all variables in the {@link SerializedMap#ofArray(Object...)} format
+	 * adding {} to them if they do not contain it already
+	 *
 	 * @param message
 	 * @param associativeArray
 	 * @return
@@ -222,21 +239,11 @@ public final class Replacer {
 	 * @param replacements
 	 * @return
 	 */
-	public static List<String> replaceArray(List<String> list, Object... replacements) {
+	public static List<String> replaceVariables(List<String> list, SerializedMap replacements) {
+		String joined = String.join("%FLPV%", list);
+		joined = replaceVariables(joined, replacements);
 
-		// Create a copy, do not alter existing list
-		list = new ArrayList<>(list);
-
-		final SerializedMap map = SerializedMap.ofArray(replacements);
-
-		for (int i = 0; i < list.size(); i++) {
-			String message = list.get(i);
-
-			message = replaceVariables(message, map);
-			list.set(i, message);
-		}
-
-		return list;
+		return java.util.Arrays.asList(joined.split("%FLPV%"));
 	}
 
 	/**
@@ -246,23 +253,47 @@ public final class Replacer {
 	 * @param variables
 	 * @return
 	 */
-	public static String replaceVariables(String message, SerializedMap variables) {
+	public static String replaceVariables(@Nullable String message, SerializedMap variables) {
+		if (message == null)
+			return null;
+
+		if ("".equals(message))
+			return "";
+
 		final Matcher matcher = Variables.BRACKET_PLACEHOLDER_PATTERN.matcher(message);
 
 		while (matcher.find()) {
 			String variable = matcher.group(1);
-			boolean addSpace = false;
+
+			boolean frontSpace = false;
+			boolean backSpace = false;
+
+			if (variable.startsWith("+")) {
+				variable = variable.substring(1);
+
+				frontSpace = true;
+			}
 
 			if (variable.endsWith("+")) {
 				variable = variable.substring(0, variable.length() - 1);
 
-				addSpace = true;
+				backSpace = true;
 			}
 
-			String value = variables.containsKey(variable) ? variables.getObject(variable).toString() : null;
+			String value = null;
+
+			for (final Map.Entry<String, Object> entry : variables.entrySet()) {
+				String variableKey = entry.getKey();
+
+				variableKey = variableKey.startsWith("{") ? variableKey.substring(1) : variableKey;
+				variableKey = variableKey.endsWith("}") ? variableKey.substring(0, variableKey.length() - 1) : variableKey;
+
+				if (variableKey.equals(variable))
+					value = entry.getValue().toString();
+			}
 
 			if (value != null) {
-				value = value.isEmpty() ? "" : Common.colorize(value) + (addSpace ? " " : "");
+				value = value.isEmpty() ? "" : (frontSpace ? " " : "") + Common.colorize(value) + (backSpace ? " " : "");
 
 				message = message.replace(matcher.group(), value);
 			}

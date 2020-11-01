@@ -56,17 +56,21 @@ public abstract class SimpleSubCommand extends SimpleCommand {
 	protected SimpleSubCommand(SimpleCommandGroup parent, String sublabel) {
 		super(parent.getLabel());
 
-		this.sublabels = sublabel.split("\\|");
+		this.sublabels = sublabel.split("(\\||\\/)");
 		Valid.checkBoolean(sublabels.length > 0, "Please set at least 1 sublabel");
 
 		this.sublabel = sublabels[0];
 
 		// If the default perm was not changed, improve it
-		if (getRawPermission().equals(DEFAULT_PERMISSION_SYNTAX))
-			if (SimplePlugin.isMainCommand(this.getMainLabel()))
+		if (getRawPermission().equals(getDefaultPermission())) {
+			final SimplePlugin instance = SimplePlugin.getInstance();
+
+			if (instance.getMainCommand() != null && instance.getMainCommand().getLabel().equals(this.getMainLabel()))
 				setPermission(getRawPermission().replace("{label}", "{sublabel}")); // simply replace label with sublabel
+
 			else
 				setPermission(getRawPermission() + ".{sublabel}"); // append the sublabel at the end since this is not our main command
+		}
 	}
 
 	/**

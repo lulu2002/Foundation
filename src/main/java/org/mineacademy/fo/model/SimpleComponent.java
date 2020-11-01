@@ -10,13 +10,19 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.mineacademy.fo.ChatUtil;
 import org.mineacademy.fo.Common;
+import org.mineacademy.fo.PlayerUtil;
+import org.mineacademy.fo.Valid;
+import org.mineacademy.fo.collection.SerializedMap;
 import org.mineacademy.fo.remain.CompMaterial;
 import org.mineacademy.fo.remain.Remain;
 
-import lombok.Data;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -27,7 +33,8 @@ import net.md_5.bungee.api.chat.TextComponent;
 /**
  * A very simple way of sending interactive chat messages
  */
-public final class SimpleComponent {
+@ToString
+public final class SimpleComponent implements ConfigSerializable {
 
 	/**
 	 * The pattern to match URL addresses when parsing text
@@ -35,47 +42,34 @@ public final class SimpleComponent {
 	private static final Pattern URL_PATTERN = Pattern.compile("^(?:(https?)://)?([-\\w_\\.]{2,}\\.[a-z]{2,4})(/\\S*)?$");
 
 	/**
-	 * The past components having different hover/click events
+	 * The past components
 	 */
-	private final List<PermissibleComponent> pastComponents = new ArrayList<>();
+	private final List<Part> pastComponents = new ArrayList<>();
 
 	/**
-	 * Shall we automatically translate & into colors? True by default
-	 * <p>
-	 * Hover/Click events will always be colorized
+	 * The current component being created
 	 */
-	private final boolean colorize;
-
-	/**
-	 * The current component that is being modified
-	 */
-	private PermissibleComponent[] currentComponents;
-
-	/**
-	 * Create a new empty component
-	 */
-	private SimpleComponent() {
-		this(true, "");
-	}
+	@Nullable
+	private Part currentComponent;
 
 	/**
 	 * Create a new interactive chat component
 	 *
-	 * @param colorize
 	 * @param text
 	 */
-	private SimpleComponent(boolean colorize, String... text) {
-		this.colorize = colorize;
-		this.currentComponents = fromLegacyText(colorize ? String.join("\n", Common.colorize(text)) : String.join("\n", text), null, null);
+	private SimpleComponent(String text) {
+
+		// Inject the center element here already
+		if (Common.stripColors(text).startsWith("<center>"))
+			text = ChatUtil.center(text.replace("<center>", "").trim());
+
+		this.currentComponent = new Part(text);
 	}
 
 	/**
-	 * Represents a component with viewing permission
+	 * Private constructor used when deserializing
 	 */
-	@Data
-	public static class PermissibleComponent {
-		private final BaseComponent component;
-		private final String permission;
+	private SimpleComponent() {
 	}
 
 	// --------------------------------------------------------------------
@@ -122,10 +116,31 @@ public final class SimpleComponent {
 	 * @return
 	 */
 	public SimpleComponent onHover(HoverEvent.Action action, String text) {
-		final List<BaseComponent> baseComponents = Common.convert(Arrays.asList(fromLegacyText(colorize ? Common.colorize(text) : text, null, null)), PermissibleComponent::getComponent);
+		this.currentComponent.hoverEvent = new HoverEvent(action, toComponent(Common.colorize(text), null));
 
-		for (final PermissibleComponent component : currentComponents)
-			component.getComponent().setHoverEvent(new HoverEvent(action, baseComponents.toArray(new BaseComponent[baseComponents.size()])));
+		return this;
+	}
+
+	/**
+	 * Set view permission for last component part
+	 *
+	 * @param viewPermission
+	 * @return
+	 */
+	public SimpleComponent viewPermission(String viewPermission) {
+		this.currentComponent.viewPermission = viewPermission;
+
+		return this;
+	}
+
+	/**
+	 * Set view permission for last component part
+	 *
+	 * @param viewCondition
+	 * @return
+	 */
+	public SimpleComponent viewCondition(String viewCondition) {
+		this.currentComponent.viewCondition = viewCondition;
 
 		return this;
 	}
@@ -168,8 +183,19 @@ public final class SimpleComponent {
 	 * @return
 	 */
 	public SimpleComponent onClick(Action action, String text) {
-		for (final PermissibleComponent component : currentComponents)
-			component.getComponent().setClickEvent(new ClickEvent(action, Common.colorize(text)));
+		this.currentComponent.clickEvent = new ClickEvent(action, text);
+
+		return this;
+	}
+
+	/**
+	 * Invoke {@link TextComponent#setInsertion(String)} for {@link #currentComponents}
+	 *
+	 * @param insertion
+	 * @return
+	 */
+	public SimpleComponent onClickInsert(String insertion) {
+		this.currentComponent.insertion = insertion;
 
 		return this;
 	}
@@ -179,22 +205,37 @@ public final class SimpleComponent {
 	// --------------------------------------------------------------------
 
 	/**
-	 * Append a new component on the end of this one
+	 * Append new component at the beginning of all components
 	 *
-	 * @param newComponent
+	 * @param component
 	 * @return
 	 */
-	public SimpleComponent append(SimpleComponent newComponent) {
-		for (final PermissibleComponent baseComponent : currentComponents)
-			pastComponents.add(baseComponent);
-
-		currentComponents = new PermissibleComponent[] { new PermissibleComponent(newComponent.build(), null) };
+	public SimpleComponent appendFirst(SimpleComponent component) {
+		this.pastComponents.add(0, component.currentComponent);
+		this.pastComponents.addAll(0, component.pastComponents);
 
 		return this;
 	}
 
+	/**
+	 * Append text to this simple component
+	 *
+	 * @param text
+	 * @return
+	 */
 	public SimpleComponent append(String text) {
-		return append(text, null);
+		return this.append(text, true);
+	}
+
+	/**
+	 * Append text to this simple component
+	 *
+	 * @param text
+	 * @param colorize
+	 * @return
+	 */
+	public SimpleComponent append(String text, boolean colorize) {
+		return this.append(text, null, colorize);
 	}
 
 	/**
@@ -203,48 +244,58 @@ public final class SimpleComponent {
 	 * specified here
 	 *
 	 * @param text
+	 * @param inheritFormatting
 	 * @return
 	 */
-	public SimpleComponent append(String text, String viewPermission) {
+	public SimpleComponent append(String text, BaseComponent inheritFormatting) {
+		return this.append(text, inheritFormatting, true);
+	}
 
-		// Copy the last color to reuse in the next component
-		BaseComponent lastComponentFormatting = null;
+	/**
+	 * Create another component. The current is put in a list of past components
+	 * so next time you use onClick or onHover, you will be added the event to the new one
+	 * specified here
+	 *
+	 * @param text
+	 * @param colorize
+	 * @return
+	 */
+	public SimpleComponent append(String text, BaseComponent inheritFormatting, boolean colorize) {
 
-		for (final PermissibleComponent baseComponent : currentComponents) {
-			pastComponents.add(baseComponent);
+		// Get the last extra
+		BaseComponent inherit = inheritFormatting != null ? inheritFormatting : this.currentComponent.toTextComponent(null);
 
-			lastComponentFormatting = baseComponent.getComponent();
-		}
+		if (inherit != null && inherit.getExtra() != null && !inherit.getExtra().isEmpty())
+			inherit = inherit.getExtra().get(inherit.getExtra().size() - 1);
 
-		currentComponents = fromLegacyText(colorize ? Common.colorize(text) : text, lastComponentFormatting, viewPermission);
+		this.pastComponents.add(this.currentComponent);
+
+		this.currentComponent = new Part(colorize ? Common.colorize(text) : text);
+		this.currentComponent.inheritFormatting = inherit;
 
 		return this;
 	}
 
 	/**
-	 * Form a single {@link TextComponent} out of all components created
+	 * Append a new component on the end of this one
 	 *
+	 * @param component
 	 * @return
 	 */
-	public TextComponent build() {
-		final TextComponent mainComponent = new TextComponent("");
+	public SimpleComponent append(SimpleComponent component) {
+		this.pastComponents.add(this.currentComponent);
+		this.pastComponents.addAll(component.pastComponents);
 
-		for (final PermissibleComponent pastComponent : pastComponents)
-			mainComponent.addExtra(pastComponent.getComponent());
+		// Get the last extra
+		BaseComponent inherit = Common.getOrDefault(component.currentComponent.inheritFormatting, this.currentComponent.toTextComponent(null));
 
-		for (final PermissibleComponent currentComponent : currentComponents)
-			mainComponent.addExtra(currentComponent.getComponent());
+		if (inherit != null && inherit.getExtra() != null && !inherit.getExtra().isEmpty())
+			inherit = inherit.getExtra().get(inherit.getExtra().size() - 1);
 
-		return mainComponent;
-	}
+		this.currentComponent = component.currentComponent;
+		this.currentComponent.inheritFormatting = inherit;
 
-	/**
-	 * Return all components that we have created
-	 *
-	 * @return
-	 */
-	public List<PermissibleComponent> getComponents() {
-		return Common.joinArrays(pastComponents, Arrays.asList(currentComponents));
+		return this;
 	}
 
 	/**
@@ -254,7 +305,46 @@ public final class SimpleComponent {
 	 * @return
 	 */
 	public String getPlainMessage() {
-		return build().toLegacyText();
+		return build(null).toLegacyText();
+	}
+
+	/**
+	 * Builds the component and its past components into a {@link TextComponent}
+	 *
+	 * @return
+	 */
+	public TextComponent getTextComponent() {
+		return build(null);
+	}
+
+	/**
+	 * Builds the component and its past components into a {@link TextComponent}
+	 *
+	 * @param receiver
+	 * @return
+	 */
+	public TextComponent build(CommandSender receiver) {
+		TextComponent preparedComponent = null;
+
+		for (final Part part : this.pastComponents) {
+			final TextComponent component = part.toTextComponent(receiver);
+
+			if (component != null)
+				if (preparedComponent == null)
+					preparedComponent = component;
+				else
+					preparedComponent.addExtra(component);
+		}
+
+		final TextComponent currentComponent = this.currentComponent.toTextComponent(receiver);
+
+		if (currentComponent != null)
+			if (preparedComponent == null)
+				preparedComponent = currentComponent;
+			else
+				preparedComponent.addExtra(currentComponent);
+
+		return Common.getOrDefault(preparedComponent, new TextComponent(""));
 	}
 
 	// --------------------------------------------------------------------
@@ -267,14 +357,10 @@ public final class SimpleComponent {
 	 * <p>
 	 * If they are console, they receive a plain text message.
 	 *
-	 * @param <T>
-	 * @param senders
+	 * @param receiver
 	 */
-	public <T extends CommandSender> void send(Iterable<T> senders) {
-		final TextComponent mainComponent = build();
-
-		for (final CommandSender sender : senders)
-			Remain.sendComponent(sender, mainComponent);
+	public <T extends CommandSender> void send(T... receivers) {
+		this.send(Arrays.asList(receivers));
 	}
 
 	/**
@@ -283,13 +369,104 @@ public final class SimpleComponent {
 	 * <p>
 	 * If they are console, they receive a plain text message.
 	 *
-	 * @param senders
+	 * @param <T>
+	 * @param receiver
 	 */
-	public <T extends CommandSender> void send(T... senders) {
-		final TextComponent mainComponent = build();
+	public <T extends CommandSender> void send(Iterable<T> receivers) {
+		this.sendAs(null, receivers);
+	}
 
-		for (final CommandSender sender : senders)
-			Remain.sendComponent(sender, mainComponent);
+	/**
+	 * Attempts to send the complete {@link SimpleComponent} to the given
+	 * command senders. If they are players, we send them interactive elements.
+	 * <p>
+	 * If they are console, they receive a plain text message.
+	 *
+	 * We will also replace relation placeholders if the sender is set and is player.
+	 *
+	 * @param <T>
+	 * @param receiver
+	 */
+	public <T extends CommandSender> void sendAs(@Nullable CommandSender sender, Iterable<T> receivers) {
+		for (final CommandSender receiver : receivers) {
+			final TextComponent component = new TextComponent(build(receiver));
+
+			if (receiver instanceof Player && sender instanceof Player)
+				setRelationPlaceholders(component, (Player) receiver, (Player) sender);
+
+			Remain.sendComponent(receiver, component);
+		}
+	}
+
+	/*
+	 * Replace relationship placeholders in the full component and all of its extras
+	 */
+	private void setRelationPlaceholders(final TextComponent component, final Player receiver, final Player sender) {
+
+		// Set the main text
+		component.setText(HookManager.replaceRelationPlaceholders(sender, receiver, component.getText()));
+
+		if (component.getExtra() == null)
+			return;
+
+		for (final BaseComponent extra : component.getExtra())
+			if (extra instanceof TextComponent) {
+
+				final TextComponent text = (TextComponent) extra;
+				final ClickEvent clickEvent = text.getClickEvent();
+				final HoverEvent hoverEvent = text.getHoverEvent();
+
+				// Replace for the text itself
+				//text.setText(HookManager.replaceRelationPlaceholders(sender, receiver, text.getText()));
+
+				// And for the click event
+				if (clickEvent != null)
+					text.setClickEvent(new ClickEvent(clickEvent.getAction(), HookManager.replaceRelationPlaceholders(sender, receiver, clickEvent.getValue())));
+
+				// And for the hover event
+				if (hoverEvent != null)
+					for (final BaseComponent hoverBaseComponent : hoverEvent.getValue())
+						if (hoverBaseComponent instanceof TextComponent) {
+							final TextComponent hoverTextComponent = (TextComponent) hoverBaseComponent;
+
+							hoverTextComponent.setText(HookManager.replaceRelationPlaceholders(sender, receiver, hoverTextComponent.getText()));
+						}
+
+				// Then repeat for the extra parts in the text itself
+				setRelationPlaceholders(text, receiver, sender);
+			}
+	}
+
+	// --------------------------------------------------------------------
+	// Serialize
+	// --------------------------------------------------------------------
+
+	/**
+	 * @see org.mineacademy.fo.model.ConfigSerializable#serialize()
+	 */
+	@Override
+	public SerializedMap serialize() {
+		final SerializedMap map = new SerializedMap();
+
+		map.putIf("Current_Component", this.currentComponent);
+		map.put("Past_Components", this.pastComponents);
+
+		return map;
+	}
+
+	/**
+	 * Create a {@link SimpleComponent} from the serialized map
+	 *
+	 * @param map
+	 * @return
+	 */
+	public static SimpleComponent deserialize(SerializedMap map) {
+		final SimpleComponent component = new SimpleComponent();
+
+		component.currentComponent = map.get("Current_Component", Part.class);
+		component.pastComponents.addAll(map.getList("Past_Components", Part.class));
+
+		return component;
 	}
 
 	// --------------------------------------------------------------------
@@ -302,31 +479,31 @@ public final class SimpleComponent {
 	 * the last color
 	 *
 	 * @param message
-	 * @param lastComponentFormatting
+	 * @param inheritFormatting
 	 * @param viewPermission
 	 * @return
 	 */
-	public static PermissibleComponent[] fromLegacyText(@NonNull String message, @Nullable BaseComponent lastComponentFormatting, @Nullable String viewPermission) {
-		final List<PermissibleComponent> components = new ArrayList<>();
+	private static TextComponent[] toComponent(@NonNull String message, @Nullable BaseComponent inheritFormatting) {
+		final List<TextComponent> components = new ArrayList<>();
 
 		// Plot the previous formatting manually before the message to retain it
-		if (lastComponentFormatting != null) {
-			if (lastComponentFormatting.isBold())
+		if (inheritFormatting != null) {
+			if (inheritFormatting.isBold())
 				message = ChatColor.BOLD + message;
 
-			if (lastComponentFormatting.isItalic())
+			if (inheritFormatting.isItalic())
 				message = ChatColor.ITALIC + message;
 
-			if (lastComponentFormatting.isObfuscated())
+			if (inheritFormatting.isObfuscated())
 				message = ChatColor.MAGIC + message;
 
-			if (lastComponentFormatting.isStrikethrough())
+			if (inheritFormatting.isStrikethrough())
 				message = ChatColor.STRIKETHROUGH + message;
 
-			if (lastComponentFormatting.isUnderlined())
+			if (inheritFormatting.isUnderlined())
 				message = ChatColor.UNDERLINE + message;
 
-			message = lastComponentFormatting.getColor() + message;
+			message = inheritFormatting.getColor() + message;
 		}
 
 		final Matcher matcher = URL_PATTERN.matcher(message);
@@ -346,56 +523,62 @@ public final class SimpleComponent {
 				if (c >= 'A' && c <= 'Z')
 					c += 32;
 
-				ChatColor format = ChatColor.getByChar(c);
+				ChatColor format;
+
+				if (c == 'x' && i + 12 < message.length()) {
+					final StringBuilder hex = new StringBuilder("#");
+
+					for (int j = 0; j < 6; j++)
+						hex.append(message.charAt(i + 2 + (j * 2)));
+
+					try {
+						format = ChatColor.of(hex.toString());
+
+					} catch (final IllegalArgumentException ex) {
+						format = null;
+					}
+
+					i += 12;
+
+				} else
+					format = ChatColor.getByChar(c);
 
 				if (format == null)
 					continue;
 
 				if (builder.length() > 0) {
 					final TextComponent old = component;
-
 					component = new TextComponent(old);
 					old.setText(builder.toString());
-
 					builder = new StringBuilder();
-					components.add(new PermissibleComponent(old, viewPermission));
+					components.add(old);
 				}
 
-				switch (format.getName().toUpperCase()) {
-					case "BOLD":
-						component.setBold(true);
-						break;
-					case "ITALIC":
-						component.setItalic(true);
-						break;
-					case "UNDERLINE":
-						component.setUnderlined(true);
-						break;
-					case "STRIKETHROUGH":
-						component.setStrikethrough(true);
-						break;
-					case "OBFUSCATED":
-						component.setObfuscated(true);
-						break;
-					case "MAGIC":
-						component.setObfuscated(true);
-						break;
-					case "RESET":
-						format = ChatColor.RESET;
+				if (format == ChatColor.BOLD)
+					component.setBold(true);
 
-					default:
-						component = new TextComponent();
-						component.setColor(format);
+				else if (format == ChatColor.ITALIC)
+					component.setItalic(true);
 
-						if (format == ChatColor.RESET) {
-							component.setBold(false);
-							component.setItalic(false);
-							component.setUnderlined(false);
-							component.setStrikethrough(false);
-							component.setObfuscated(false);
-						}
+				else if (format == ChatColor.UNDERLINE)
+					component.setUnderlined(true);
 
-						break;
+				else if (format == ChatColor.STRIKETHROUGH)
+					component.setStrikethrough(true);
+
+				else if (format == ChatColor.MAGIC)
+					component.setObfuscated(true);
+
+				else if (format == ChatColor.RESET) {
+					format = ChatColor.WHITE;
+
+					component = new TextComponent();
+					component.setColor(format);
+
+				} else {
+					component = new TextComponent();
+
+					component.setColor(format);
 				}
 
 				continue;
@@ -408,13 +591,13 @@ public final class SimpleComponent {
 
 			// Web link handling
 			if (matcher.region(i, pos).find()) {
+
 				if (builder.length() > 0) {
 					final TextComponent old = component;
-
 					component = new TextComponent(old);
 					old.setText(builder.toString());
 					builder = new StringBuilder();
-					components.add(new PermissibleComponent(old, viewPermission));
+					components.add(old);
 				}
 
 				final TextComponent old = component;
@@ -423,7 +606,7 @@ public final class SimpleComponent {
 				final String urlString = message.substring(i, pos);
 				component.setText(urlString);
 				component.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, urlString.startsWith("http") ? urlString : "http://" + urlString));
-				components.add(new PermissibleComponent(component, viewPermission));
+				components.add(component);
 
 				i += pos - i - 1;
 				component = old;
@@ -435,9 +618,9 @@ public final class SimpleComponent {
 		}
 
 		component.setText(builder.toString());
-		components.add(new PermissibleComponent(component, viewPermission));
+		components.add(component);
 
-		return components.stream().toArray(PermissibleComponent[]::new);
+		return components.toArray(new TextComponent[components.size()]);
 	}
 
 	/**
@@ -447,7 +630,18 @@ public final class SimpleComponent {
 	 * @param text
 	 * @return
 	 */
-	public static SimpleComponent of(String... text) {
+	public static SimpleComponent empty() {
+		return of(true, "");
+	}
+
+	/**
+	 * Create a new interactive chat component
+	 * You can then build upon your text to add interactive elements
+	 *
+	 * @param text
+	 * @return
+	 */
+	public static SimpleComponent of(String text) {
 		return of(true, text);
 	}
 
@@ -459,7 +653,153 @@ public final class SimpleComponent {
 	 * @param text
 	 * @return
 	 */
-	public static SimpleComponent of(boolean colorize, String... text) {
-		return new SimpleComponent(colorize, text);
+	public static SimpleComponent of(boolean colorize, String text) {
+		return new SimpleComponent(colorize ? Common.colorize(text) : text);
+	}
+
+	// --------------------------------------------------------------------
+	// Classes
+	// --------------------------------------------------------------------
+
+	/**
+	 * The part that is being created
+	 */
+	@RequiredArgsConstructor
+	static final class Part implements ConfigSerializable {
+
+		/**
+		 * The text
+		 */
+		private final String text;
+
+		/**
+		 * The view permission
+		 */
+		@Nullable
+		private String viewPermission;
+
+		/**
+		 * The view JS condition
+		 */
+		@Nullable
+		private String viewCondition;
+
+		/**
+		 * The hover event
+		 */
+		@Nullable
+		private HoverEvent hoverEvent;
+
+		/**
+		 * The click event
+		 */
+		@Nullable
+		private ClickEvent clickEvent;
+
+		/**
+		 * The insertion
+		 */
+		@Nullable
+		private String insertion;
+
+		/**
+		 * What component to inherit colors/decoration from?
+		 */
+		@Nullable
+		private BaseComponent inheritFormatting;
+
+		/**
+		 * @see org.mineacademy.fo.model.ConfigSerializable#serialize()
+		 */
+		@Override
+		public SerializedMap serialize() {
+			final SerializedMap map = new SerializedMap();
+
+			map.put("Text", this.text);
+			map.putIf("View_Permission", this.viewPermission);
+			map.putIf("View_Condition", this.viewCondition);
+			map.putIf("Hover_Event", this.hoverEvent);
+			map.putIf("Click_Event", this.clickEvent);
+			map.putIf("Insertion", this.insertion);
+			map.putIf("Inherit_Formatting", this.inheritFormatting);
+
+			return map;
+		}
+
+		/**
+		 * Create a Part from the given serializedMap
+		 *
+		 * @param map
+		 * @return
+		 */
+		public static Part deserialize(SerializedMap map) {
+			final Part part = new Part(map.getString("Text"));
+
+			part.viewPermission = map.getString("View_Permission");
+			part.viewCondition = map.getString("View_Condition");
+			part.hoverEvent = map.get("Hover_Event", HoverEvent.class);
+			part.clickEvent = map.get("Click_Event", ClickEvent.class);
+			part.insertion = map.getString("Insertion");
+			part.inheritFormatting = map.get("Inherit_Formatting", BaseComponent.class);
+
+			return part;
+		}
+
+		/**
+		 * Turn this part of the components into a {@link TextComponent}
+		 * for the given receiver
+		 *
+		 * @param receiver
+		 * @return
+		 */
+		@Nullable
+		private TextComponent toTextComponent(CommandSender receiver) {
+			if (!canSendTo(receiver) || isEmpty())
+				return null;
+
+			final BaseComponent[] base = toComponent(this.text, this.inheritFormatting);
+
+			for (final BaseComponent part : base) {
+				if (this.hoverEvent != null)
+					part.setHoverEvent(hoverEvent);
+
+				if (this.clickEvent != null)
+					part.setClickEvent(clickEvent);
+
+				if (this.insertion != null)
+					part.setInsertion(insertion);
+			}
+
+			return new TextComponent(base);
+		}
+
+		/*
+		 * Return if we're dealing with an empty format
+		 */
+		private boolean isEmpty() {
+			return this.text.isEmpty() && this.hoverEvent == null && this.clickEvent == null && this.insertion == null;
+		}
+
+		/*
+		 * Can this component be shown to the given sender?
+		 */
+		private boolean canSendTo(@Nullable CommandSender receiver) {
+
+			if (this.viewPermission != null && (receiver == null || !PlayerUtil.hasPerm(receiver, this.viewPermission)))
+				return false;
+
+			if (this.viewCondition != null) {
+				if (receiver == null)
+					return false;
+
+				final Object result = JavaScriptExecutor.run(Variables.replace(this.viewCondition, receiver), receiver);
+				Valid.checkBoolean(result instanceof Boolean, "Receiver condition must return Boolean not " + result.getClass() + " for component: " + this);
+
+				if ((boolean) result == false)
+					return false;
+			}
+
+			return true;
+		}
 	}
 }

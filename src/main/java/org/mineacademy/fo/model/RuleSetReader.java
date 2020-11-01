@@ -1,6 +1,7 @@
 package org.mineacademy.fo.model;
 
 import java.io.File;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,25 +33,80 @@ public abstract class RuleSetReader<T extends Rule> {
 	}
 
 	/**
+	 * Load all items in this ruleset
+	 */
+	public abstract void load();
+
+	// ------–------–------–------–------–------–------–------–------–------–------–------–
+	// Classes
+	// ------–------–------–------–------–------–------–------–------–------–------–------–
+
+	/**
+	 * Toggle the given rule on/off
+	 *
+	 * @param rule
+	 * @param disabled
+	 */
+	public final void toggleMessage(Rule rule, boolean disabled) {
+
+		final File file = rule.getFile();
+		Valid.checkBoolean(file.exists(), "No such file: " + file + " Rule: " + rule);
+
+		final List<String> lines = FileUtil.readLines(file);
+		boolean found = false;
+
+		for (int i = 0; i < lines.size(); i++) {
+			final String line = lines.get(i);
+
+			// Found our rule
+			if (line.equals(this.newKeyword + " " + rule.getUid()))
+				found = true;
+
+			// Found something else
+			else if (line.startsWith("#") || line.isEmpty() || line.startsWith("match ")) {
+				if (found && i > 0 && disabled) {
+					lines.add(i, "disabled");
+
+					break;
+				}
+			}
+
+			// Found the disabled operator
+			else if (line.equals("disabled")) {
+				if (found && !disabled) {
+					lines.remove(i);
+
+					break;
+				}
+			}
+		}
+
+		Valid.checkBoolean(found, "Failed to disable rule " + rule);
+		saveAndLoad(file, lines);
+	}
+
+	/**
+	 * Save the given file with the given lines and reloads
+	 *
+	 * @param rule
+	 * @param lines
+	 */
+	protected final void saveAndLoad(File file, List<String> lines) {
+		FileUtil.write(file, lines, StandardOpenOption.TRUNCATE_EXISTING);
+
+		load();
+	}
+
+	/**
 	 * Load rules from the given file path in your plugin folder
 	 *
 	 * @param path
 	 * @return
 	 */
 	protected final List<T> loadFromFile(String path) {
-		try {
-			final File file = FileUtil.extract(path);
+		final File file = FileUtil.extract(path);
 
-			return loadFromFile(file);
-
-		} catch (final Throwable t) {
-			Common.throwError(t,
-					"Failed to parse rules from " + path,
-					"Check for syntax errors.",
-					"Error: " + t.getMessage());
-
-			return null;
-		}
+		return loadFromFile(file);
 	}
 
 	/*
@@ -64,12 +120,8 @@ public abstract class RuleSetReader<T extends Rule> {
 		T rule = null;
 		String match = null;
 
-		//System.out.println("# READING " + file);
-
 		for (int i = 0; i < lines.size(); i++) {
 			final String line = lines.get(i).trim();
-
-			//System.out.println(i + "/" + lines.size() + ": " + line);
 
 			if (!line.isEmpty() && !line.startsWith("#")) {
 
@@ -78,7 +130,7 @@ public abstract class RuleSetReader<T extends Rule> {
 
 					// Found another match, assuming previous rule is finished creating.
 					if (rule != null) {
-						Valid.checkBoolean(!rules.contains(rule), "Duplicate rule found in: " + file + "! Line (" + i + "): '" + line + "' Rules: " + rules);
+						//Valid.checkBoolean(!rules.contains(rule), "Duplicate rule found in: " + file + "! Duplicated rule: " + rule);
 
 						if (canFinish(rule))
 							rules.add(rule);
@@ -90,7 +142,7 @@ public abstract class RuleSetReader<T extends Rule> {
 
 					} catch (final Throwable t) {
 						Common.throwError(t,
-								"Error creating rule from line (" + i + "): " + line,
+								"Error creating rule from line (" + (i + 1) + "): " + line,
 								"File: " + file,
 								"Error: %error",
 								"Processing aborted.");
@@ -101,7 +153,8 @@ public abstract class RuleSetReader<T extends Rule> {
 
 				// If something is being created then attempt to parse operators.
 				else {
-					Valid.checkNotNull(match, "Cannot define operator when no rule is being created! File: '" + file + "' Line (" + i + "): '" + line + "'");
+					if (!onNoMatchLineParse(file, line))
+						Valid.checkNotNull(match, "Cannot define operator when no rule is being created! File: '" + file + "' Line (" + (i + 1) + "): '" + line + "'");
 
 					if (rule != null)
 						try {
@@ -109,7 +162,7 @@ public abstract class RuleSetReader<T extends Rule> {
 
 						} catch (final Throwable t) {
 							Common.throwError(t,
-									"Error parsing rule operator from line (" + i + "): " + line,
+									"Error parsing rule operator from line (" + (i + 1) + "): " + line,
 									"File: " + file,
 									"Error: %error");
 						}
@@ -122,6 +175,20 @@ public abstract class RuleSetReader<T extends Rule> {
 		}
 
 		return rules;
+	}
+
+	/**
+	 * Called if there is no match {@link #newKeyword} but something is on the line
+	 * enabling you to inject your own custom operators and settings
+	 *
+	 * Return true if you processed the line, false if we should throw an error
+	 *
+	 * @param file the current file
+	 * @param line
+	 * @return
+	 */
+	protected boolean onNoMatchLineParse(File file, String line) {
+		return false;
 	}
 
 	/**

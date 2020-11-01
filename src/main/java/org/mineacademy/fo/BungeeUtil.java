@@ -2,13 +2,13 @@ package org.mineacademy.fo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.util.UUID;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.mineacademy.fo.Common.Stringer;
 import org.mineacademy.fo.bungee.BungeeAction;
+import org.mineacademy.fo.bungee.SimpleBungee;
 import org.mineacademy.fo.debug.Debugger;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.plugin.SimplePlugin;
@@ -43,7 +43,10 @@ public final class BungeeUtil {
 	 */
 	@SafeVarargs
 	public static <T> void tellBungee(BungeeAction action, T... datas) {
-		tellBungee(SimplePlugin.getInstance().getBungeeCord().getChannel(), action, datas);
+		final SimpleBungee bungee = SimplePlugin.getInstance().getBungeeCord();
+		Valid.checkNotNull(bungee, SimplePlugin.getNamed() + " does not implement getBungeeCord()!");
+
+		tellBungee(bungee.getChannel(), action, datas);
 	}
 
 	/**
@@ -64,61 +67,90 @@ public final class BungeeUtil {
 		Valid.checkBoolean(Remain.isServerNameChanged(), "Please configure your 'server-name' in server.properties according to mineacademy.org/server-properties first before using BungeeCord features");
 
 		Debugger.put("bungee", "Server '" + Remain.getServerName() + "' sent bungee message [" + channel + ", " + action + "]: ");
+
+		final Player recipient = getThroughWhomSendMessage();
+
+		if (recipient == null) {
+			Common.log("Unable to send channel '" + channel + "' packet '" + action + "' to BungeeCord because this server is empty.");
+
+			return;
+		}
+
 		final ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
+		out.writeUTF(recipient.getUniqueId().toString());
 		out.writeUTF(Remain.getServerName());
 		out.writeUTF(action.toString());
 
 		actionHead = 0;
 
 		for (Object data : datas) {
-			Valid.checkNotNull(data, "Bungee object in array is null! Array: " + Common.join(datas, ", ", (Stringer<T>) t -> t == null ? "null" : t.toString() + " (" + t.getClass().getSimpleName() + ")"));
+			try {
+				Valid.checkNotNull(data, "Bungee object in array is null! Array: " + Common.join(datas, ", ", (Stringer<T>) t -> t == null ? "null" : t.toString() + " (" + t.getClass().getSimpleName() + ")"));
 
-			if (data instanceof CommandSender)
-				data = ((CommandSender) data).getName();
+				if (data instanceof CommandSender)
+					data = ((CommandSender) data).getName();
 
-			if (data instanceof Integer) {
-				Debugger.put("bungee", data.toString() + ", ");
+				if (data instanceof Integer) {
+					Debugger.put("bungee", data.toString() + ", ");
 
-				moveHead(action, Integer.class);
-				out.writeInt((Integer) data);
+					moveHead(action, Integer.class, datas);
+					out.writeInt((Integer) data);
 
-			} else if (data instanceof Double) {
-				Debugger.put("bungee", data.toString() + ", ");
+				} else if (data instanceof Double) {
+					Debugger.put("bungee", data.toString() + ", ");
 
-				moveHead(action, Double.class);
-				out.writeDouble((Double) data);
+					moveHead(action, Double.class, datas);
+					out.writeDouble((Double) data);
 
-			} else if (data instanceof Long) {
-				Debugger.put("bungee", data.toString() + ", ");
+				} else if (data instanceof Long) {
+					Debugger.put("bungee", data.toString() + ", ");
 
-				moveHead(action, Long.class);
-				out.writeLong((Long) data);
+					moveHead(action, Long.class, datas);
+					out.writeLong((Long) data);
 
-			} else if (data instanceof Boolean) {
-				Debugger.put("bungee", data.toString() + ", ");
+				} else if (data instanceof Boolean) {
+					Debugger.put("bungee", data.toString() + ", ");
 
-				moveHead(action, Boolean.class);
-				out.writeBoolean((Boolean) data);
+					moveHead(action, Boolean.class, datas);
+					out.writeBoolean((Boolean) data);
 
-			} else if (data instanceof String) {
-				Debugger.put("bungee", data.toString() + ", ");
+				} else if (data instanceof String) {
+					Debugger.put("bungee", data.toString() + ", ");
 
-				moveHead(action, String.class);
-				out.writeUTF((String) data);
+					moveHead(action, String.class, datas);
+					out.writeUTF((String) data);
 
-			} else if (data instanceof byte[]) {
-				Debugger.put("bungee", data.toString() + ", ");
+				} else if (data instanceof UUID) {
+					Debugger.put("bungee", data.toString() + ", ");
 
-				moveHead(action, String.class);
-				out.write((byte[]) data);
+					moveHead(action, UUID.class, datas);
+					out.writeUTF(((UUID) data).toString());
 
-			} else
-				throw new FoException("Unknown type of data: " + data + " (" + data.getClass().getSimpleName() + ")");
+				} else if (data instanceof Enum) {
+					Debugger.put("bungee", data.toString() + ", ");
+
+					moveHead(action, Enum.class, datas);
+					out.writeUTF(((Enum<?>) data).toString());
+
+				} else if (data instanceof byte[]) {
+					Debugger.put("bungee", data.toString() + ", ");
+
+					moveHead(action, String.class, datas);
+					out.write((byte[]) data);
+
+				} else
+					throw new FoException("Unknown type of data: " + data + " (" + data.getClass().getSimpleName() + ")");
+
+			} catch (final Throwable t) {
+				t.printStackTrace();
+
+				return;
+			}
 		}
 
 		Debugger.push("bungee");
-		getThroughWhomSendMessage().sendPluginMessage(SimplePlugin.getInstance(), channel, out.toByteArray());
+		recipient.sendPluginMessage(SimplePlugin.getInstance(), channel, out.toByteArray());
 
 		actionHead = 0;
 	}
@@ -189,8 +221,8 @@ public final class BungeeUtil {
 	 *
 	 * @return
 	 */
-	private static PluginMessageRecipient getThroughWhomSendMessage() {
-		return Remain.getOnlinePlayers().isEmpty() ? Bukkit.getServer() : Remain.getOnlinePlayers().iterator().next();
+	private static Player getThroughWhomSendMessage() {
+		return Remain.getOnlinePlayers().isEmpty() ? null : Remain.getOnlinePlayers().iterator().next();
 	}
 
 	/**
@@ -202,11 +234,11 @@ public final class BungeeUtil {
 	 *
 	 * @param typeOf
 	 */
-	private static void moveHead(BungeeAction action, Class<?> typeOf) {
+	private static void moveHead(BungeeAction action, Class<?> typeOf, Object[] datas) throws Throwable {
 		Valid.checkNotNull(action, "Action not set!");
 
 		final Class<?>[] content = action.getContent();
-		Valid.checkBoolean(actionHead < content.length, "Head out of bounds! Max data size for " + action.name() + " is " + content.length + "! (Set Debug to [bungee] in settings.yml and report this issue along with the new console messages");
+		Valid.checkBoolean(actionHead < content.length, "Head out of bounds! Max data size for " + action.name() + " is " + content.length + "! Set Debug to [bungee] in settings.yml and report. Data length: " + datas.length + " data: " + Common.join(datas));
 
 		actionHead++;
 	}

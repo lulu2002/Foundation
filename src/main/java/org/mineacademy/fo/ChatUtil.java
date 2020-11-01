@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
-import org.bukkit.ChatColor;
+import org.mineacademy.fo.model.Whiteblacklist;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -21,7 +21,7 @@ public final class ChatUtil {
 	/**
 	 * The default center padding
 	 */
-	public final static int CENTER_PX = 154;
+	public final static int CENTER_PX = 152;
 
 	/**
 	 * The vertical lines a player can see at once in his chat history
@@ -35,7 +35,7 @@ public final class ChatUtil {
 	 * @return
 	 */
 	public static String center(final String message) {
-		return center(message, ' ', ChatColor.WHITE);
+		return center(message, ' ');
 	}
 
 	/**
@@ -46,7 +46,7 @@ public final class ChatUtil {
 	 * @return
 	 */
 	public static String center(final String message, final int centerPx) {
-		return center(message, ' ', ChatColor.WHITE, centerPx);
+		return center(message, ' ', centerPx);
 	}
 
 	/**
@@ -60,8 +60,8 @@ public final class ChatUtil {
 	 * @param spaceColor
 	 * @return
 	 */
-	public static String center(final String message, final char space, final ChatColor spaceColor) {
-		return center(message, space, spaceColor, CENTER_PX);
+	public static String center(final String message, final char space) {
+		return center(message, space, CENTER_PX);
 	}
 
 	/**
@@ -69,11 +69,10 @@ public final class ChatUtil {
 	 *
 	 * @param message
 	 * @param space
-	 * @param spaceColor
 	 * @param centerPx
 	 * @return
 	 */
-	public static String center(final String message, final char space, final ChatColor spaceColor, final int centerPx) {
+	public static String center(final String message, final char space, final int centerPx) {
 		if (message == null || message.equals(""))
 			return "";
 
@@ -115,7 +114,7 @@ public final class ChatUtil {
 		int compensated = 0;
 
 		while (compensated < toCompensate) {
-			builder.append(spaceColor.toString() + space);
+			builder.append(space);
 
 			compensated += spaceLength;
 		}
@@ -279,6 +278,33 @@ public final class ChatUtil {
 	}
 
 	/**
+	 * How many big letters the message has.
+	 *
+	 * @param message the message to check
+	 * @param ignored the list of strings to ignore (whitelist)
+	 *
+	 * @return how many big letters are in message
+	 */
+	public static int getCapsInRow(final String message, final Whiteblacklist list) {
+		if (message.isEmpty())
+			return 0;
+
+		final int[] caps = splitCaps(Common.stripColors(message), list);
+
+		int sum = 0;
+		int sumTemp = 0;
+
+		for (final int i : caps)
+			if (i == 1) {
+				sumTemp++;
+				sum = Math.max(sum, sumTemp);
+			} else
+				sumTemp = 0;
+
+		return sum;
+	}
+
+	/**
 	 * Calculates the similarity (a double within 0.00 and 1.00) between two strings.
 	 *
 	 * @param first
@@ -378,6 +404,28 @@ public final class ChatUtil {
 			for (final String whitelisted : ignored)
 				if (whitelisted.equalsIgnoreCase(parts[i]))
 					parts[i] = parts[i].toLowerCase();
+
+		for (int i = 0; i < parts.length; i++)
+			if (isDomain(parts[i]))
+				parts[i] = parts[i].toLowerCase();
+
+		final String msg = StringUtils.join(parts, " ");
+
+		for (int i = 0; i < msg.length(); i++)
+			if (Character.isUpperCase(msg.charAt(i)) && Character.isLetter(msg.charAt(i)))
+				editedMsg[i] = 1;
+			else
+				editedMsg[i] = 0;
+		return editedMsg;
+	}
+
+	private static int[] splitCaps(final String message, final Whiteblacklist list) {
+		final int[] editedMsg = new int[message.length()];
+		final String[] parts = message.split(" ");
+
+		for (int i = 0; i < parts.length; i++)
+			if (list.isInList(parts[i]))
+				parts[i] = parts[i].toLowerCase();
 
 		for (int i = 0; i < parts.length; i++)
 			if (isDomain(parts[i]))

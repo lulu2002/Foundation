@@ -4,6 +4,7 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,7 +26,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.mineacademy.fo.MinecraftVersion.V;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.remain.CompMaterial;
-import org.mineacademy.fo.settings.YamlConfig;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -61,7 +61,7 @@ public final class ReflectionUtil {
 			for (final Class<?> param : constructor.getParameterTypes()) {
 				Valid.checkNotNull(param, "Argument cannot be null when instatiating " + clazz);
 
-				classes.add(param.isPrimitive() ? ClassUtils.wrapperToPrimitive(param) : param);
+				classes.add(param);
 			}
 
 			constructorCache.put(Arrays.hashCode(classes.toArray(new Class<?>[0])), constructor);
@@ -191,7 +191,12 @@ public final class ReflectionUtil {
 	 * @return
 	 */
 	public static Class<?> getNMSClass(final String name) {
-		return ReflectionUtil.lookupClass(NMS + "." + MinecraftVersion.getServerVersion() + "." + name);
+		String version = MinecraftVersion.getServerVersion();
+
+		if (!version.isEmpty())
+			version += ".";
+
+		return ReflectionUtil.lookupClass(NMS + "." + version + name);
 	}
 
 	/**
@@ -202,7 +207,12 @@ public final class ReflectionUtil {
 	 * @return
 	 */
 	public static Class<?> getOBCClass(final String name) {
-		return ReflectionUtil.lookupClass(CRAFTBUKKIT + "." + MinecraftVersion.getServerVersion() + "." + name);
+		String version = MinecraftVersion.getServerVersion();
+
+		if (!version.isEmpty())
+			version += ".";
+
+		return ReflectionUtil.lookupClass(CRAFTBUKKIT + "." + version + name);
 	}
 
 	/**
@@ -500,9 +510,9 @@ public final class ReflectionUtil {
 	 * @return
 	 */
 	public static <T> T invoke(final Method method, final Object instance, final Object... params) {
-		try {
-			Valid.checkNotNull(method, "Method cannot be null for " + instance);
+		Valid.checkNotNull(method, "Method cannot be null for " + instance);
 
+		try {
 			return (T) method.invoke(instance, params);
 
 		} catch (final ReflectiveOperationException ex) {
@@ -690,10 +700,15 @@ public final class ReflectionUtil {
 					if (rawName.equalsIgnoreCase("ICE_MOUNTAINS"))
 						name = "SNOWY_TAIGA";
 
-			if (MinecraftVersion.atLeast(V.v1_14))
-				if (enumType == EntityType.class)
+			if (enumType == EntityType.class)
+				if (MinecraftVersion.atLeast(V.v1_14)) {
 					if (rawName.equals("TIPPED_ARROW"))
 						name = "ARROW";
+
+				} else if (MinecraftVersion.olderThan(V.v1_9))
+					if (rawName.equals("TRIDENT"))
+						name = "ARROW";
+
 		}
 
 		final String oldName = name;
@@ -741,9 +756,31 @@ public final class ReflectionUtil {
 	 */
 	public static <E extends Enum<E>> E lookupEnumSilent(final Class<E> enumType, final String name) {
 		try {
+
+			// Since we obfuscate our plugins, enum names are changed.
+			// Therefore we look up a special fromKey method in some of our enums
+			boolean hasKey = false;
+			Method method = null;
+
+			try {
+				method = enumType.getDeclaredMethod("fromKey", String.class);
+
+				if (Modifier.isPublic(method.getModifiers()) && Modifier.isStatic(method.getModifiers()))
+					hasKey = true;
+
+			} catch (final Throwable t) {
+			}
+
+			if (hasKey)
+				return (E) method.invoke(null, name);
+
+			// Resort to enum name
 			return Enum.valueOf(enumType, name);
 
 		} catch (final IllegalArgumentException ex) {
+			return null;
+
+		} catch (final ReflectiveOperationException ex) {
 			return null;
 		}
 	}
@@ -830,7 +867,7 @@ public final class ReflectionUtil {
 					final Class<?> clazz;
 
 					try {
-						YamlConfig.INVOKE_SAVE = false;
+						//YamlConfig.INVOKE_SAVE = false;
 
 						clazz = Class.forName(name);
 
@@ -838,7 +875,7 @@ public final class ReflectionUtil {
 						continue;
 
 					} finally {
-						YamlConfig.INVOKE_SAVE = true;
+						//YamlConfig.INVOKE_SAVE = true;
 					}
 
 					classes.add(clazz);

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -26,7 +28,6 @@ import org.mineacademy.fo.menu.button.Button;
 import org.mineacademy.fo.menu.button.Button.DummyButton;
 import org.mineacademy.fo.model.SimpleEnchant;
 import org.mineacademy.fo.model.SimpleEnchantment;
-import org.mineacademy.fo.model.Tuple;
 import org.mineacademy.fo.remain.CompColor;
 import org.mineacademy.fo.remain.CompItemFlag;
 import org.mineacademy.fo.remain.CompMaterial;
@@ -43,8 +44,7 @@ import lombok.Singular;
  * <p>
  * You can use this to make named items with incredible speed and quality.
  */
-@Builder
-public final class ItemCreator {
+final @Builder public class ItemCreator {
 
 	/**
 	 * The initial item stack
@@ -124,7 +124,7 @@ public final class ItemCreator {
 	 * The list of NBT tags with their key-value pairs
 	 */
 	@Singular
-	private final List<Tuple<String, String>> tags;
+	private final Map<String, String> tags;
 
 	/**
 	 * The item meta, overriden by other fields
@@ -247,11 +247,11 @@ public final class ItemCreator {
 			if (MinecraftVersion.atLeast(V.v1_13))
 				is.setType(Material.valueOf(dye + "_WOOL"));
 
-			else if (MinecraftVersion.atLeast(V.v1_8))
-				applyColors0(color, material, is);
+			else
+				applyColors0(itemMeta, color, material, is);
 
 		} else
-			applyColors0(color, material, is);
+			applyColors0(itemMeta, color, material, is);
 
 		// Fix monster eggs
 		if (is.getType().toString().endsWith("SPAWN_EGG")) {
@@ -308,7 +308,7 @@ public final class ItemCreator {
 		}
 
 		if (color != null && is.getType().toString().contains("LEATHER"))
-			((LeatherArmorMeta) itemMeta).setColor(color.getDye().getColor());
+			((LeatherArmorMeta) itemMeta).setColor(color.getColor());
 
 		if (skullOwner != null && itemMeta instanceof SkullMeta)
 			((SkullMeta) itemMeta).setOwner(skullOwner);
@@ -342,17 +342,7 @@ public final class ItemCreator {
 			flags.add(CompItemFlag.HIDE_ATTRIBUTES);
 			flags.add(CompItemFlag.HIDE_UNBREAKABLE);
 
-			if (MinecraftVersion.olderThan(V.v1_12))
-				try {
-					final Object spigot = itemMeta.getClass().getMethod("spigot").invoke(itemMeta);
-
-					spigot.getClass().getMethod("setUnbreakable", boolean.class).invoke(spigot, true);
-
-				} catch (final Throwable t) {
-					// Probably 1.7.10, tough luck
-				}
-			else
-				CompProperty.UNBREAKABLE.apply(itemMeta, true);
+			CompProperty.UNBREAKABLE.apply(itemMeta, true);
 		}
 
 		if (hideTags)
@@ -381,8 +371,12 @@ public final class ItemCreator {
 
 		// Apply NBT tags
 		if (tags != null)
-			for (final Tuple<String, String> tag : tags)
-				is = CompMetadata.setMetadata(is, tag.getKey(), tag.getValue());
+			if (MinecraftVersion.atLeast(V.v1_8))
+				for (final Entry<String, String> entry : tags.entrySet())
+					is = CompMetadata.setMetadata(is, entry.getKey(), entry.getValue());
+
+			else if (!tags.isEmpty() && item != null)
+				Common.log("Item had unsupported tags " + tags + " that are not supported on MC " + MinecraftVersion.getServerVersion() + " Item: " + is);
 
 		return is;
 	}
@@ -390,11 +384,12 @@ public final class ItemCreator {
 	/**
 	 * A method to add colors (colorize) item bellow 1.13
 	 *
+	 * @param itemMeta 	   the item meta
 	 * @param color    color to set
 	 * @param material material used
 	 * @param is       ItemStack to apply to
 	 */
-	private static void applyColors0(final CompColor color, final CompMaterial material, final ItemStack is) {
+	private void applyColors0(final ItemMeta itemMeta, final CompColor color, final CompMaterial material, final ItemStack is) {
 		int dataValue = material != null ? material.getData() : is.getData().getData();
 
 		if (!is.getType().toString().contains("LEATHER") && color != null)
@@ -407,6 +402,10 @@ public final class ItemCreator {
 
 		if (MinecraftVersion.olderThan(V.v1_13))
 			is.setDurability((short) dataValue);
+
+		if (itemMeta instanceof LeatherArmorMeta && color != null)
+			((LeatherArmorMeta) itemMeta).setColor(color.getColor());
+
 	}
 
 	// ----------------------------------------------------------------------------------------

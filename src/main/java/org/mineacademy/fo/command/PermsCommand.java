@@ -4,13 +4,12 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.mineacademy.fo.Common;
 import org.mineacademy.fo.collection.SerializedMap;
 import org.mineacademy.fo.command.annotation.Permission;
 import org.mineacademy.fo.command.annotation.PermissionGroup;
 import org.mineacademy.fo.constants.FoPermissions;
 import org.mineacademy.fo.exception.FoException;
-import org.mineacademy.fo.model.ChatPages;
+import org.mineacademy.fo.model.ChatPaginator;
 import org.mineacademy.fo.model.Replacer;
 import org.mineacademy.fo.model.SimpleComponent;
 import org.mineacademy.fo.plugin.SimplePlugin;
@@ -45,12 +44,10 @@ public final class PermsCommand extends SimpleSubCommand {
 	@Override
 	protected void onCommand() {
 
-		new ChatPages(15)
-				.setHeader("&8" + Common.chatLine(),
-						"&6 Enumerating all " + SimplePlugin.getNamed() + " permissions",
-						"&8" + Common.chatLine())
+		new ChatPaginator(15)
+				.setFoundationHeader("Listing All " + SimplePlugin.getNamed() + " Permissions")
 				.setPages(list())
-				.showTo(sender);
+				.send(sender);
 	}
 
 	private List<SimpleComponent> list() {
@@ -108,5 +105,13 @@ public final class PermsCommand extends SimpleSubCommand {
 
 			listIn(inner, messages);
 		}
+	}
+
+	/**
+	 * @see org.mineacademy.fo.command.SimpleCommand#tabComplete()
+	 */
+	@Override
+	protected List<String> tabComplete() {
+		return NO_COMPLETE;
 	}
 }

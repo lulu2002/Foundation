@@ -12,9 +12,13 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServiceRegisterEvent;
 import org.mineacademy.fo.Common;
+import org.mineacademy.fo.MathUtil;
+import org.mineacademy.fo.Messenger;
+import org.mineacademy.fo.MinecraftVersion;
+import org.mineacademy.fo.MinecraftVersion.V;
 import org.mineacademy.fo.PlayerUtil;
 import org.mineacademy.fo.constants.FoPermissions;
-import org.mineacademy.fo.model.ChatPages;
+import org.mineacademy.fo.model.ChatPaginator;
 import org.mineacademy.fo.model.HookManager;
 import org.mineacademy.fo.model.SimpleComponent;
 import org.mineacademy.fo.model.SimpleScoreboard;
@@ -44,7 +48,7 @@ final class FoundationListener implements Listener {
 	}
 
 	/**
-	 * Handler for {@link ChatPages}
+	 * Handler for {@link ChatPaginator}
 	 *
 	 * @param event
 	 */
@@ -76,7 +80,7 @@ final class FoundationListener implements Listener {
 		int page = -1;
 
 		try {
-			page = Integer.parseInt(numberRaw);
+			page = Integer.parseInt(numberRaw) - 1;
 
 		} catch (final NumberFormatException ex) {
 			Common.tell(player, "&cYour input '" + numberRaw + "' is not a valid number.");
@@ -85,14 +89,19 @@ final class FoundationListener implements Listener {
 			return;
 		}
 
-		final ChatPages chatPages = (ChatPages) player.getMetadata("FoPages").get(0).value();
+		final ChatPaginator chatPages = (ChatPaginator) player.getMetadata("FoPages").get(0).value();
 		final Map<Integer, List<SimpleComponent>> pages = chatPages.getPages();
 
 		// Remove empty lines
 		pages.entrySet().removeIf(entry -> entry.getValue().isEmpty());
 
 		if (!pages.containsKey(page)) {
-			Common.tell(player, "Pages do not contain page number ");
+			final String playerMessage = "Pages do not contain the given page number.";
+
+			if (Messenger.ENABLED)
+				Messenger.error(player, playerMessage);
+			else
+				Common.tell(player, playerMessage);
 
 			event.setCancelled(true);
 			return;
@@ -107,32 +116,46 @@ final class FoundationListener implements Listener {
 			for (final SimpleComponent comp : messagesOnPage)
 				comp.send(player);
 
-			for (int i = messagesOnPage.size(); i < chatPages.getLinesPerPage() + (pages.size() == 1 ? 1 : 0); i++)
+			int whiteLines = chatPages.getLinesPerPage();
+
+			if (whiteLines == 15 && pages.size() == 1) {
+				if (messagesOnPage.size() < 17)
+					whiteLines = 7;
+				else
+					whiteLines += 2;
+			}
+
+			for (int i = messagesOnPage.size(); i < whiteLines; i++)
 				SimpleComponent.of("&r").send(player);
 
 			for (final SimpleComponent component : chatPages.getFooter())
 				component.send(player);
 		}
 
-		Common.tell(player, " ");
-
 		// Fill in the pagination line
-		if (pages.size() > 1) {
-			final SimpleComponent pagination = SimpleComponent.of("&7Page " + (page + 1) + "/" + pages.size() + ". Visit the ");
+		if (MinecraftVersion.atLeast(V.v1_7) && pages.size() > 1) {
+			Common.tellNoPrefix(player, " ");
+
+			final int pagesDigits = (int) (Math.log10(pages.size()) + 1);
+			final int multiply = 23 - (int) MathUtil.ceiling(pagesDigits);
+
+			final SimpleComponent pagination = SimpleComponent.of(chatPages.getThemeColor() + "&m" + Common.duplicate("-", multiply) + "&r");
 
 			if (page == 0)
-				pagination.append("&7previous page");
+				pagination.append(" &7« ");
 			else
-				pagination.append("&6&nprevious page&7").onHover("&7Go to page " + page).onClickRunCmd("/#flp " + (page - 1));
+				pagination.append(" &6« ").onHover("&7Go to page " + page).onClickRunCmd("/#flp " + page);
 
-			pagination.append(" or the ");
+			pagination.append("&f" + (page + 1)).onHover("&7Go to the first page").onClickRunCmd("/#flp 1");
+			pagination.append("/");
+			pagination.append(pages.size() + "").onHover("&7You can also navigate using the", "&7hidden /#flp <page> command.");
 
 			if (page + 1 >= pages.size())
-				pagination.append("next one");
+				pagination.append(" &7» ");
 			else
-				pagination.append("&6&nnext one&7").onHover("&7Go to page " + (page + 1)).onClickRunCmd("/#flp " + (page + 1));
+				pagination.append(" &6» ").onHover("&7Go to page " + (page + 2)).onClickRunCmd("/#flp " + (page + 2));
 
-			pagination.append(".");
+			pagination.append(chatPages.getThemeColor() + "&m" + Common.duplicate("-", multiply));
 
 			pagination.send(player);
 		}

@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
@@ -76,15 +77,47 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	// ----------------------------------------------------------------------------------------
 
 	/**
+	 * The instance of this plugin
+	 */
+	private static volatile SimplePlugin instance;
+
+	/**
+	 * Shortcut for getDescription().getVersion()
+	 *
+	 * @return plugin's version
+	 */
+	@Getter
+	private static String version;
+
+	/**
+	 * Shortcut for getName()
+	 *
+	 * @return plugin's name
+	 */
+	@Getter
+	private static String named;
+
+	/**
+	 * Shortcut for getFile()
+	 *
+	 * @return plugin's jar file
+	 */
+	@Getter
+	private static File source;
+
+	/**
+	 * Shortcut for getDataFolder()
+	 *
+	 * @return plugins' data folder in plugins/
+	 */
+	@Getter
+	private static File data;
+
+	/**
 	 * An internal flag to indicate that the plugin is being reloaded.
 	 */
 	@Getter
 	private static volatile boolean reloading = false;
-
-	/**
-	 * The instance of this plugin
-	 */
-	private static volatile SimplePlugin instance;
 
 	/**
 	 * Returns the instance of {@link SimplePlugin}.
@@ -102,53 +135,6 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 		}
 
 		return instance;
-	}
-
-	/**
-	 * Shortcut for getDescription().getVersion()
-	 *
-	 * @return plugin's version
-	 */
-	public static final String getVersion() {
-		return getInstance().getDescription().getVersion();
-	}
-
-	/**
-	 * Shortcut for getName()
-	 *
-	 * @return plugin's name
-	 */
-	public static final String getNamed() {
-		return hasInstance() ? getInstance().getName() : "No instance yet";
-	}
-
-	/**
-	 * Shortcut for getFile()
-	 *
-	 * @return plugin's jar file
-	 */
-	public static final File getSource() {
-		return getInstance().getFile();
-	}
-
-	/**
-	 * Shortcut for getDataFolder()
-	 *
-	 * @return plugins' data folder in plugins/
-	 */
-	public static final File getData() {
-		return getInstance().getDataFolder();
-	}
-
-	/**
-	 * Return true if the {@link #getMainCommand()} is registered and its label
-	 * equals to the given label
-	 *
-	 * @param label
-	 * @return
-	 */
-	public static final boolean isMainCommand(final String label) {
-		return getInstance().getMainCommand() != null && getInstance().getMainCommand().getLabel().equals(label);
 	}
 
 	/**
@@ -199,6 +185,12 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 			else
 				throw ex;
 		}
+
+		// Cache results for best performance
+		version = instance.getDescription().getVersion();
+		named = instance.getName();
+		source = instance.getFile();
+		data = instance.getDataFolder();
 
 		// Call parent
 		onPluginLoad();
@@ -283,7 +275,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 			if (getMainCommand() != null) {
 				Valid.checkBoolean(!SimpleSettings.MAIN_COMMAND_ALIASES.isEmpty(), "Please make a settings class extending SimpleSettings and specify Command_Aliases in your settings file.");
 
-				getMainCommand().register(SimpleSettings.MAIN_COMMAND_ALIASES);
+				reloadables.registerCommands(SimpleSettings.MAIN_COMMAND_ALIASES, getMainCommand());
 			}
 
 			// --------------------------------------------
@@ -318,8 +310,11 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 			FoundationPacketListener.addPacketListener();
 
 			// Register DiscordSRV listener
-			if (HookManager.isDiscordSRVLoaded())
-				reloadables.registerEvents(new DiscordListener.DiscordListenerImpl());
+			if (HookManager.isDiscordSRVLoaded()) {
+				DiscordListener.DiscordListenerImpl.getInstance().resubscribe();
+
+				reloadables.registerEvents(DiscordListener.DiscordListenerImpl.getInstance());
+			}
 
 			// Set the logging and tell prefix
 			Common.setTellPrefix(SimpleSettings.PLUGIN_PREFIX);
@@ -385,8 +380,8 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 						if (isTool || isEnchant) {
 
 							if (isEnchant && MinecraftVersion.olderThan(V.v1_13)) {
-								System.out.println("**** WARNING ****");
-								System.out.println("SimpleEnchantment requires Minecraft 1.13.2 or greater. The following class will not be registered: " + clazz.getName());
+								Bukkit.getLogger().warning("**** WARNING ****");
+								Bukkit.getLogger().warning("SimpleEnchantment requires Minecraft 1.13.2 or greater. The following class will not be registered: " + clazz.getName());
 
 								continue;
 							}
@@ -423,12 +418,12 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 								final String error = Common.getOrEmpty(t.getMessage());
 
 								if (t instanceof NoClassDefFoundError && error.contains("org/bukkit/entity")) {
-									System.out.println("**** WARNING ****");
+									Bukkit.getLogger().warning("**** WARNING ****");
 
 									if (error.contains("DragonFireball"))
-										System.out.println("Your Minecraft version does not have DragonFireball class, we suggest replacing it with a Fireball instead in: " + clazz);
+										Bukkit.getLogger().warning("Your Minecraft version does not have DragonFireball class, we suggest replacing it with a Fireball instead in: " + clazz);
 									else
-										System.out.println("Your Minecraft version does not have " + error + " class you call in: " + clazz);
+										Bukkit.getLogger().warning("Your Minecraft version does not have " + error + " class you call in: " + clazz);
 								} else
 									Common.error(t, "Failed to register events in " + clazz.getSimpleName() + " class " + clazz);
 							}
@@ -470,18 +465,18 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 		public ShadingException() {
 			if (!SimplePlugin.getNamed().equals(getDescription().getName())) {
-				System.out.println(Common.consoleLine());
-				System.out.println("We have a class path problem in the Foundation library");
-				System.out.println("preventing " + getDescription().getName() + " from loading correctly!");
-				System.out.println("");
-				System.out.println("This is likely caused by two plugins having the");
-				System.out.println("same Foundation library paths - make sure you");
-				System.out.println("relocale the package! If you are testing using");
-				System.out.println("Ant, only test one plugin at the time.");
-				System.out.println("");
-				System.out.println("Possible cause: " + SimplePlugin.getNamed());
-				System.out.println("Foundation package: " + SimplePlugin.class.getPackage().getName());
-				System.out.println(Common.consoleLine());
+				Bukkit.getLogger().severe(Common.consoleLine());
+				Bukkit.getLogger().severe("We have a class path problem in the Foundation library");
+				Bukkit.getLogger().severe("preventing " + getDescription().getName() + " from loading correctly!");
+				Bukkit.getLogger().severe("");
+				Bukkit.getLogger().severe("This is likely caused by two plugins having the");
+				Bukkit.getLogger().severe("same Foundation library paths - make sure you");
+				Bukkit.getLogger().severe("relocale the package! If you are testing using");
+				Bukkit.getLogger().severe("Ant, only test one plugin at the time.");
+				Bukkit.getLogger().severe("");
+				Bukkit.getLogger().severe("Possible cause: " + SimplePlugin.getNamed());
+				Bukkit.getLogger().severe("Foundation package: " + SimplePlugin.class.getPackage().getName());
+				Bukkit.getLogger().severe(Common.consoleLine());
 
 				isEnabled = false;
 			}
@@ -512,16 +507,15 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 		}
 
 		if (!md_5 || !gson) {
-			System.out.println("==================================================");
-			System.out.println("Your Minecraft version (" + MinecraftVersion.getCurrent() + ")");
-			System.out.println("lacks libraries " + getName() + " needs:");
-			System.out.println("JSON Chat (by md_5) found: " + md_5);
-			System.out.println("Gson (by Google) found: " + gson);
-			System.out.println(" ");
-			System.out.println("To fix that, please install BungeeChatAPI:");
-			System.out.println("https://www.spigotmc.org/resources/38379/");
-			System.out.println("==================================================");
-			return false;
+			Bukkit.getLogger().severe(Common.consoleLine());
+			Bukkit.getLogger().severe("Your Minecraft version (" + MinecraftVersion.getCurrent() + ")");
+			Bukkit.getLogger().severe("lacks libraries " + getName() + " needs:");
+			Bukkit.getLogger().severe("JSON Chat (by md_5) found: " + md_5);
+			Bukkit.getLogger().severe("Gson (by Google) found: " + gson);
+			Bukkit.getLogger().severe(" ");
+			Bukkit.getLogger().severe("To fix that, please install BungeeChatAPI:");
+			Bukkit.getLogger().severe("https://www.spigotmc.org/resources/38379/");
+			Bukkit.getLogger().severe(Common.consoleLine());
 		}
 
 		return true;
@@ -535,17 +529,15 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	private final boolean checkServerVersions0() {
 
 		// Call the static block to test compatibility early
-		if (!MinecraftVersion.getCurrent().isTested()) {
-			System.out.println(Common.consoleLine());
-			System.out.println("** Your Minecraft version " + MinecraftVersion.getCurrent() + " has not yet");
-			System.out.println("been officialy tested with the Foundation");
-			System.out.println("library that powers the " + SimplePlugin.getNamed() + " plugin.");
-			System.out.println(" ");
-			System.out.println("For your safety, the plugin is now disabled.");
-			System.out.println(Common.consoleLine());
-
-			return false;
-		}
+		if (!MinecraftVersion.getCurrent().isTested())
+			Common.logFramed(
+					"*** WARNING ***",
+					"Your Minecraft version " + MinecraftVersion.getCurrent() + " has not yet",
+					"been officialy tested with the Foundation,",
+					"the library that " + SimplePlugin.getNamed() + " plugin uses.",
+					"",
+					"Loading the plugin at your own risk...",
+					Common.consoleLine());
 
 		// Check min version
 		final V minimumVersion = getMinimumVersion();
@@ -740,6 +732,14 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 
 			unregisterReloadables();
 
+			// Load our dependency system
+			try {
+				HookManager.loadDependencies();
+
+			} catch (final Throwable throwable) {
+				Common.throwError(throwable, "Error while loading " + getName() + " dependencies!");
+			}
+
 			onPluginPreReload();
 			reloadables.reload();
 
@@ -748,27 +748,36 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 			if (getSettings() != null)
 				YamlStaticConfig.load(getSettings());
 
+			CompMetadata.MetadataFile.onReload();
+
 			FoundationPacketListener.addPacketListener();
 
 			Common.setTellPrefix(SimpleSettings.PLUGIN_PREFIX);
 			onPluginReload();
 
 			if (getMainCommand() != null)
-				getMainCommand().register(SimpleSettings.MAIN_COMMAND_ALIASES);
+				reloadables.registerCommands(SimpleSettings.MAIN_COMMAND_ALIASES, getMainCommand());
 
 			startingReloadables = true;
 			onReloadablesStart();
 			startingReloadables = false;
 
+			if (HookManager.isDiscordSRVLoaded()) {
+				DiscordListener.DiscordListenerImpl.getInstance().resubscribe();
+
+				reloadables.registerEvents(DiscordListener.DiscordListenerImpl.getInstance());
+			}
+
 			registerBungeeCord();
+
+			Common.log(Common.consoleLineSmooth());
 
 		} catch (final Throwable t) {
 			Common.throwError(t, "Error reloading " + getName() + " " + getVersion());
 
 		} finally {
-			Common.log(Common.consoleLineSmooth());
-
 			Common.ADD_LOG_PREFIX = hadLogPrefix;
+
 			reloading = false;
 		}
 	}
@@ -780,8 +789,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 		BlockVisualizer.stopAll();
 		FolderWatcher.stopThreads();
 
-		if (getMainCommand() != null && getMainCommand().isRegistered())
-			getMainCommand().unregister();
+		DiscordListener.clearRegisteredListeners();
 
 		try {
 			HookManager.unloadDependencies(this);
@@ -822,6 +830,9 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 			reloadables.registerEvents(listener);
 		else
 			getServer().getPluginManager().registerEvents(listener, this);
+
+		if (listener instanceof DiscordListener)
+			((DiscordListener) listener).register();
 	}
 
 	/**
@@ -869,27 +880,13 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	}
 
 	/**
-	 * Shortcut for calling {@link SimpleCommandGroup#register(StrictList)}
+	 * Shortcut for calling {@link SimpleCommandGroup#register(String, List))}
 	 *
-	 * @param label
+	 * @param labelAndAliases
 	 * @param group
 	 */
-	protected final void registerCommands(final String label, final SimpleCommandGroup group) {
-		registerCommands(label, null, group);
-	}
-
-	/**
-	 * Shortcut for calling {@link SimpleCommandGroup#register(StrictList)}
-	 *
-	 * @param label
-	 * @param aliases
-	 * @param group
-	 */
-	protected final void registerCommands(final String label, final List<String> aliases, final SimpleCommandGroup group) {
-		if (getMainCommand() != null && getMainCommand().getLabel().equals(label))
-			throw new FoException("Your main command group is registered automatically!");
-
-		group.register(label, aliases);
+	protected final void registerCommands(final String labelAndAliases, final SimpleCommandGroup group) {
+		this.registerCommands(new StrictList<>(labelAndAliases.split("\\|")), group);
 	}
 
 	/**
@@ -904,7 +901,7 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 		if (getMainCommand() != null && getMainCommand().getLabel().equals(labelAndAliases.get(0)))
 			throw new FoException("Your main command group is registered automatically!");
 
-		group.register(labelAndAliases);
+		reloadables.registerCommands(labelAndAliases, group);
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -1033,6 +1030,16 @@ public abstract class SimplePlugin extends JavaPlugin implements Listener {
 	 * @return
 	 */
 	public boolean regexUnicode() {
+		return true;
+	}
+
+	/**
+	 * Should we remove diacritical marks before matching regex?
+	 * Defaults to true
+	 *
+	 * @return
+	 */
+	public boolean regexStripAccents() {
 		return true;
 	}
 

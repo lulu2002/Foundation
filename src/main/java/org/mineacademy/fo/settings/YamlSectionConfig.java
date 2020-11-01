@@ -1,5 +1,7 @@
 package org.mineacademy.fo.settings;
 
+import java.util.Objects;
+
 import org.mineacademy.fo.Valid;
 
 /**
@@ -88,5 +90,31 @@ public abstract class YamlSectionConfig extends YamlConfig {
 		path = path + myPath;
 
 		return path.endsWith(".") ? path.substring(0, path.length() - 1) : path;
+	}
+
+	// ----------------------------------------------------------------
+	// Misc
+	// ----------------------------------------------------------------
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "YamlSection{file=" + getFileName() + ", section=" + super.getPathPrefix() + ", local path=" + this.localPathPrefix + "}";
+	}
+
+	/**
+	 * @see org.mineacademy.fo.settings.YamlConfig#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof YamlSectionConfig) {
+			final YamlSectionConfig c = (YamlSectionConfig) obj;
+
+			return c.getFileName().equals(this.getFileName()) && c.getPathPrefix().equals(this.getPathPrefix()) && Objects.deepEquals(c.localPathPrefix, this.localPathPrefix);
+		}
+
+		return false;
 	}
 }

@@ -45,7 +45,6 @@ import org.mineacademy.fo.remain.Remain;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 /**
  * Utility class for managing players.
@@ -245,14 +244,29 @@ public final class PlayerUtil {
 
 	/**
 	 * Return if the given sender has a certain permission
-	 * You can use {plugin_name} to replace with your plugin name (lower-cased)
 	 *
 	 * @param sender
 	 * @param permission
 	 * @return
 	 */
-	public static boolean hasPerm(@NonNull final Permissible sender, @Nullable final String permission) {
-		return permission == null || sender.hasPermission(permission.replace("{plugin_name}", SimplePlugin.getNamed().toLowerCase()).replace("{plugin_name_lower}", SimplePlugin.getNamed().toLowerCase()));
+	public static boolean hasPerm(final Permissible sender, String permission) {
+		Valid.checkNotNull(sender, "cannot call hasPerm for null sender!");
+
+		if (permission == null) {
+			Common.log("THIS IS NOT AN ACTUAL ERROR, YOUR PLUGIN WILL WORK FINE");
+			Common.log("Internal check got null permission as input, this is no longer allowed.");
+			Common.log("We'll return true to prevent errors. Contact developers of " + SimplePlugin.getNamed());
+			Common.log("to get it solved and include the fake error below:");
+
+			new Throwable().printStackTrace();
+
+			return true;
+		}
+
+		Valid.checkBoolean(!permission.contains("{plugin_name}") && !permission.contains("{plugin_name_lower}"),
+				"Found {plugin_name} variable calling hasPerm(" + sender + ", " + permission + ")." + "This is now disallowed, contact plugin authors to put " + SimplePlugin.getNamed().toLowerCase() + " in their permission.");
+
+		return sender.hasPermission(permission);
 	}
 
 	// ------------------------------------------------------------------------------------------------------------

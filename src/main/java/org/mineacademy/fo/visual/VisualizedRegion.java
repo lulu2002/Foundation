@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.mineacademy.fo.BlockUtil;
 import org.mineacademy.fo.Common;
@@ -14,6 +15,7 @@ import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.SerializedMap;
 import org.mineacademy.fo.region.Region;
 import org.mineacademy.fo.remain.CompParticle;
+import org.mineacademy.fo.remain.CompRunnable;
 
 import lombok.Setter;
 
@@ -44,7 +46,7 @@ public final class VisualizedRegion extends Region {
 	 * @param primary
 	 * @param secondary
 	 */
-	public VisualizedRegion(final Location primary, final Location secondary) {
+	public VisualizedRegion(@Nullable final Location primary, @Nullable final Location secondary) {
 		super(primary, secondary);
 	}
 
@@ -55,7 +57,7 @@ public final class VisualizedRegion extends Region {
 	 * @param primary
 	 * @param secondary
 	 */
-	public VisualizedRegion(final String name, final Location primary, final Location secondary) {
+	public VisualizedRegion(@Nullable final String name, final Location primary, @Nullable final Location secondary) {
 		super(name, primary, secondary);
 	}
 
@@ -125,7 +127,7 @@ public final class VisualizedRegion extends Region {
 		Valid.checkBoolean(task == null, "Already visualizing region " + this + "!");
 		Valid.checkBoolean(isWhole(), "Cannot visualize incomplete region " + this + "!");
 
-		task = Common.runTimer(23, new BukkitRunnable() {
+		task = Common.runTimer(23, new CompRunnable() {
 			@Override
 			public void run() {
 				if (viewers.isEmpty()) {
@@ -137,9 +139,12 @@ public final class VisualizedRegion extends Region {
 				final Set<Location> blocks = BlockUtil.getBoundingBox(getPrimary(), getSecondary());
 
 				for (final Location location : blocks)
-					for (final Player viewer : viewers)
-						if (viewer.getLocation().distance(location) < 100)
+					for (final Player viewer : viewers) {
+						final Location viewerLocation = viewer.getLocation();
+
+						if (viewerLocation.getWorld().equals(location.getWorld()) && viewerLocation.distance(location) < 100)
 							particle.spawnFor(viewer, location);
+					}
 
 			}
 		});
