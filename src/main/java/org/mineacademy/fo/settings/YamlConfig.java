@@ -3,7 +3,6 @@ package org.mineacademy.fo.settings;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -223,7 +222,7 @@ public class YamlConfig {
 
 				if (instance == null) {
 					if (!file.exists()) {
-						FileUtil.extract(localePath, line -> replaceVariables(line, FileUtil.getFileName(localePath)));
+						FileUtil.extract(localePath);
 
 						// Reformat afterwards with comments engine
 						if (saveComments())
@@ -313,7 +312,7 @@ public class YamlConfig {
 						Valid.checkNotNull(is, "Inbuilt resource not found: " + from);
 
 						defaultsConfig = Remain.loadConfiguration(is);
-						file = FileUtil.extract(from, to, line -> replaceVariables(line, FileUtil.getFileName(to)));
+						file = FileUtil.extract(from, to);
 
 					} else
 						file = FileUtil.getOrMakeFile(to);
@@ -352,39 +351,6 @@ public class YamlConfig {
 
 			save = false;
 		}
-	}
-
-	/**
-	 * Replace variables in the file and write it again. For details see
-	 * {@link #replaceVariables(String, String)}
-	 *
-	 * @param file
-	 */
-	private void rewriteVariablesIn(final File file) {
-		final List<String> lines = FileUtil.readLines(file);
-		final String fileName = FileUtil.getFileName(file.getName()).toLowerCase();
-
-		for (int i = 0; i < lines.size(); i++) {
-			final String line = lines.get(i);
-
-			lines.set(i, replaceVariables(line, fileName));
-		}
-
-		FileUtil.write(file, lines, StandardOpenOption.TRUNCATE_EXISTING);
-	}
-
-	/**
-	 * Replace variables in the destination file before it is copied.
-	 *
-	 * @param line
-	 * @param fileName
-	 */
-	private String replaceVariables(String line, final String fileName) {
-		line = line.replace("{plugin_name}", SimplePlugin.getNamed().toLowerCase());
-		line = line.replace("{file}", fileName);
-		line = line.replace("{file_lowercase}", fileName);
-
-		return line;
 	}
 
 	/**
@@ -470,9 +436,7 @@ public class YamlConfig {
 		}
 
 		onSave();
-
 		instance.save(header != null ? header : getFileName().equals(FoConstants.File.DATA) ? FoConstants.Header.DATA_FILE : FoConstants.Header.UPDATED_FILE);
-		rewriteVariablesIn(instance.getFile());
 	}
 
 	/**
@@ -2049,25 +2013,17 @@ class ConfigInstance {
 		}
 
 		try {
-
 			config.save(file);
 
-			// Workaround: When saving maps, the config somehow stops
-			// recognizing them as sections so we must reload in order
+			// Workaround: When saving maps, the config stops recognizing them as sections so we must reload in order
 			// for all maps to be turned back into MemorySection to be reachable by get()
-			reload();
+			//reload();
+			//config.loadFromString(config.saveToString());
 
 			writeComments();
 
-		} catch (final NullPointerException ex) {
-			if (ex.getMessage() != null && ex.getMessage().contains("Nodes must be provided")) {
-				Common.log("Unable to save: " + file.getName() + ". Got: " + ex);
-
-			} else
-				throw ex;
-
-		} catch (final IOException | InvalidConfigurationException e) {
-			Common.error(e, "Failed to save " + file.getName());
+		} catch (final Exception ex) {
+			Common.error(ex, "Failed to save " + file.getName());
 		}
 	}
 
