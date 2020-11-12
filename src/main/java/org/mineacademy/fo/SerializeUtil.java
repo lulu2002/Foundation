@@ -32,6 +32,7 @@ import org.mineacademy.fo.model.IsInList;
 import org.mineacademy.fo.model.SimpleSound;
 import org.mineacademy.fo.model.SimpleTime;
 import org.mineacademy.fo.remain.CompChatColor;
+import org.mineacademy.fo.remain.CompColor;
 import org.mineacademy.fo.remain.CompMaterial;
 import org.mineacademy.fo.remain.Remain;
 import org.mineacademy.fo.settings.YamlConfig;
@@ -74,6 +75,9 @@ public final class SerializeUtil {
 
 		else if (obj instanceof CompChatColor)
 			return ((CompChatColor) obj).getName();
+
+		else if (obj instanceof CompColor)
+			return ((CompColor) obj).getName();
 
 		else if (obj instanceof net.md_5.bungee.api.ChatColor) {
 			final net.md_5.bungee.api.ChatColor color = ((net.md_5.bungee.api.ChatColor) obj);
@@ -328,6 +332,9 @@ public final class SerializeUtil {
 
 			else if (classOf == CompChatColor.class)
 				object = CompChatColor.of(object.toString());
+
+			else if (classOf == CompColor.class)
+				object = CompColor.fromName(object.toString());
 
 			else if (classOf == UUID.class)
 				object = UUID.fromString(object.toString());
