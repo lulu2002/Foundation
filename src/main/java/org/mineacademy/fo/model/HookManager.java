@@ -61,7 +61,7 @@ import com.earth2me.essentials.Essentials;
 import com.earth2me.essentials.IUser;
 import com.earth2me.essentials.User;
 import com.earth2me.essentials.UserMap;
-import com.gmail.nossr50.datatypes.chat.ChatMode;
+import com.gmail.nossr50.datatypes.chat.ChatChannel;
 import com.gmail.nossr50.datatypes.party.Party;
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
 import com.gmail.nossr50.util.player.UserManager;
@@ -86,6 +86,8 @@ import github.scarsz.discordsrv.util.DiscordUtil;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import me.angeschossen.lands.api.integration.LandsIntegration;
+import me.angeschossen.lands.api.land.Land;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.PlaceholderHook;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
@@ -115,6 +117,7 @@ public final class HookManager {
 	private static DiscordSRVHook discordSRVHook;
 	private static EssentialsHook essentialsHook;
 	private static FactionsHook factionsHook;
+	private static LandsHook landsHook;
 	private static LocketteProHook locketteProHook;
 	private static LWCHook lwcHook;
 	private static McMMOHook mcmmoHook;
@@ -143,22 +146,22 @@ public final class HookManager {
 	 * Detect various plugins and load their methods into this library so you can use it later
 	 */
 	public static void loadDependencies() {
-		if (Common.doesPluginExistSilently("AuthMe"))
+		if (Common.doesPluginExist("AuthMe"))
 			authMeHook = new AuthMeHook();
 
-		if (Common.doesPluginExistSilently("BanManager"))
+		if (Common.doesPluginExist("BanManager"))
 			banManagerHook = new BanManagerHook();
 
-		if (Common.doesPluginExistSilently("Boss"))
+		if (Common.doesPluginExist("Boss"))
 			bossHook = new BossHook();
 
-		if (Common.doesPluginExistSilently("Citizens"))
+		if (Common.doesPluginExist("Citizens"))
 			citizensHook = new CitizensHook();
 
-		if (Common.doesPluginExistSilently("CMI"))
+		if (Common.doesPluginExist("CMI"))
 			CMIHook = new CMIHook();
 
-		if (Common.doesPluginExistSilently("DiscordSRV"))
+		if (Common.doesPluginExist("DiscordSRV"))
 			try {
 				Class.forName("github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel");
 
@@ -168,16 +171,20 @@ public final class HookManager {
 				Common.error(ex, "&c" + SimplePlugin.getNamed() + " failed to hook DiscordSRV because the plugin is outdated (1.18.x is supported)!");
 			}
 
-		if (Common.doesPluginExistSilently("Essentials"))
+		if (Common.doesPluginExist("Essentials"))
 			essentialsHook = new EssentialsHook();
 
 		// Various kinds of Faction plugins
-		if (Common.doesPluginExistSilently("Factions")) {
-			final String ver = Bukkit.getPluginManager().getPlugin("Factions").getDescription().getVersion();
+		final Plugin factions = Bukkit.getPluginManager().getPlugin("Factions");
 
-			if (ver.startsWith("1.6")) {
-				Common.log("Recognized and hooked FactionsUUID...");
+		if (Common.doesPluginExist("FactionsX") && factions == null)
+			Common.log("Note: If you want FactionX integration, install FactionsUUIDAPIProxy.");
 
+		else if (factions != null) {
+			final String ver = factions.getDescription().getVersion();
+			final String main = factions.getDescription().getMain();
+
+			if (ver.startsWith("1.6") || main.contains("FactionsUUIDAPIProxy")) {
 				factionsHook = new FactionsUUID();
 
 			} else if (ver.startsWith("2.")) {
@@ -189,49 +196,57 @@ public final class HookManager {
 				}
 
 				if (mplayer != null) {
-					Common.log("Recognized and hooked MCore Factions...");
-
 					factionsHook = new FactionsMassive();
+
 				} else
-					Common.log("&cRecognized MCore Factions, but not hooked! Check if you have the latest version!");
+					Common.log("&cWarning: Recognized MCore Factions, but not hooked! Check if you have the latest version!");
 
 			}
 		}
 
-		if (Common.doesPluginExistSilently("Lockette"))
+		if (Common.doesPluginExist("Lands"))
+			landsHook = new LandsHook();
+
+		if (Common.doesPluginExist("Lockette"))
 			locketteProHook = new LocketteProHook();
 
-		if (Common.doesPluginExistSilently("LWC"))
+		if (Common.doesPluginExist("LWC"))
 			lwcHook = new LWCHook();
 
-		if (Common.doesPluginExistSilently("mcMMO"))
-			mcmmoHook = new McMMOHook();
+		if (Common.doesPluginExist("mcMMO")) {
+			final String ver = Bukkit.getPluginManager().getPlugin("mcMMO").getDescription().getVersion();
 
-		if (Common.doesPluginExistSilently("Multiverse-Core"))
+			if (ver.startsWith("2."))
+				mcmmoHook = new McMMOHook();
+			else
+				Common.log("&cWarning: Could not hook into mcMMO, version 2.x required, you have " + ver);
+		}
+
+		if (Common.doesPluginExist("Multiverse-Core"))
 			multiverseHook = new MultiverseHook();
 
-		if (Common.doesPluginExistSilently("MVdWPlaceholderAPI"))
+		if (Common.doesPluginExist("MVdWPlaceholderAPI"))
 			MVdWPlaceholderHook = new MVdWPlaceholderHook();
 
-		if (Common.doesPluginExistSilently("MythicMobs"))
+		if (Common.doesPluginExist("MythicMobs"))
 			mythicMobsHook = new MythicMobsHook();
 
-		if (Common.doesPluginExistSilently("Nicky"))
+		if (Common.doesPluginExist("Nicky"))
 			nickyHook = new NickyHook();
 
-		if (Common.doesPluginExistSilently("PlaceholderAPI"))
+		if (Common.doesPluginExist("PlaceholderAPI"))
 			placeholderAPIHook = new PlaceholderAPIHook();
 
-		if (Common.doesPluginExistSilently("PlotSquared")) {
+		if (Common.doesPluginExist("PlotSquared")) {
 			final String ver = Bukkit.getPluginManager().getPlugin("PlotSquared").getDescription().getVersion();
 
 			if (ver.startsWith("5."))
 				plotSquaredHook = new PlotSquaredHook();
 			else
-				Common.log("&eCould not hook into PlotSquared, version 5.x required, you have " + ver);
+				Common.log("&cWarning: Could not hook into PlotSquared, version 5.x required, you have " + ver);
 		}
 
-		if (Common.doesPluginExistSilently("ProtocolLib")) {
+		if (Common.doesPluginExist("ProtocolLib")) {
 			protocolLibHook = new ProtocolLibHook();
 
 			// Also check if the library is loaded properly
@@ -245,28 +260,28 @@ public final class HookManager {
 			}
 		}
 
-		if (Common.doesPluginExistSilently("Residence"))
+		if (Common.doesPluginExist("Residence"))
 			residenceHook = new ResidenceHook();
 
-		if (Common.doesPluginExistSilently("Towny"))
+		if (Common.doesPluginExist("Towny"))
 			townyHook = new TownyHook();
 
-		if (Common.doesPluginExistSilently("Vault"))
+		if (Common.doesPluginExist("Vault"))
 			vaultHook = new VaultHook();
 
-		if (Common.doesPluginExistSilently("WorldEdit") || Common.doesPluginExistSilently("FastAsyncWorldEdit"))
+		if (Common.doesPluginExist("WorldEdit") || Common.doesPluginExist("FastAsyncWorldEdit"))
 			worldeditHook = new WorldEditHook();
 
-		if (Common.doesPluginExistSilently("WorldGuard"))
+		if (Common.doesPluginExist("WorldGuard"))
 			worldguardHook = new WorldGuardHook(worldeditHook);
 
-		if (Common.doesPluginExistSilently("NBTAPI"))
+		if (Common.doesPluginExist("NBTAPI"))
 			nbtAPIDummyHook = true;
 
-		if (Common.doesPluginExistSilently("Votifier"))
+		if (Common.doesPluginExist("Votifier"))
 			nuVotifierDummyHook = true;
 
-		if (Common.doesPluginExistSilently("TownyChat"))
+		if (Common.doesPluginExist("TownyChat"))
 			townyChatDummyHook = true;
 	}
 
@@ -358,7 +373,7 @@ public final class HookManager {
 	 *
 	 * @return
 	 */
-	public static boolean isMMythicMobsLoaded() {
+	public static boolean isMythicMobsLoaded() {
 		return mythicMobsHook != null;
 	}
 
@@ -511,6 +526,15 @@ public final class HookManager {
 	}
 
 	/**
+	 * Is Lands loaded as a plugin?
+	 *
+	 * @return
+	 */
+	public static boolean isLandsLoaded() {
+		return landsHook != null;
+	}
+
+	/**
 	 * Is NBTAPI loaded as a plugin?
 	 *
 	 * @return
@@ -595,7 +619,21 @@ public final class HookManager {
 	 * @return
 	 */
 	public static String getMythicMobName(Entity entity) {
-		return isMMythicMobsLoaded() ? mythicMobsHook.getBossName(entity) : null;
+		return isMythicMobsLoaded() ? mythicMobsHook.getBossName(entity) : null;
+	}
+
+	// ------------------------------------------------------------------------------------------------------------
+	// Lands
+	// ------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Return lands players for the player's land, or empty list
+	 *
+	 * @param player
+	 * @return
+	 */
+	public static Collection<Player> getLandPlayers(Player player) {
+		return isLandsLoaded() ? landsHook.getLandPlayers(player) : new ArrayList<>();
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -977,7 +1015,7 @@ public final class HookManager {
 	 */
 	public static boolean hasProtocolLibPermission(Player player, String perm) {
 		if (isProtocolLibLoaded() && protocolLibHook.isTemporaryPlayer(player))
-			return hasVaultPermission(player.getName(), perm);
+			return hasVaultPermission(player, perm);
 
 		return PlayerUtil.hasPerm(player, perm);
 	}
@@ -986,19 +1024,20 @@ public final class HookManager {
 	 * Checks if the given player name has a certain permission using vault
 	 * Or throws an error if Vault is not present
 	 *
-	 * @param name
+	 * @param offlinePlayer
 	 * @param perm
 	 *
 	 * @return
 	 */
-	public static boolean hasVaultPermission(final String name, final String perm) {
+	public static boolean hasVaultPermission(final OfflinePlayer offlinePlayer, final String perm) {
 		Valid.checkBoolean(isVaultLoaded(), "hasVaultPermission called - Please install Vault to enable this functionality!");
+		//Valid.checkAsync("Calling hasVaultPermission on the main thread was not disabled to prevent server freeze condition, please contact plugin authors to correct this");
 
 		// TODO remove checks below to increase method call performance
 		Valid.checkNotNull(perm, "Permission to check in vault cannot be null");
 		Valid.checkBoolean(!perm.contains("{plugin_name}"), "Replacing {plugin_name} in vault permissions is no longer supported!");
 
-		return vaultHook.hasPerm(name, perm);
+		return vaultHook.hasPerm(offlinePlayer, perm);
 	}
 
 	/**
@@ -1129,13 +1168,13 @@ public final class HookManager {
 	}
 
 	/**
-	 * Return players in players faction or null if none
+	 * Return players in players faction or empty if none
 	 *
 	 * @param player
 	 * @return
 	 */
 	public static Collection<? extends Player> getOnlineFactionPlayers(final Player player) {
-		return isFactionsLoaded() ? factionsHook.getSameFactionPlayers(player) : null;
+		return isFactionsLoaded() ? factionsHook.getSameFactionPlayers(player) : new ArrayList<>();
 	}
 
 	/**
@@ -1287,13 +1326,13 @@ public final class HookManager {
 	// ------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Get a list of players inside a PlotSquared plot, or null if not loaded
+	 * Get a list of players inside a PlotSquared plot, or empty if not loaded
 	 *
 	 * @param players
 	 * @return
 	 */
 	public static Collection<? extends Player> getPlotPlayers(final Player players) {
-		return isPlotSquaredLoaded() ? plotSquaredHook.getPlotPlayers(players) : null;
+		return isPlotSquaredLoaded() ? plotSquaredHook.getPlotPlayers(players) : new ArrayList<>();
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -1308,6 +1347,16 @@ public final class HookManager {
 	 */
 	public static String getActivePartyChat(final Player player) {
 		return isMcMMOLoaded() ? mcmmoHook.getActivePartyChat(player) : null;
+	}
+
+	/**
+	 * Return the online residents in player's party, or an empty list
+	 *
+	 * @param player
+	 * @return
+	 */
+	public static List<Player> getMcMMOPartyRecipients(final Player player) {
+		return isMcMMOLoaded() ? mcmmoHook.getPartyRecipients(player) : new ArrayList<>();
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -1608,7 +1657,6 @@ class TownyHook {
 				if (playerNation.equals(getNationName(online)))
 					recipients.add(online);
 
-		Debugger.debug("towny", "Players in " + pl.getName() + "'s nation '" + playerNation + "': " + recipients);
 		return recipients;
 	}
 
@@ -1694,7 +1742,12 @@ class ProtocolLibHook {
 	final void addPacketListener(final Object listener) {
 		Valid.checkBoolean(listener instanceof PacketListener, "Listener must extend or implements PacketListener or PacketAdapter");
 
-		manager.addPacketListener((PacketListener) listener);
+		try {
+			manager.addPacketListener((PacketListener) listener);
+
+		} catch (final Throwable t) {
+			Common.error(t, "Failed to register ProtocolLib packet listener! Ensure you have the latest ProtocolLib. If you reloaded, try a fresh startup (some ProtocolLib esp. for 1.8.8 fails on reload).");
+		}
 	}
 
 	final void removePacketListeners(final Plugin plugin) {
@@ -1790,6 +1843,10 @@ class VaultHook {
 	// ------------------------------------------------------------------------------
 	// Permissions
 	// ------------------------------------------------------------------------------
+
+	Boolean hasPerm(@NonNull final OfflinePlayer player, final String perm) {
+		return permissions != null ? perm != null ? permissions.playerHas((String) null, player, perm) : true : null;
+	}
 
 	Boolean hasPerm(@NonNull final String player, final String perm) {
 		return permissions != null ? perm != null ? permissions.has((String) null, player, perm) : true : null;
@@ -2454,11 +2511,13 @@ abstract class FactionsHook {
 		final List<Player> recipients = new ArrayList<>();
 		final String playerFaction = getFaction(pl);
 
-		if (playerFaction != null && !"".equals(playerFaction))
-			Remain.getOnlinePlayers().forEach(online -> {
-				if (playerFaction.equals(getFaction(online)))
+		if (playerFaction != null && !playerFaction.isEmpty())
+			for (final Player online : Remain.getOnlinePlayers()) {
+				final String onlineFaction = getFaction(online);
+
+				if (playerFaction.equals(onlineFaction))
 					recipients.add(online);
-			});
+			}
 
 		return recipients;
 	}
@@ -2529,6 +2588,7 @@ final class FactionsUUID extends FactionsHook {
 			final Object name = f != null ? f.getClass().getMethod("getTag").invoke(f) : null;
 
 			return name != null ? name.toString() : null;
+
 		} catch (final ReflectiveOperationException ex) {
 			ex.printStackTrace();
 
@@ -2596,20 +2656,54 @@ final class FactionsUUID extends FactionsHook {
 }
 
 class McMMOHook {
-	// Empty
+
+	// Only display error once
+	private boolean errorLogged = false;
 
 	String getActivePartyChat(final Player player) {
 		try {
-
 			final McMMOPlayer mcplayer = UserManager.getPlayer(player);
-			if (mcplayer == null)
-				return null;
-			final Party party = mcplayer.getParty();
-			return mcplayer.isChatEnabled(ChatMode.PARTY) && party != null ? party.getName() : null;
+
+			if (mcplayer != null) {
+				final Party party = mcplayer.getParty();
+				final ChatChannel channelType = mcplayer.getChatChannel();
+
+				return channelType == ChatChannel.PARTY || channelType == ChatChannel.PARTY_OFFICER && party != null ? party.getName() : null;
+			}
+
 		} catch (final Throwable throwable) {
-			return null;
+			if (!errorLogged) {
+				Common.log("&cWarning: Failed getting mcMMO party chat for " + player.getName() + " due to error. Returning null."
+						+ " Ensure you have the latest mcMMO version, if so, contact plugin authors to update the integration. Error was: " + throwable);
+
+				errorLogged = true;
+			}
 		}
 
+		return null;
+	}
+
+	List<Player> getPartyRecipients(final Player bukkitPlayer) {
+		try {
+			final McMMOPlayer mcplayer = UserManager.getPlayer(bukkitPlayer);
+
+			if (mcplayer != null) {
+				final Party party = mcplayer.getParty();
+
+				if (party != null)
+					return party.getOnlineMembers();
+			}
+
+		} catch (final Throwable throwable) {
+			if (!errorLogged) {
+				Common.log("&cWarning: Failed getting mcMMO party recipients for " + bukkitPlayer.getName() + " due to error. Returning null."
+						+ " Ensure you have the latest mcMMO version, if so, contact plugin authors to update the integration. Error was: " + throwable);
+
+				errorLogged = true;
+			}
+		}
+
+		return new ArrayList<>();
 	}
 }
 
@@ -2858,5 +2952,23 @@ class MythicMobsHook {
 		}
 
 		return null;
+	}
+}
+
+class LandsHook {
+
+	private final LandsIntegration lands;
+
+	LandsHook() {
+		this.lands = new LandsIntegration(SimplePlugin.getInstance());
+	}
+
+	Collection<Player> getLandPlayers(Player player) {
+		final Land land = lands.getLand(player.getLocation());
+
+		if (land != null)
+			return land.getOnlinePlayers();
+
+		return new ArrayList<>();
 	}
 }

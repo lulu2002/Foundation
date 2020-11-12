@@ -9,13 +9,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.FileUtil;
 import org.mineacademy.fo.MinecraftVersion;
 import org.mineacademy.fo.TimeUtil;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.Remain;
+import org.mineacademy.fo.settings.SimpleLocalization;
 
 public final class DebugCommand extends SimpleSubCommand {
 
@@ -27,7 +28,7 @@ public final class DebugCommand extends SimpleSubCommand {
 
 	@Override
 	protected void onCommand() {
-		tell("&6Preparing debug log...");
+		tell(SimpleLocalization.Commands.DEBUG_PREPARING);
 
 		final File debugFolder = FileUtil.getFile("debug");
 		final List<File> files = listFilesRecursively(SimplePlugin.getData(), new ArrayList<>());
@@ -44,7 +45,7 @@ public final class DebugCommand extends SimpleSubCommand {
 		// Zip the folder
 		zipAndRemoveFolder(debugFolder);
 
-		tell("&2Successfuly copied " + files.size() + " files to debug.zip. Your sensitive MySQL information has been removed from yml files. Please upload it via uploadfiles.io and send it to us for review.");
+		tell(SimpleLocalization.Commands.DEBUG_SUCCESS.replace("{amount}", String.valueOf(files.size())));
 	}
 
 	/*
@@ -79,8 +80,8 @@ public final class DebugCommand extends SimpleSubCommand {
 
 				// Strip sensitive keys from .YML files
 				if (file.getName().endsWith(".yml")) {
-					final YamlConfiguration config = FileUtil.loadConfigurationStrict(file);
-					final YamlConfiguration copyConfig = FileUtil.loadConfigurationStrict(copy);
+					final FileConfiguration config = FileUtil.loadConfigurationStrict(file);
+					final FileConfiguration copyConfig = FileUtil.loadConfigurationStrict(copy);
 
 					for (final Map.Entry<String, Object> entry : config.getValues(true).entrySet()) {
 						final String key = entry.getKey();
@@ -98,7 +99,7 @@ public final class DebugCommand extends SimpleSubCommand {
 			} catch (final Exception ex) {
 				ex.printStackTrace();
 
-				returnTell("&cCopying files failed on file " + file.getName() + " and it was stopped. See console for more information.");
+				returnTell(SimpleLocalization.Commands.DEBUG_COPY_FAIL.replace("{file}", file.getName()));
 			}
 		}
 	}
@@ -116,7 +117,7 @@ public final class DebugCommand extends SimpleSubCommand {
 		} catch (final IOException ex) {
 			ex.printStackTrace();
 
-			returnTell("&cCreating a ZIP of your files failed, see console for more information. Please ZIP debug/ folder and send it to us via uploadfiles.io manually.");
+			returnTell(SimpleLocalization.Commands.DEBUG_ZIP_FAIL);
 		}
 	}
 

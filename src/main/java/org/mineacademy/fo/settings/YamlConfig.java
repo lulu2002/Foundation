@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -22,7 +23,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -229,18 +229,26 @@ public class YamlConfig {
 							save = true;
 					}
 
-					final YamlConfiguration config = FileUtil.loadConfigurationStrict(file);
-					final YamlConfiguration defaultsConfig = Remain.loadConfiguration(is);
+					final SimpleYaml config = FileUtil.loadConfigurationStrict(file);
+					final SimpleYaml defaultsConfig = Remain.loadConfiguration(is);
 
 					Valid.checkBoolean(file != null && file.exists(), "Failed to load " + localePath + " from " + file);
 
-					instance = new ConfigInstance(localePath, file, config, defaultsConfig, saveComments(), getUncommentedSections());
+					instance = new ConfigInstance(file, config, defaultsConfig, saveComments(), getUncommentedSections(), localePath);
 					addConfig(instance, this);
 				}
 
 				this.instance = instance;
 
+				// Place comments first (this also copies default keys to be used in onLoadFinish) before loading
+				if (saveComments()) {
+					this.instance.writeComments();
+					this.instance.reload();
+				}
+
 				onLoadFinish();
+
+				loaded = true;
 
 			} finally {
 				loading = false;
@@ -299,8 +307,8 @@ public class YamlConfig {
 
 				if (instance == null) {
 					final File file;
-					final YamlConfiguration config;
-					YamlConfiguration defaultsConfig = null;
+					final SimpleYaml config;
+					SimpleYaml defaultsConfig = null;
 
 					// Reformat afterwards with comments engine
 					if (!new File(SimplePlugin.getInstance().getDataFolder(), to).exists() && saveComments())
@@ -321,18 +329,27 @@ public class YamlConfig {
 
 					config = FileUtil.loadConfigurationStrict(file);
 
-					instance = new ConfigInstance(from == null ? to : from, file, config, defaultsConfig, saveComments(), getUncommentedSections());
+					instance = new ConfigInstance(file, config, defaultsConfig, saveComments(), getUncommentedSections(), from == null ? to : from);
 					addConfig(instance, this);
 				}
 
 				this.instance = instance;
 
 				try {
+
+					// Place comments first (this also copies default keys to be used in onLoadFinish) before loading
+					if (saveComments()) {
+						this.instance.writeComments();
+						this.instance.reload();
+					}
+
 					onLoadFinish();
 
 				} catch (final Exception ex) {
 					Common.throwError(ex, "Error loading configuration in " + getFileName() + "!", "Problematic section: " + Common.getOrDefault(getPathPrefix(), "''"), "Problem: " + ex + " (see below for more)");
 				}
+
+				loaded = true;
 
 			} finally {
 				loading = false;
@@ -364,7 +381,7 @@ public class YamlConfig {
 	 *
 	 * @return
 	 */
-	protected final YamlConfiguration getConfig() {
+	protected final SimpleYaml getConfig() {
 		Valid.checkNotNull(instance, "Cannot call getConfig when no instance is set!");
 
 		return instance.getConfig();
@@ -376,7 +393,7 @@ public class YamlConfig {
 	 * @return
 	 */
 	@Nullable
-	protected final YamlConfiguration getDefaults() {
+	protected final SimpleYaml getDefaults() {
 		Valid.checkNotNull(instance, "Cannot call getDefaults when no instance is set!");
 
 		return instance.getDefaultConfig();
@@ -697,7 +714,28 @@ public class YamlConfig {
 	 * @return
 	 */
 	protected final String getString(final String path) {
-		return getT(path, String.class);
+		final Object object = getObject(path);
+
+		if (object == null)
+			return null;
+
+		else if (object instanceof List)
+			return Common.join((List<?>) object, "\n");
+
+		else if (object instanceof String[])
+			return Common.join(Arrays.asList((String[]) object), "\n");
+
+		else if (object instanceof Boolean
+				|| object instanceof Integer
+				|| object instanceof Long
+				|| object instanceof Double
+				|| object instanceof Float)
+			return Objects.toString(object);
+
+		else if (object instanceof String)
+			return (String) object;
+
+		throw new FoException("Excepted string at '" + path + "' in " + getFileName() + ", got (" + object.getClass() + "): " + object);
 	}
 
 	/**
@@ -1128,7 +1166,19 @@ public class YamlConfig {
 	protected final String[] getStringArray(final String path) {
 		final Object array = getObject(path);
 
-		return array != null ? String.join("\n", array.toString()).split("\n") : new String[0];
+		if (array == null)
+			return new String[0];
+
+		else if (array instanceof String)
+			return ((String) array).split("\n");
+
+		else if (array instanceof List)
+			return Common.join((List<?>) array, "\n").split("\n");
+
+		else if (array instanceof String[])
+			return (String[]) array;
+
+		throw new FoException("Excepted string or string list at '" + path + "' in " + getFileName() + ", got (" + array.getClass() + "): " + array);
 	}
 
 	/**
@@ -1249,8 +1299,8 @@ public class YamlConfig {
 		// The map we are creating, preserve order
 		final LinkedHashMap<Key, Value> map = new LinkedHashMap<>();
 
-		final YamlConfiguration config = getConfig();
-		final YamlConfiguration defaults = getDefaults();
+		final SimpleYaml config = getConfig();
+		final SimpleYaml defaults = getDefaults();
 
 		// Add path prefix right away
 		path = formPathPrefix(path);
@@ -1295,8 +1345,8 @@ public class YamlConfig {
 		// The map we are creating, preserve order
 		final LinkedHashMap<Key, Set<Value>> map = new LinkedHashMap<>();
 
-		final YamlConfiguration config = getConfig();
-		final YamlConfiguration defaults = getDefaults();
+		final SimpleYaml config = getConfig();
+		final SimpleYaml defaults = getDefaults();
 
 		// Add path prefix right away
 		path = formPathPrefix(path);
@@ -1962,11 +2012,6 @@ public class YamlConfig {
 class ConfigInstance {
 
 	/**
-	 * The path where the default config lays
-	 */
-	private final String defaultsPath;
-
-	/**
 	 * The file this configuration belongs to.
 	 */
 	@Getter
@@ -1975,12 +2020,12 @@ class ConfigInstance {
 	/**
 	 * Our config we are manipulating.
 	 */
-	private final YamlConfiguration config;
+	private final SimpleYaml config;
 
 	/**
 	 * @return the config
 	 */
-	public YamlConfiguration getConfig() {
+	public SimpleYaml getConfig() {
 		return config;
 	}
 
@@ -1988,7 +2033,7 @@ class ConfigInstance {
 	 * The default config we reach out to fill values from.
 	 */
 	@Getter
-	private final YamlConfiguration defaultConfig;
+	private final SimpleYaml defaultConfig;
 
 	/**
 	 * Experimental - Should we save comments for this config instance?
@@ -2000,6 +2045,11 @@ class ConfigInstance {
 	 * from comments being set
 	 */
 	private final List<String> uncommentedSections;
+
+	/**
+	 * Wherefrom shall we save o' mighty comments?
+	 */
+	private final String commentsFilePath;
 
 	/**
 	 * Saves the config instance with the given header, can be null
@@ -2032,9 +2082,9 @@ class ConfigInstance {
 	 *
 	 * @throws IOException
 	 */
-	protected void writeComments() throws IOException {
-		if (defaultsPath != null && saveComments)
-			YamlComments.writeComments(defaultsPath, file, Common.getOrDefault(uncommentedSections, new ArrayList<>()));
+	public void writeComments() throws IOException {
+		if (this.commentsFilePath != null && this.saveComments)
+			YamlComments.writeComments(this.commentsFilePath, this.file, Common.getOrDefault(this.uncommentedSections, new ArrayList<>()));
 	}
 
 	/**

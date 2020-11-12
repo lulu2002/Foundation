@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,7 @@ import org.mineacademy.fo.Common;
 import org.mineacademy.fo.FileUtil;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.remain.Remain;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import lombok.NonNull;
@@ -72,7 +74,10 @@ public final class YamlComments {
 	 * @throws IOException If an IOException occurs
 	 */
 	public static void writeComments(@NonNull String jarPath, @NonNull File diskFile, @NonNull List<String> ignoredSections) throws IOException {
-		final BufferedReader newReader = new BufferedReader(new InputStreamReader(FileUtil.getInternalResource(jarPath), StandardCharsets.UTF_8));
+		final InputStream internalResource = FileUtil.getInternalResource(jarPath);
+		Valid.checkNotNull(internalResource, "Failed getting internal resource: " + jarPath);
+
+		final BufferedReader newReader = new BufferedReader(new InputStreamReader(internalResource, StandardCharsets.UTF_8));
 		final List<String> newLines = newReader.lines().collect(Collectors.toList());
 		newReader.close();
 
@@ -82,7 +87,7 @@ public final class YamlComments {
 
 		// ignoredSections can ONLY contain configurations sections
 		for (final String ignoredSection : ignoredSections)
-			Valid.checkBoolean(newConfig.isConfigurationSection(ignoredSection), "Can only ignore config sections not '" + ignoredSection + "' that is " + newConfig.get(ignoredSection));
+			Valid.checkBoolean(newConfig.isConfigurationSection(ignoredSection), "Can only ignore config sections in " + jarPath + " (file " + diskFile + ")" + " not '" + ignoredSection + "' that is " + newConfig.get(ignoredSection));
 
 		// Save keys added to config that are not in default and would otherwise be lost
 		final Set<String> newKeys = newConfig.getKeys(true);
@@ -109,10 +114,13 @@ public final class YamlComments {
 
 			backupConfig.save(backupFile);
 
-			Common.log("&6Warning: The following entries in " + diskFile.getName() + " are unused and were moved into " + backupFile.getName() + ": " + removedKeys.keySet());
+			Common.log("&cWarning: The following entries in " + diskFile.getName() + " are unused and were moved into " + backupFile.getName() + ": " + removedKeys.keySet());
 		}
 
-		final Yaml yaml = new Yaml();
+		final DumperOptions dumperOptions = new DumperOptions();
+		dumperOptions.setWidth(4096);
+
+		final Yaml yaml = new Yaml(dumperOptions);
 		final Map<String, String> comments = parseComments(newLines, ignoredSections, oldConfig, yaml);
 
 		write(newConfig, oldConfig, comments, ignoredSections, writer, yaml);
@@ -267,9 +275,11 @@ public final class YamlComments {
 			final Object o = list.get(i);
 
 			if (o instanceof String || o instanceof Character) {
-				builder.append(prefixSpaces).append("- '").append(o).append("'");
+				builder.append(prefixSpaces).append("- '").append(o.toString().replace("'", "''")).append("'");
+
 			} else if (o instanceof List) {
 				builder.append(prefixSpaces).append("- ").append(yaml.dump(o));
+
 			} else {
 				builder.append(prefixSpaces).append("- ").append(o);
 			}
@@ -299,17 +309,6 @@ public final class YamlComments {
 				builder.append(line).append("\n");
 			} else {
 				lastLineIndentCount = setFullKey(keyBuilder, line, lastLineIndentCount);
-
-				/*for (final String ignoredSection : ignoredSections) {
-					if (keyBuilder.toString().equals(ignoredSection)) {
-						final Object value = oldConfig.get(keyBuilder.toString());
-				
-						if (value instanceof ConfigurationSection)
-							appendSection(builder, (ConfigurationSection) value, new StringBuilder(getPrefixSpaces(lastLineIndentCount)), yaml);
-				
-						continue outer;
-					}
-				}*/
 
 				if (keyBuilder.length() > 0) {
 					comments.put(keyBuilder.toString(), builder.toString());
@@ -353,11 +352,6 @@ public final class YamlComments {
 		temp = temp.substring(0, temp.length() - keys[keys.length - 1].length() - 1);
 		keyBuilder.setLength(temp.length());
 	}
-
-	/*private static String getKeyFromFullKey(String fullKey) {
-		final String[] keys = fullKey.split("\\.");
-		return keys[keys.length - 1];
-	}*/
 
 	//Updates the keyBuilder and returns configLines number of indents
 	private static int setFullKey(StringBuilder keyBuilder, String configLine, int lastLineIndentCount) {

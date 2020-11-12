@@ -18,6 +18,7 @@ import org.mineacademy.fo.menu.button.Button;
 import org.mineacademy.fo.menu.model.InventoryDrawer;
 import org.mineacademy.fo.menu.model.ItemCreator;
 import org.mineacademy.fo.remain.CompMaterial;
+import org.mineacademy.fo.settings.SimpleLocalization;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -89,7 +90,7 @@ public abstract class MenuPagged<T> extends Menu {
 	 * Create a new paged menu
 	 *
 	 * @param parent the parent menu
-	 * @param pages the pages the pages
+	 * @param pages  the pages the pages
 	 */
 	protected MenuPagged(final Menu parent, final Iterable<T> pages) {
 		this(null, parent, pages, false);
@@ -109,10 +110,11 @@ public abstract class MenuPagged<T> extends Menu {
 	/**
 	 * Create a new paged menu
 	 *
-	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add 1 row there)
-	 * @param pages the pages
-	 *
-	 * @deprecated we recommend you don't set the page size for the menu to autocalculate
+	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add
+	 *                 1 row there)
+	 * @param pages    the pages
+	 * @deprecated we recommend you don't set the page size for the menu to
+	 * autocalculate
 	 */
 	@Deprecated
 	protected MenuPagged(final int pageSize, final Iterable<T> pages) {
@@ -122,10 +124,12 @@ public abstract class MenuPagged<T> extends Menu {
 	/**
 	 * Create a new paged menu
 	 *
-	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add 1 row there)
-	 * @param parent the parent menu
-	 * @param pages the pages the pages
-	 * @deprecated we recommend you don't set the page size for the menu to autocalculate
+	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add
+	 *                 1 row there)
+	 * @param parent   the parent menu
+	 * @param pages    the pages the pages
+	 * @deprecated we recommend you don't set the page size for the menu to
+	 * autocalculate
 	 */
 	@Deprecated
 	protected MenuPagged(final int pageSize, final Menu parent, final Iterable<T> pages) {
@@ -150,11 +154,11 @@ public abstract class MenuPagged<T> extends Menu {
 	/**
 	 * Create a new paged menu
 	 *
-	 * @param pageSize size of the menu, a multiple of 9 (keep in mind we already add 1 row there)
-	 * @param parent the parent menu
-	 * @param pages the pages the pages
-	 * @param returnMakesNewInstance should we re-instatiate the parent menu when
-	 *                               returning to it?
+	 * @param pageSize               size of the menu, a multiple of 9 (keep in mind we already add
+	 *                               1 row there)
+	 * @param parent                 the parent menu
+	 * @param pages                  the pages the pages
+	 * @param returnMakesNewInstance should we re-instatiate the parent menu when returning to it?
 	 */
 	private MenuPagged(final Integer pageSize, final Menu parent, final Iterable<T> pages, final boolean returnMakesNewInstance) {
 		super(parent, returnMakesNewInstance);
@@ -163,42 +167,13 @@ public abstract class MenuPagged<T> extends Menu {
 		final int autoPageSize = pageSize != null ? pageSize : items <= 9 ? 9 * 1 : items <= 9 * 2 ? 9 * 2 : items <= 9 * 3 ? 9 * 3 : items <= 9 * 4 ? 9 * 4 : 9 * 5;
 
 		this.currentPage = 1;
-		this.pages = fillPages(autoPageSize, pages);
+		this.pages = Common.fillPages(autoPageSize, pages);
 
 		setSize(9 + autoPageSize);
+
+		nextPageSlot = getSize() - 4;
+		previousPageSlot = getSize() - 6;
 		setButtons();
-	}
-
-	/**
-	 * Dynamically populates the pages
-	 *
-	 * @param allItems all items that will be split
-	 * @return the map containing pages and their items
-	 */
-	private Map<Integer, List<T>> fillPages(int cellSize, Iterable<T> items) {
-		final List<T> allItems = Common.toList(items);
-
-		final Map<Integer, List<T>> pages = new HashMap<>();
-		final int pageCount = allItems.size() == cellSize ? 0 : allItems.size() / cellSize;
-
-		for (int i = 0; i <= pageCount; i++) {
-			final List<T> pageItems = new ArrayList<>();
-
-			final int down = cellSize * i;
-			final int up = down + cellSize;
-
-			for (int valueIndex = down; valueIndex < up; valueIndex++)
-				if (valueIndex < allItems.size()) {
-					final T page = allItems.get(valueIndex);
-
-					pageItems.add(page);
-				} else
-					break;
-
-			pages.put(i, pageItems);
-		}
-
-		return pages;
 	}
 
 	@SuppressWarnings("unused")
@@ -233,9 +208,16 @@ public abstract class MenuPagged<T> extends Menu {
 				return getPageToggleItem(prevPageItemModel, firstPageItemModel, currentPage - 1);
 			}
 		};
+	}
 
-		// Set next page button
-		this.nextButton = new Button() {
+	/**
+	 * Return the button to list the next page,
+	 * override to customize it.
+	 *
+	 * @return
+	 */
+	public Button formNextButton() {
+		return new Button() {
 			final boolean canGo = currentPage < pages.size();
 
 			@Override
@@ -285,6 +267,10 @@ public abstract class MenuPagged<T> extends Menu {
 
 	/**
 	 * Automatically prepend the title with page numbers
+	 * <p>
+	 * Override for a custom last-minute implementation, but
+	 * ensure to call the super method otherwise no title will
+	 * be set in {@link InventoryDrawer}
 	 *
 	 * @param
 	 */
@@ -312,8 +298,8 @@ public abstract class MenuPagged<T> extends Menu {
 	 * Called automatically when an item is clicked
 	 *
 	 * @param player the player who clicked
-	 * @param item the clicked item
-	 * @param click the click type
+	 * @param item   the clicked item
+	 * @param click  the click type
 	 */
 	protected abstract void onPageClick(Player player, T item, ClickType click);
 
@@ -327,8 +313,8 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	/**
-	 * Return true if you want our system to add page/totalPages suffix
-	 * after your title, true by default
+	 * Return true if you want our system to add page/totalPages suffix after
+	 * your title, true by default
 	 *
 	 * @return
 	 */
@@ -346,7 +332,8 @@ public abstract class MenuPagged<T> extends Menu {
 	}
 
 	/**
-	 * Automatically get the correct item from the actual page, including prev/next buttons
+	 * Automatically get the correct item from the actual page, including
+	 * prev/next buttons
 	 *
 	 * @param slot the slot
 	 * @return the item, or null
@@ -360,10 +347,11 @@ public abstract class MenuPagged<T> extends Menu {
 				return convertToItemStack(object);
 		}
 
-		if (slot == getSize() - 6)
+		if (slot == nextPageSlot) {
 			return prevButton.getItem();
+		}
 
-		if (slot == getSize() - 4)
+		if (slot == previousPageSlot)
 			return nextButton.getItem();
 
 		return null;

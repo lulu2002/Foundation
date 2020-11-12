@@ -31,11 +31,11 @@ import javax.annotation.Nullable;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.model.Tuple;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.Remain;
+import org.mineacademy.fo.settings.SimpleYaml;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -216,7 +216,7 @@ public final class FileUtil {
 	 * @param internalFileName
 	 * @return
 	 */
-	public static YamlConfiguration loadInternalConfiguration(String internalFileName) {
+	public static SimpleYaml loadInternalConfiguration(String internalFileName) {
 		final InputStream is = getInternalResource(internalFileName);
 		Valid.checkNotNull(is, "Failed getting internal configuration from " + internalFileName);
 
@@ -226,15 +226,17 @@ public final class FileUtil {
 	/**
 	 * Loads YAML configuration from file, failing if anything happens or the file does not exist
 	 *
+	 * FIX FOR PROJECT ORION STUDENTS IN ARENA MANAGER, SIMPLY RENAME YamlConfiguration TO FileConfiguration
+	 *
 	 * @param file
 	 * @return
 	 * @throws RuntimeException
 	 */
-	public static YamlConfiguration loadConfigurationStrict(File file) throws RuntimeException {
+	public static SimpleYaml loadConfigurationStrict(File file) throws RuntimeException {
 		Valid.checkNotNull(file, "File is null!");
 		Valid.checkBoolean(file.exists(), "File " + file.getName() + " does not exists");
 
-		final YamlConfiguration conf = new YamlConfiguration();
+		final SimpleYaml conf = new SimpleYaml();
 
 		try {
 			if (file.exists())
@@ -243,29 +245,28 @@ public final class FileUtil {
 			conf.load(file);
 
 		} catch (final FileNotFoundException ex) {
-			throw new FoException(ex, "Configuration file missing: " + file.getName());
+			throw new IllegalArgumentException("Configuration file missing: " + file.getName(), ex);
 
 		} catch (final IOException ex) {
-			throw new FoException(ex, "IO exception opening " + file.getName());
+			throw new IllegalArgumentException("IO exception opening " + file.getName(), ex);
 
 		} catch (final InvalidConfigurationException ex) {
-			throw new FoException(ex, "Malformed YAML file " + file.getName());
+			throw new IllegalArgumentException("Malformed YAML file " + file.getName(), ex);
 
 		} catch (final Throwable t) {
-			throw new FoException(t, "Error reading YAML file " + file.getName());
+			throw new IllegalArgumentException("Error reading YAML file " + file.getName(), t);
 		}
 
-		Valid.checkNotNull(conf, "Could not load: " + file.getName());
 		return conf;
 	}
 
 	/*
 	 * Check file for known errors
 	 */
-	private static void checkFileForKnownErrors(File file) throws IOException {
+	private static void checkFileForKnownErrors(File file) throws IllegalArgumentException {
 		for (final String line : readLines(file))
 			if (line.contains("[*]"))
-				throw new FoException("Found [*] in your .yml file " + file + ". Please replace it with ['*'] instead.");
+				throw new IllegalArgumentException("Found [*] in your .yml file " + file + ". Please replace it with ['*'] instead.");
 	}
 
 	// ----------------------------------------------------------------------------------------------------
@@ -431,7 +432,7 @@ public final class FileUtil {
 
 	/*
 	 * A helper method to replace variables in files we are extracting.
-	 * 
+	 *
 	 * Saves us time so that we can distribute the same file across multiple
 	 * plugins each having its own unique plugin name and file name.
 	 */

@@ -93,11 +93,11 @@ import org.mineacademy.fo.remain.internal.BossBarInternals;
 import org.mineacademy.fo.remain.internal.ChatInternals;
 import org.mineacademy.fo.remain.internal.ParticleInternals;
 import org.mineacademy.fo.remain.nbt.NBTInternals;
+import org.mineacademy.fo.settings.SimpleYaml;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import lombok.Getter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -227,7 +227,6 @@ public final class Remain {
 	/**
 	 * The server-name from server.properties (is lacking on new Minecraft version so we have to readd it back)
 	 */
-	@Getter
 	private static String serverName;
 
 	// Singleton
@@ -2021,10 +2020,10 @@ public final class Remain {
 	 * @param is the input stream
 	 * @return the configuration
 	 */
-	public static YamlConfiguration loadConfiguration(final InputStream is) {
+	public static SimpleYaml loadConfiguration(final InputStream is) {
 		Valid.checkNotNull(is, "Could not load configuration from a null input stream!");
 
-		YamlConfiguration conf = null;
+		SimpleYaml conf = null;
 
 		try {
 			conf = loadConfigurationStrict(is);
@@ -2044,8 +2043,8 @@ public final class Remain {
 	 * @return the configuration
 	 * @throws Throwable when any error occurs
 	 */
-	public static YamlConfiguration loadConfigurationStrict(final InputStream is) throws Throwable {
-		final YamlConfiguration conf = new YamlConfiguration();
+	public static SimpleYaml loadConfigurationStrict(final InputStream is) throws Throwable {
+		final SimpleYaml conf = new SimpleYaml();
 
 		try {
 			conf.load(new InputStreamReader(is, StandardCharsets.UTF_8));
@@ -2065,7 +2064,7 @@ public final class Remain {
 	 * @throws IOException
 	 * @throws InvalidConfigurationException
 	 */
-	public static YamlConfiguration loadConfigurationFromString(final InputStream stream, final YamlConfiguration conf) throws IOException, InvalidConfigurationException {
+	public static SimpleYaml loadConfigurationFromString(final InputStream stream, final SimpleYaml conf) throws IOException, InvalidConfigurationException {
 		Valid.checkNotNull(stream, "Stream cannot be null");
 
 		final StringBuilder builder = new StringBuilder();
@@ -2172,7 +2171,7 @@ public final class Remain {
 		String previousName = null;
 
 		if (settingsFile.exists()) {
-			final YamlConfiguration settings = FileUtil.loadConfigurationStrict(settingsFile);
+			final SimpleYaml settings = FileUtil.loadConfigurationStrict(settingsFile);
 			final String previousNameRaw = settings.getString("Bungee_Server_Name");
 
 			if (previousNameRaw != null && !previousNameRaw.isEmpty() && !"none".equals(previousNameRaw) && !"undefined".equals(previousNameRaw)) {
@@ -2202,12 +2201,23 @@ public final class Remain {
 	}
 
 	/**
+	 * Return the server name identifier (used for BungeeCord)
+	 *
+	 * @return
+	 */
+	public static String getServerName() {
+		Valid.checkBoolean(isServerNameChanged(), "Detected getServerName call, please configure your 'server-name' in server.properties according to mineacademy.org/server-properties");
+
+		return serverName;
+	}
+
+	/**
 	 * Return true if the server-name property in server.properties got modified
 	 *
 	 * @return
 	 */
 	public static boolean isServerNameChanged() {
-		return !"Undefined - see mineacademy.org/server-properties to configure".equals(serverName) && !"undefined".equals(serverName) && !"Unknown Server".equals(serverName);
+		return !"see mineacademy.org/server-properties to configure".contains(serverName) && !"undefined".equals(serverName) && !"Unknown Server".equals(serverName);
 	}
 
 	// ----------------------------------------------------------------------------------------------------
