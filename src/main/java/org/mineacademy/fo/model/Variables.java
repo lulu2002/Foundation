@@ -19,11 +19,11 @@ import org.mineacademy.fo.Common;
 import org.mineacademy.fo.GeoAPI;
 import org.mineacademy.fo.GeoAPI.GeoResponse;
 import org.mineacademy.fo.MinecraftVersion;
+import org.mineacademy.fo.PlayerUtil;
 import org.mineacademy.fo.TimeUtil;
 import org.mineacademy.fo.collection.StrictList;
 import org.mineacademy.fo.collection.StrictMap;
 import org.mineacademy.fo.collection.expiringmap.ExpiringMap;
-import org.mineacademy.fo.model.Variable.Type;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.Remain;
 import org.mineacademy.fo.settings.SimpleSettings;
@@ -289,11 +289,11 @@ public final class Variables {
 			// Find the variable key without []
 			final Variable variable = Variable.findVariable(variableKey.substring(1, variableKey.length() - 1));
 
-			if (variable != null && variable.getType() == Type.FORMAT) {
+			if (variable != null && variable.getType() == Variable.Type.FORMAT) {
 				final SimpleComponent component = variable.build(sender, SimpleComponent.empty(), replacements);
 
-				// We do not support interact chat elements so we just flatten the variable
-				// For interactive chat, use formatting
+				// We do not support interact chat elements in format variables,
+				// so we just flatten the variable. Use formatting or chat variables instead.
 				message = message.replace(variableKey, component.getPlainMessage());
 			}
 		}
@@ -424,7 +424,7 @@ public final class Variables {
 				return player == null ? "" : formatIp0(player);
 
 			case "player_vanished":
-				return player == null ? "false" : String.valueOf(HookManager.isVanished(player));
+				return player == null ? "false" : String.valueOf(PlayerUtil.isVanished(player));
 
 			case "country_code":
 				return player == null ? "" : geoResponse.getCountryCode();

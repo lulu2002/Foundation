@@ -75,17 +75,22 @@ public final class Common {
 	/**
 	 * Pattern used to match colors with & or {@link ChatColor#COLOR_CHAR}
 	 */
-	private static final Pattern COLOR_REGEX = Pattern.compile("(?i)(&|" + ChatColor.COLOR_CHAR + ")([0-9A-F])");
+	private static final Pattern COLOR_AND_DECORATION_REGEX = Pattern.compile("(&|" + ChatColor.COLOR_CHAR + ")[0-9a-fk-orA-FK-OR]");
+
+	/**
+	 * Pattern used to match colors with #HEX code for MC 1.16+
+	 */
+	public static final Pattern RGB_HEX_COLOR_REGEX = Pattern.compile("(?<!\\\\)#((?:[0-9a-fA-F]{3}){1,2})");
 
 	/**
 	 * Pattern used to match colors with {#HEX} code for MC 1.16+
 	 */
-	private static final Pattern RGB_HEX_COLOR_REGEX = Pattern.compile(Pattern.quote("{#") + "(.*?)" + Pattern.quote("}"));
+	private static final Pattern RGB_HEX_BRACKED_COLOR_REGEX = Pattern.compile("\\{#((?:[0-9a-fA-F]{3}){1,2})\\}");
 
 	/**
-	 * Pattern used to match colors with {#HEX} code for MC 1.16+
+	 * Pattern used to match colors with #HEX code for MC 1.16+
 	 */
-	private static final Pattern RGB_X_COLOR_REGEX = Pattern.compile("(" + ChatColor.COLOR_CHAR + "x)(" + ChatColor.COLOR_CHAR + "[0-9A-F]){6}");
+	private static final Pattern RGB_X_COLOR_REGEX = Pattern.compile("(" + ChatColor.COLOR_CHAR + "x)(" + ChatColor.COLOR_CHAR + "[0-9a-fA-F]){6}");
 
 	/**
 	 * We use this to send messages with colors to your console
@@ -573,7 +578,9 @@ public final class Common {
 
 		// RGB colors
 		if (MinecraftVersion.atLeast(MinecraftVersion.V.v1_16)) {
-			final Matcher match = RGB_HEX_COLOR_REGEX.matcher(result);
+
+			// Preserve compatibility with former systems
+			Matcher match = RGB_HEX_BRACKED_COLOR_REGEX.matcher(result);
 
 			while (match.find()) {
 				final String colorCode = match.group(1);
@@ -581,11 +588,29 @@ public final class Common {
 
 				try {
 					replacement = CompChatColor.of("#" + colorCode).toString();
+
 				} catch (final IllegalArgumentException ex) {
 				}
 
 				result = result.replaceAll("\\{#" + colorCode + "\\}", replacement);
 			}
+
+			match = RGB_HEX_COLOR_REGEX.matcher(result);
+
+			while (match.find()) {
+				final String colorCode = match.group(1);
+				String replacement = "";
+
+				try {
+					replacement = CompChatColor.of("#" + colorCode).toString();
+
+				} catch (final IllegalArgumentException ex) {
+				}
+
+				result = result.replaceAll("#" + colorCode, replacement);
+			}
+
+			result = result.replace("\\#", "#");
 		}
 
 		return result;
@@ -630,8 +655,31 @@ public final class Common {
 	 * @param message
 	 * @return
 	 */
-	public static String stripColors(final String message) {
-		return message == null ? "" : message.replace(ChatColor.COLOR_CHAR + "x", "").replaceAll("(" + ChatColor.COLOR_CHAR + "|&)([0-9a-fk-orA-F-K-OR])", "");
+	public static String stripColors(String message) {
+
+		if (message == null || message.isEmpty())
+			return message;
+
+		// Replace & color codes
+		Matcher matcher = COLOR_AND_DECORATION_REGEX.matcher(message);
+
+		while (matcher.find())
+			message = matcher.replaceAll("");
+
+		// Replace hex colors, both raw and parsed
+		if (Remain.hasHexColors()) {
+			matcher = RGB_HEX_COLOR_REGEX.matcher(message);
+
+			while (matcher.find())
+				message = matcher.replaceAll("");
+
+			matcher = RGB_X_COLOR_REGEX.matcher(message);
+
+			while (matcher.find())
+				message = matcher.replaceAll("");
+		}
+
+		return message;
 	}
 
 	/**
@@ -651,7 +699,7 @@ public final class Common {
 	 * @return
 	 */
 	public static boolean hasColors(final String message) {
-		return COLOR_REGEX.matcher(message).find();
+		return COLOR_AND_DECORATION_REGEX.matcher(message).find();
 	}
 
 	/**
@@ -1324,27 +1372,11 @@ public final class Common {
 	public static boolean regExMatch(final Matcher matcher) {
 		Valid.checkNotNull(matcher, "Cannot call regExMatch on null matcher");
 
-		final boolean caseInsensitive = SimplePlugin.getInstance().regexCaseInsensitive();
-
 		try {
 			return matcher.find();
 
 		} catch (final RegexTimeoutException ex) {
-			Common.error(ex,
-					"A regular expression took too long to process, and was",
-					"stopped to prevent freezing your server.",
-					"",
-					"Limit " + SimpleSettings.REGEX_TIMEOUT + "ms ",
-					"Expression: '" + matcher.pattern().pattern() + "'",
-					"Evaluated message: '" + ex.getCheckedMessage() + "'",
-					"",
-					"IF YOU CREATED THAT RULE YOURSELF, we unfortunately",
-					"can't provide support for custom expressions.",
-					"",
-					"Use services like regex101.com to test and fix it.",
-					"Put the expression without '' and the message there.",
-					"Ensure to turn flags 'insensitive' and 'unicode' " + (caseInsensitive ? "on" : "off"),
-					"on there when testing: https://i.imgur.com/PRR5Rfn.png");
+			handleRegexTimeoutException(ex, matcher.pattern());
 
 			return false;
 		}
@@ -1361,7 +1393,6 @@ public final class Common {
 	 * @return
 	 */
 	public static Matcher compileMatcher(@NonNull final Pattern pattern, final String message) {
-		final boolean caseInsensitive = SimplePlugin.getInstance().regexCaseInsensitive();
 
 		try {
 			String strippedMessage = SimplePlugin.getInstance().regexStripColors() ? stripColors(message) : message;
@@ -1370,21 +1401,7 @@ public final class Common {
 			return pattern.matcher(TimedCharSequence.withSettingsLimit(strippedMessage));
 
 		} catch (final RegexTimeoutException ex) {
-			Common.error(ex,
-					"A regular expression took too long to process, and was",
-					"stopped to prevent freezing your server.",
-					"",
-					"Limit " + SimpleSettings.REGEX_TIMEOUT + "ms ",
-					"Expression: '" + pattern.pattern() + "'",
-					"Evaluated message: '" + ex.getCheckedMessage() + "'",
-					"",
-					"IF YOU CREATED THAT RULE YOURSELF, we unfortunately",
-					"can't provide support for custom expressions.",
-					"",
-					"Use services like regex101.com to test and fix it.",
-					"Put the expression without '' and the message there.",
-					"Ensure to turn flags 'insensitive' and 'unicode' " + (caseInsensitive ? "on" : "off"),
-					"on there when testing: https://i.imgur.com/PRR5Rfn.png");
+			handleRegexTimeoutException(ex, pattern);
 
 			return null;
 		}
@@ -1438,6 +1455,35 @@ public final class Common {
 		}
 
 		return pattern;
+	}
+
+	/**
+	 * A special call handling regex timeout exception, do not use
+	 *
+	 * @param ex
+	 * @param pattern
+	 */
+	public static void handleRegexTimeoutException(RegexTimeoutException ex, Pattern pattern) {
+		final boolean caseInsensitive = SimplePlugin.getInstance().regexCaseInsensitive();
+
+		Common.error(ex,
+				"A regular expression took too long to process, and was",
+				"stopped to prevent freezing your server.",
+				" ",
+				"Limit " + SimpleSettings.REGEX_TIMEOUT + "ms ",
+				"Expression: '" + (pattern == null ? "unknown" : pattern.pattern()) + "'",
+				"Evaluated message: '" + ex.getCheckedMessage() + "'",
+				" ",
+				"IF YOU CREATED THAT RULE YOURSELF, we unfortunately",
+				"can't provide support for custom expressions.",
+				" ",
+				"Sometimes, all you need doing is increasing timeout",
+				"limit in your settings.yml",
+				" ",
+				"Use services like regex101.com to test and fix it.",
+				"Put the expression without '' and the message there.",
+				"Ensure to turn flags 'insensitive' and 'unicode' " + (caseInsensitive ? "on" : "off"),
+				"on there when testing: https://i.imgur.com/PRR5Rfn.png");
 	}
 
 	// ------------------------------------------------------------------------------------------------------------

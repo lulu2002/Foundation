@@ -906,7 +906,8 @@ public final class Remain {
 			sendComponent(sender, ComponentSerializer.parse(json));
 
 		} catch (final RuntimeException ex) {
-			Common.error(ex, "Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json);
+			Common.error(ex,
+					"Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json);
 		}
 	}
 

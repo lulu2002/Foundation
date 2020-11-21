@@ -240,12 +240,6 @@ public class YamlConfig {
 
 				this.instance = instance;
 
-				// Place comments first (this also copies default keys to be used in onLoadFinish) before loading
-				if (saveComments()) {
-					this.instance.writeComments();
-					this.instance.reload();
-				}
-
 				onLoadFinish();
 
 				loaded = true;
@@ -336,13 +330,6 @@ public class YamlConfig {
 				this.instance = instance;
 
 				try {
-
-					// Place comments first (this also copies default keys to be used in onLoadFinish) before loading
-					if (saveComments()) {
-						this.instance.writeComments();
-						this.instance.reload();
-					}
-
 					onLoadFinish();
 
 				} catch (final Exception ex) {
@@ -363,7 +350,7 @@ public class YamlConfig {
 	protected void saveIfNecessary() {
 
 		// We want to save the file if the save is pending or if there are no defaults
-		if (save || saveComments() /*|| getDefaults() == null*/) {
+		if (save || saveComments()) {
 			save();
 
 			save = false;

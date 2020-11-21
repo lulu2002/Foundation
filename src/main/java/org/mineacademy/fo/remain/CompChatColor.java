@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import org.mineacademy.fo.ItemUtil;
 import org.mineacademy.fo.MinecraftVersion;
 import org.mineacademy.fo.MinecraftVersion.V;
 import org.mineacademy.fo.Valid;
@@ -221,6 +222,33 @@ public final class CompChatColor {
 		return code;
 	}
 
+	/**
+	 * Return true if the color is HEX?
+	 *
+	 * @return
+	 */
+	public boolean isHex() {
+		return code == '#';
+	}
+
+	/**
+	 * Return the color's name such as red, or in case of hex color return
+	 * the code, colorized
+	 * @return
+	 */
+	public String toReadableString() {
+		return isHex() ? toString + "\\" + getName() : ItemUtil.bountify(getName());
+	}
+
+	/**
+	 * Return a string that can be used in saving yml files
+	 *
+	 * @return
+	 */
+	public String toSaveableString() {
+		return isHex() ? getName() : getName();
+	}
+
 	@Override
 	public String toString() {
 		return toString;
@@ -255,7 +283,6 @@ public final class CompChatColor {
 	public static CompChatColor of(@NonNull String string) {
 
 		if (string.startsWith("#") && string.length() == 7) {
-
 			if (!MinecraftVersion.atLeast(V.v1_16))
 				throw new IllegalArgumentException("Only Minecraft 1.16+ supports # HEX color codes!");
 
