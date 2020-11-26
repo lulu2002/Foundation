@@ -57,8 +57,7 @@ public abstract class MenuPagged<T> extends Menu {
 	private static ItemStack lastPageItemModel = ItemCreator
 			.of(CompMaterial.GRAY_DYE)
 			.name("&7Last Page")
-			.build().make();
-	;
+			.build().make();;
 
 	/**
 	 * The "go to previous page" button automatically generated
@@ -76,6 +75,8 @@ public abstract class MenuPagged<T> extends Menu {
 			.name("&7First Page")
 			.build().make();
 
+	protected int nextPageSlot;
+	protected int previousPageSlot;
 
 	/**
 	 * Create a new paged menu where each page has 3 rows + 1 bottom bar
@@ -191,7 +192,20 @@ public abstract class MenuPagged<T> extends Menu {
 		final boolean hasPages = pages.size() > 1;
 
 		// Set previous button
-		this.prevButton = new Button() {
+		prevButton = hasPages ? formPreviousButton() : Button.makeEmpty();
+
+		// Set next page button
+		nextButton = hasPages ? formNextButton() : Button.makeEmpty();
+	}
+
+	/**
+	 * Return the button to list the previous page,
+	 * override to customize it.
+	 *
+	 * @return
+	 */
+	public Button formPreviousButton() {
+		return new Button() {
 			final boolean canGo = currentPage > 1;
 
 			@Override
@@ -208,6 +222,7 @@ public abstract class MenuPagged<T> extends Menu {
 				return getPageToggleItem(prevPageItemModel, firstPageItemModel, currentPage - 1);
 			}
 		};
+
 	}
 
 	/**
@@ -243,8 +258,7 @@ public abstract class MenuPagged<T> extends Menu {
 		boolean moreThanOnePage = pages.size() > 1;
 		boolean hasToTogglePage = toTogglePage >= 1 && toTogglePage <= pages.size();
 
-		return moreThanOnePage ?
-				hasToTogglePage ? ItemCreator.of(item).name(newName).build().make() : noMorePageItem
+		return moreThanOnePage ? hasToTogglePage ? ItemCreator.of(item).name(newName).build().make() : noMorePageItem
 				: CompMaterial.AIR.toItem();
 	}
 
@@ -348,11 +362,11 @@ public abstract class MenuPagged<T> extends Menu {
 		}
 
 		if (slot == nextPageSlot) {
-			return prevButton.getItem();
+			return nextButton.getItem();
 		}
 
 		if (slot == previousPageSlot)
-			return nextButton.getItem();
+			return prevButton.getItem();
 
 		return null;
 	}
