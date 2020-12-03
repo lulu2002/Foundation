@@ -1094,7 +1094,7 @@ public abstract class SimpleCommand extends Command {
 	 */
 	private String replaceBasicPlaceholders0(final String message) {
 		return message
-				.replace("{label}", getLabel())
+				.replace("{label}", getMainLabel())
 				.replace("{sublabel}", this instanceof SimpleSubCommand ? ((SimpleSubCommand) this).getSublabels()[0] : super.getLabel());
 	}
 
