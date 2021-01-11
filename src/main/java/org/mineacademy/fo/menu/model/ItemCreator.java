@@ -7,23 +7,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
+import org.bukkit.block.data.FaceAttachable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
-import org.bukkit.inventory.meta.EnchantmentStorageMeta;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.inventory.meta.*;
 import org.bukkit.material.MaterialData;
-import org.mineacademy.fo.Common;
-import org.mineacademy.fo.MinecraftVersion;
+import org.bukkit.potion.PotionEffect;
+import org.mineacademy.fo.*;
 import org.mineacademy.fo.MinecraftVersion.V;
-import org.mineacademy.fo.ReflectionUtil;
-import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.menu.button.Button;
 import org.mineacademy.fo.menu.button.Button.DummyButton;
 import org.mineacademy.fo.model.SimpleEnchant;
@@ -91,6 +87,10 @@ final @Builder public class ItemCreator {
 	@Singular
 	private List<CompItemFlag> flags;
 
+	@Singular
+	private List<PotionEffect> potionEffects;
+
+
 	/**
 	 * Is the item unbreakable?
 	 */
@@ -100,7 +100,6 @@ final @Builder public class ItemCreator {
 	 * The dye color in case your item is compatible
 	 */
 	private final CompColor color;
-
 	/**
 	 * Should we hide all tags from the item (enchants, etc.)?
 	 */
@@ -338,6 +337,12 @@ final @Builder public class ItemCreator {
 			itemMeta.setLore(coloredLores);
 		}
 
+		if( potionEffects != null && !potionEffects.isEmpty()){
+			for (PotionEffect effect : potionEffects) {
+				(( PotionMeta ) itemMeta).addCustomEffect(effect, false);
+			}
+		}
+
 		if (unbreakable != null) {
 			flags.add(CompItemFlag.HIDE_ATTRIBUTES);
 			flags.add(CompItemFlag.HIDE_UNBREAKABLE);
@@ -482,6 +487,8 @@ final @Builder public class ItemCreator {
 
 		if (meta != null && meta.getLore() != null)
 			builder.lores(meta.getLore());
+
+		builder.damage(item.getDurability());
 
 		return builder.item(item);
 	}
