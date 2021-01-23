@@ -35,10 +35,7 @@ import org.mineacademy.fo.debug.LagCatcher;
 import org.mineacademy.fo.exception.CommandException;
 import org.mineacademy.fo.exception.EventHandledException;
 import org.mineacademy.fo.exception.InvalidCommandArgException;
-import org.mineacademy.fo.model.ChatPaginator;
-import org.mineacademy.fo.model.Replacer;
-import org.mineacademy.fo.model.SimpleComponent;
-import org.mineacademy.fo.model.SimpleTime;
+import org.mineacademy.fo.model.*;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.CompMaterial;
 import org.mineacademy.fo.remain.Remain;
@@ -906,6 +903,11 @@ public abstract class SimpleCommand extends Command {
 
 		Common.ADD_TELL_PREFIX = tellPrefix;
 		addTellPrefix = localPrefix;
+	}
+
+	protected final void tell(Message message) {
+		tell(message.getContent());
+		message.sendOtherNotifications(sender);
 	}
 
 	/**

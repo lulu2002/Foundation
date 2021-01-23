@@ -48,6 +48,7 @@ import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.exception.RegexTimeoutException;
 import org.mineacademy.fo.model.DiscordSender;
 import org.mineacademy.fo.model.HookManager;
+import org.mineacademy.fo.model.Message;
 import org.mineacademy.fo.model.Replacer;
 import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.CompChatColor;
@@ -185,7 +186,6 @@ public final class Common {
 	public static void broadcast(final String message, final String playerReplacement) {
 		broadcast(message.replace("{player}", playerReplacement));
 	}
-
 
 	/**
 	 * Broadcast the message to everyone and logs it
@@ -393,6 +393,10 @@ public final class Common {
 		for (final String message : messages)
 			if (message != null && !"none".equals(message))
 				tellJson(sender, message);
+	}
+
+	public static void tell(final CommandSender sender, Message message) {
+		message.send(sender);
 	}
 
 	/**
