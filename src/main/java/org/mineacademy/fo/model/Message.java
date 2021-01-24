@@ -13,22 +13,32 @@ import org.mineacademy.fo.remain.CompSound;
 @Getter
 @Setter
 public class Message {
-	private String[] content;
+	private SimpleReplacer content;
 	private SimpleSound sound;
 
 	public Message(SimpleSound sound, String... content) {
-		this.content = content;
+		this.content = new SimpleReplacer(content);
 		this.sound = sound;
 	}
 
 	public Message(CompSound compSound, String... content) {
-		this.content = content;
+		this.content = new SimpleReplacer(content);
 		this.sound = new SimpleSound(compSound.getSound(), 1F, 1F);
 	}
 
+	public Message replace(String from, Object to) {
+		this.content.replace(from, to);
+
+		return this;
+	}
+
 	public void send(CommandSender sender) {
-		Common.tell(sender, content);
+		Common.tell(sender, getContent());
 		sendOtherNotifications(sender);
+	}
+
+	public String[] getContent() {
+		return content.toArray();
 	}
 
 	public void sendOtherNotifications(CommandSender sender) {

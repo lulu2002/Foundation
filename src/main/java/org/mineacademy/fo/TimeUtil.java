@@ -57,10 +57,10 @@ public final class TimeUtil {
 			Pattern.CASE_INSENSITIVE);
 
 	// ------------------------------------------------------------------------------------------------------------
-    public static String SECONDS_SYMBOL = "seconds", SECOND_SYMBOL = "second";
-    public static String MINUTES_SYMBOL = "minutes ",MINUTE_SYMBOL = "minute";
+	public static String SECONDS_SYMBOL = "seconds", SECOND_SYMBOL = "second";
+	public static String MINUTES_SYMBOL = "minutes ", MINUTE_SYMBOL = "minute";
 
-    // ------------------------------------------------------------------------------------------------------------
+	// ------------------------------------------------------------------------------------------------------------
 	// Current time
 	// ------------------------------------------------------------------------------------------------------------
 
@@ -376,104 +376,103 @@ public final class TimeUtil {
 		return Timestamp.valueOf(timestamp).getTime();
 	}
 
+	public static SimpleReplacer getTimeReplacer(String string, int seconds) {
+		return new SimpleReplacer(string)
+				.replace("{seconds}", seconds)
+				.replace("{time}", formatTime(seconds))
+				.replace("{fancy-time}", formatTimeFancy(seconds));
+	}
 
-    public static SimpleReplacer getTimeReplacer(String string, int seconds) {
-        return SimpleReplacer.from(string)
-                .replace("{seconds}", seconds)
-                .replace("{time}", formatTime(seconds))
-                .replace("{fancy-time}", formatTimeFancy(seconds));
-    }
+	public static String replacePlaceholders(String string, int seconds) {
+		return getTimeReplacer(string, seconds).getMessages();
+	}
 
-    public static String replacePlaceholders(String string, int seconds) {
-        return getTimeReplacer(string, seconds).getMessages();
-    }
+	public static String formatTime(int duration) {
+		String f = "0";
+		if (duration < 0) {
+			duration = 0;
+		}
+		if (duration >= 3600 && duration < 7200) {
+			duration = duration - 3600;
+			int ms = duration / 60;
+			int ss = duration % 60;
+			String m = (ms < 10 ? "0" : "") + ms;
+			String s = (ss < 10 ? "0" : "") + ss;
+			f = "1:" + m + ":" + s;
+		} else if (duration >= 7200 && duration < 10800) {
+			duration = duration - 7200;
+			int ms = duration / 60;
+			int ss = duration % 60;
+			String m = (ms < 10 ? "0" : "") + ms;
+			String s = (ss < 10 ? "0" : "") + ss;
+			f = "2:" + m + ":" + s;
+		} else if (duration >= 10800 && duration < 14400) {
+			duration = duration - 10800;
+			int ms = duration / 60;
+			int ss = duration % 60;
+			String m = (ms < 10 ? "0" : "") + ms;
+			String s = (ss < 10 ? "0" : "") + ss;
+			f = "3:" + m + ":" + s;
+		} else {
+			int ms = duration / 60;
+			int ss = duration % 60;
+			String m = (ms < 10 ? "0" : "") + ms;
+			String s = (ss < 10 ? "0" : "") + ss;
+			f = m + ":" + s;
+		}
 
-    public static String formatTime(int duration) {
-        String f = "0";
-        if (duration < 0) {
-            duration = 0;
-        }
-        if (duration >= 3600 && duration < 7200) {
-            duration = duration - 3600;
-            int ms = duration / 60;
-            int ss = duration % 60;
-            String m = (ms < 10 ? "0" : "") + ms;
-            String s = (ss < 10 ? "0" : "") + ss;
-            f = "1:" + m + ":" + s;
-        } else if (duration >= 7200 && duration < 10800) {
-            duration = duration - 7200;
-            int ms = duration / 60;
-            int ss = duration % 60;
-            String m = (ms < 10 ? "0" : "") + ms;
-            String s = (ss < 10 ? "0" : "") + ss;
-            f = "2:" + m + ":" + s;
-        } else if (duration >= 10800 && duration < 14400) {
-            duration = duration - 10800;
-            int ms = duration / 60;
-            int ss = duration % 60;
-            String m = (ms < 10 ? "0" : "") + ms;
-            String s = (ss < 10 ? "0" : "") + ss;
-            f = "3:" + m + ":" + s;
-        } else {
-            int ms = duration / 60;
-            int ss = duration % 60;
-            String m = (ms < 10 ? "0" : "") + ms;
-            String s = (ss < 10 ? "0" : "") + ss;
-            f = m + ":" + s;
-        }
+		return f;
+	}
 
-        return f;
-    }
+	public static int parseToSeconds(String hoursDuration) {
+		int[] array = getIntArr(hoursDuration.split(":"));
 
-    public static int parseToSeconds(String hoursDuration) {
-        int[] array = getIntArr(hoursDuration.split(":"));
+		if (array.length > 3)
+			throw new RuntimeException("Error while converting duration, this can only convert max to hours.");
 
-        if (array.length > 3)
-            throw new RuntimeException("Error while converting duration, this can only convert max to hours.");
+		int totalSeconds = 0;
+		int multiple = 1;
 
-        int totalSeconds = 0;
-        int multiple = 1;
+		for (int i = array.length - 1; i >= 0; i--) {
+			totalSeconds += (array[i] * multiple);
 
-        for (int i = array.length - 1; i >= 0; i--) {
-            totalSeconds += (array[i] * multiple);
+			multiple *= 60;
+		}
 
-            multiple *= 60;
-        }
+		if (totalSeconds <= 0)
+			throw new RuntimeException("Error while converting duration, result < 0 after converted");
 
-        if (totalSeconds <= 0)
-            throw new RuntimeException("Error while converting duration, result < 0 after converted");
+		return totalSeconds;
+	}
 
-        return totalSeconds;
-    }
+	public static String formatTimeFancy(int time) {
+		StringBuilder builder = new StringBuilder();
 
-    public static String formatTimeFancy(int time) {
-        StringBuilder builder = new StringBuilder();
+		int minutes = time / 60;
+		int seconds = time % 60;
 
-        int minutes = time / 60;
-        int seconds = time % 60;
+		String secondWord = seconds > 1 ? SECONDS_SYMBOL : SECOND_SYMBOL;
+		String minuteWord = minutes > 1 ? MINUTES_SYMBOL : MINUTE_SYMBOL;
 
-        String secondWord = seconds > 1 ? SECONDS_SYMBOL : SECOND_SYMBOL;
-        String minuteWord = minutes > 1 ? MINUTES_SYMBOL : MINUTE_SYMBOL;
+		if (minutes == 0)
+			builder.append(seconds)
+					.append(secondWord);
+		else {
+			builder.append(minutes).append(minuteWord);
 
-        if (minutes == 0)
-            builder.append(seconds)
-                    .append(secondWord);
-        else {
-            builder.append(minutes).append(minuteWord);
+			if (seconds != 0)
+				builder.append(seconds).append(secondWord);
+		}
 
-            if (seconds != 0)
-                builder.append(seconds).append(secondWord);
-        }
+		return builder.toString();
+	}
 
-        return builder.toString();
-    }
+	private static int[] getIntArr(String[] stringArr) {
+		int[] intArr = new int[stringArr.length];
 
-    private static int[] getIntArr(String[] stringArr) {
-        int[] intArr = new int[stringArr.length];
+		for (int i = 0; i < stringArr.length; i++)
+			intArr[i] = Integer.valueOf(stringArr[i]);
 
-        for (int i = 0; i < stringArr.length; i++)
-            intArr[i] = Integer.valueOf(stringArr[i]);
-
-        return intArr;
-    }
+		return intArr;
+	}
 }

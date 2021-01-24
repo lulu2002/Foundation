@@ -20,7 +20,7 @@ public abstract class SimpleScoreLines {
     }
 
     public void updateGlobalVariables() {
-        currentGlobalReplacedLines = replaceGlobal(SimpleReplacer.from(lines));
+        currentGlobalReplacedLines = replaceGlobal(new SimpleReplacer(lines));
     }
 
     protected abstract SimpleReplacer replace(Player player, SimpleReplacer replacer);

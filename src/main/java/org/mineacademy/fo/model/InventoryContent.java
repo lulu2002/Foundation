@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class InventoryContent implements ConfigSerializable {
 	private ItemStack[] storage;
 	private ItemStack[] armor;
@@ -25,6 +24,16 @@ public class InventoryContent implements ConfigSerializable {
 		this.storage = getStorageContent(inv);
 		this.extra = getExtraContent(inv);
 		this.armor = inv.getArmorContents();
+	}
+
+	private InventoryContent() {
+		this.storage = new ItemStack[0];
+		this.armor = new ItemStack[0];
+		this.extra = new ItemStack[0];
+	}
+
+	public static InventoryContent makeEmpty() {
+		return new InventoryContent();
 	}
 
 	public static ItemStack[] contentsOf(Player player) {

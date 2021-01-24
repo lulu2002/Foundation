@@ -9,61 +9,60 @@ import java.util.Set;
 
 public abstract class Countdown extends SecondTimer {
 
-    @Override
-    public final void run() {
-        int difference = getSecondsUntilEnable();
+	@Override
+	public final void run() {
+		int difference = getSecondsUntilEnable();
 
-        if (difference > 0) {
-            onCountdown(difference);
-            broadcastCountdown(difference);
-        } else if (difference == 0) {
-            execute();
-            broadcastRun();
-        }
-    }
+		if (difference > 0) {
+			onCountdown(difference);
+			broadcastCountdown(difference);
+		} else if (difference == 0) {
+			execute();
+			broadcastRun();
+		}
+	}
 
-    public abstract int getToggleTimer();
+	public abstract int getToggleTimer();
 
+	public abstract int getCurrentTime();
 
-    public abstract int getCurrentTime();
+	public abstract Set<Integer> getAnnounceSeconds();
 
-    public abstract Set<Integer> getAnnounceSeconds();
+	@Nullable
+	public abstract String getCountdownBroadcast();
 
-    @Nullable
-    public abstract String getCountdownBroadcast();
+	@Nullable
+	public abstract String getToggledBroadcast();
 
-    @Nullable
-    public abstract String getToggledBroadcast();
+	protected abstract void execute();
 
-    protected abstract void execute();
+	public void onCountdown(int untilEnable) {
 
-    public void onCountdown(int untilEnable) {
+	}
 
-    }
+	public int getSecondsUntilEnable() {
+		return getToggleTimer() - getCurrentTime();
+	}
 
-    public int getSecondsUntilEnable() {
-        return getToggleTimer() - getCurrentTime();
-    }
+	public String getUntilEnableFormat() {
+		return TimeUtil.formatTime(getSecondsUntilEnable());
+	}
 
-    public String getUntilEnableFormat() {
-        return TimeUtil.formatTime(getSecondsUntilEnable());
-    }
+	private final void broadcastCountdown(int untilEnable) {
+		if (getAnnounceSeconds().contains(untilEnable)) {
+			String broadcast = getCountdownBroadcast();
 
-    private final void broadcastCountdown(int untilEnable) {
-        if (getAnnounceSeconds().contains(untilEnable)) {
-            String broadcast = getCountdownBroadcast();
+			if (broadcast != null)
+				Common.broadcast(new SimpleReplacer(broadcast)
+						.replaceTime(untilEnable)
+						.getMessages());
+		}
+	}
 
-            if (broadcast != null)
-                Common.broadcast(SimpleReplacer.from(broadcast)
-                        .replaceTime(untilEnable)
-                        .getMessages());
-        }
-    }
+	private final void broadcastRun() {
+		String broadcast = getToggledBroadcast();
 
-    private final void broadcastRun() {
-        String broadcast = getToggledBroadcast();
-
-        if (broadcast != null)
-            Common.broadcast(broadcast);
-    }
+		if (broadcast != null)
+			Common.broadcast(broadcast);
+	}
 }
