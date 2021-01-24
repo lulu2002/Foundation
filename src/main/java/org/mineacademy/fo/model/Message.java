@@ -26,6 +26,11 @@ public class Message {
 		this.sound = new SimpleSound(compSound.getSound(), 1F, 1F);
 	}
 
+	public Message(String... content) {
+		this.content = new SimpleReplacer(content);
+		this.sound = new SimpleSound("none");
+	}
+
 	public Message replace(String from, Object to) {
 		this.content.replace(from, to);
 
@@ -39,6 +44,10 @@ public class Message {
 
 	public String[] getContent() {
 		return content.toArray();
+	}
+
+	public String toString() {
+		return String.join("\n", getContent());
 	}
 
 	public void sendOtherNotifications(CommandSender sender) {
