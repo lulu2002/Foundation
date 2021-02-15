@@ -217,6 +217,11 @@ public final class Common {
 			tell(sender, messages);
 	}
 
+	public static void broadcastTo(final Iterable<? extends CommandSender> recipients, final Message message) {
+		for (final CommandSender sender : recipients)
+			tell(sender, message);
+	}
+
 	/**
 	 * Broadcast the message to everyone with permission
 	 *

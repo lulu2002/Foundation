@@ -521,8 +521,14 @@ public abstract class SimpleCommand extends Command {
 	 * @throws CommandException
 	 */
 	protected final void checkBoolean(final boolean value, final String falseMessage) throws CommandException {
-		if (!value)
-			returnTell((USE_MESSENGER ? "" : "&c") + falseMessage);
+		checkBoolean(value, new Message(falseMessage));
+	}
+
+	protected final void checkBoolean(final boolean value, final Message falseMessage) throws CommandException {
+		if (!value) {
+			falseMessage.sendOtherNotifications(sender);
+			returnTell((USE_MESSENGER ? "" : "&c") + falseMessage.toString());
+		}
 	}
 
 	/**
@@ -545,8 +551,14 @@ public abstract class SimpleCommand extends Command {
 	 * @throws CommandException
 	 */
 	protected final void checkNotNull(final Object value, final String messageIfNull) throws CommandException {
-		if (value == null)
-			returnTell((USE_MESSENGER ? "" : "&c") + messageIfNull);
+		checkNotNull(value, new Message(messageIfNull));
+	}
+
+	protected final void checkNotNull(final Object value, final Message messageIfNull) throws CommandException {
+		if (value == null) {
+			messageIfNull.sendOtherNotifications(sender);
+			returnTell((USE_MESSENGER ? "" : "&c") + messageIfNull.toString());
+		}
 	}
 
 	/**
@@ -570,6 +582,10 @@ public abstract class SimpleCommand extends Command {
 	 * @throws CommandException
 	 */
 	protected final Player findPlayer(final String name, final String falseMessage) throws CommandException {
+		return findPlayer(name, new Message(falseMessage));
+	}
+
+	protected final Player findPlayer(final String name, final Message falseMessage) throws CommandException {
 		final Player player = findPlayerInternal(name);
 		checkBoolean(player != null && player.isOnline() && !PlayerUtil.isVanished(player), falseMessage.replace("{player}", name));
 
