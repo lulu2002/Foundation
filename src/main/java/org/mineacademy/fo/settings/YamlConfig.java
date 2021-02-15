@@ -20,7 +20,6 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.enchantments.Enchantment;
@@ -29,8 +28,6 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.FileUtil;
 import org.mineacademy.fo.ItemUtil;
-import org.mineacademy.fo.MinecraftVersion;
-import org.mineacademy.fo.MinecraftVersion.V;
 import org.mineacademy.fo.ReflectionUtil;
 import org.mineacademy.fo.ReflectionUtil.MissingEnumException;
 import org.mineacademy.fo.SerializeUtil;
@@ -50,12 +47,9 @@ import org.mineacademy.fo.plugin.SimplePlugin;
 import org.mineacademy.fo.remain.CompMaterial;
 import org.mineacademy.fo.remain.Remain;
 
-import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 /**
  * The core configuration class. Manages all settings files.
@@ -1982,8 +1976,12 @@ public class YamlConfig {
 			play(player, 3, 2 * 20, 5, replacer);
 		}
 
-		public void play(final Player player, final int fadeIn, final int stay, final int fadeOut, final Function<String, String> replacer) {
-			Remain.sendTitle(player, fadeIn, stay, fadeOut, replacer.apply(title), replacer.apply(subtitle));
+		public void play(final Player player, final int fadeIn, final int stay, final int fadeOut) {
+			this.play(player, fadeIn, stay, fadeOut, null);
+		}
+
+		public void play(final Player player, final int fadeIn, final int stay, final int fadeOut, @Nullable Function<String, String> replacer) {
+			Remain.sendTitle(player, fadeIn, stay, fadeOut, replacer != null ? replacer.apply(title) : title, replacer != null ? replacer.apply(subtitle) : subtitle);
 		}
 	}
 }

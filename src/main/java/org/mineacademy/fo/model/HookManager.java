@@ -17,6 +17,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -48,6 +50,7 @@ import org.mineacademy.fo.remain.Remain;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import com.Zrips.CMI.Modules.TabList.TabListManager;
 import com.bekvon.bukkit.residence.Residence;
 import com.bekvon.bukkit.residence.protection.ClaimedResidence;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -244,10 +247,10 @@ public final class HookManager {
 		if (Common.doesPluginExist("PlotSquared")) {
 			final String ver = Bukkit.getPluginManager().getPlugin("PlotSquared").getDescription().getVersion();
 
-			if (ver.startsWith("5."))
+			if (ver.startsWith("5.") || ver.startsWith("3."))
 				plotSquaredHook = new PlotSquaredHook();
 			else
-				Common.log("&cWarning: Could not hook into PlotSquared, version 5.x required, you have " + ver);
+				Common.log("&cWarning: Could not hook into PlotSquared, version 3.x or 5.x required, you have " + ver);
 		}
 
 		if (Common.doesPluginExist("ProtocolLib")) {
@@ -693,6 +696,7 @@ public final class HookManager {
 	 * @return
 	 */
 	public static boolean isMuted(final Player player) {
+
 		if (isEssentialsLoaded() && essentialsHook.isMuted(player.getName()))
 			return true;
 
@@ -834,6 +838,20 @@ public final class HookManager {
 		final String nick = nickyNick != null ? nickyNick : cmiNick != null ? cmiNick : essNick != null ? essNick : sender.getName();
 
 		return stripColors ? Common.stripColors(Common.revertColorizing(nick).replace(ChatColor.COLOR_CHAR + "x", "")) : nick;
+	}
+
+	/**
+	 * Sets the nickname for Essentials and CMI if installed for the given target player
+	 *
+	 * @param playerId
+	 * @param nick
+	 */
+	public static void setNick(@NonNull final UUID playerId, @Nullable String nick) {
+		if (isEssentialsLoaded())
+			essentialsHook.setNick(playerId, nick);
+
+		if (isCMILoaded())
+			CMIHook.setNick(playerId, nick);
 	}
 
 	/**
@@ -1595,6 +1613,13 @@ class EssentialsHook {
 		return "".equals(essNick) ? null : essNick;
 	}
 
+	void setNick(final UUID uniqueId, String nick) {
+		final User user = getUser(uniqueId);
+
+		if (user != null)
+			user.setNickname(nick);
+	}
+
 	String getNameFromNick(final String maybeNick) {
 		final UserMap users = ess.getUserMap();
 
@@ -1638,6 +1663,26 @@ class EssentialsHook {
 			} catch (final Throwable ex) {
 				user = ess.getUser(name);
 			}
+		return user;
+	}
+
+	private User getUser(final UUID uniqueId) {
+		if (ess.getUserMap() == null)
+			return null;
+
+		User user = null;
+
+		try {
+			user = ess.getUserMap().getUser(uniqueId);
+		} catch (final Throwable t) {
+		}
+
+		if (user == null)
+			try {
+				user = ess.getUser(uniqueId);
+			} catch (final Throwable ex) {
+			}
+
 		return user;
 	}
 
@@ -2176,7 +2221,7 @@ class PlaceholderAPIHook {
 		 */
 		@Override
 		public String onRequest(OfflinePlayer offlinePlayer, @NonNull String identifier) {
-			final Player player = offlinePlayer.getPlayer();
+			final Player player = offlinePlayer != null ? offlinePlayer.getPlayer() : null;
 
 			if (player == null || !player.isOnline())
 				return null;
@@ -2200,8 +2245,11 @@ class PlaceholderAPIHook {
 				for (final SimpleExpansion expansion : Variables.getExpansions()) {
 					final String value = expansion.replacePlaceholders(player, identifier);
 
-					if (value != null)
-						return (!value.isEmpty() && frontSpace ? " " : "") + value + (!value.isEmpty() && backSpace ? " " : "");
+					if (value != null) {
+						final boolean emptyColorless = Common.stripColors(value).isEmpty();
+
+						return (!value.isEmpty() && frontSpace && !emptyColorless ? " " : "") + value + (!value.isEmpty() && backSpace && !emptyColorless ? " " : "");
+					}
 				}
 
 			} catch (final Exception ex) {
@@ -2746,10 +2794,22 @@ class McMMOHook {
 
 class PlotSquaredHook {
 
+	private final boolean legacy;
+
+	/**
+	 *
+	 */
+	PlotSquaredHook() {
+		final Plugin plugin = Bukkit.getPluginManager().getPlugin("PlotSquared");
+		Valid.checkNotNull(plugin, "PlotSquared not hooked yet!");
+
+		this.legacy = plugin.getDescription().getVersion().startsWith("3");
+	}
+
 	List<Player> getPlotPlayers(final Player player) {
 		final List<Player> players = new ArrayList<>();
 
-		final Class<?> plotPlayerClass = ReflectionUtil.lookupClass("com.plotsquared.core.player.PlotPlayer");
+		final Class<?> plotPlayerClass = ReflectionUtil.lookupClass((legacy ? "com.intellectualcrafters.plot.object" : "com.plotsquared.core.player") + ".PlotPlayer");
 		Method wrap;
 
 		try {
@@ -2799,7 +2859,7 @@ class CMIHook {
 		final CMIUser user = getUser(player);
 
 		try {
-			return user != null && user.getMutedUntil() != 0 && user.getMutedUntil() != null;
+			return user != null && user.getMutedUntil() != 0 && user.getMutedUntil() != null && user.getMutedUntil() > System.currentTimeMillis();
 
 		} catch (final Exception ex) {
 			return false;
@@ -2849,6 +2909,19 @@ class CMIHook {
 		return nick == null || "".equals(nick) ? null : nick;
 	}
 
+	void setNick(final UUID uniqueId, String nick) {
+		final CMIUser user = getUser(uniqueId);
+		final TabListManager tabManager = CMI.getInstance().getTabListManager();
+
+		if (user != null) {
+			user.setNickName(nick, true);
+			user.updateDisplayName();
+
+			if (tabManager.isUpdatesOnNickChange())
+				tabManager.updateTabList(3);
+		}
+	}
+
 	String getNameFromNick(String nick) {
 		for (final CMIUser user : CMI.getInstance().getPlayerManager().getAllUsers().values())
 			if (user != null && user.getNickName() != null && Valid.colorlessEquals(user.getNickName(), nick))
@@ -2859,6 +2932,10 @@ class CMIHook {
 
 	private CMIUser getUser(final Player player) {
 		return CMI.getInstance().getPlayerManager().getUser(player);
+	}
+
+	private CMIUser getUser(final UUID uniqueId) {
+		return CMI.getInstance().getPlayerManager().getUser(uniqueId);
 	}
 }
 

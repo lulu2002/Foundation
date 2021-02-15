@@ -196,8 +196,13 @@ public class Messenger {
 	 * Internal method to perform the sending
 	 */
 	private void tell(final CommandSender player, final String prefix, String message) {
+
+		// Support localization being none or empty
+		if (message.isEmpty() || "none".equals(message))
+			return;
+
 		final String colorless = Common.stripColors(message);
-		final boolean foundElements = colorless.startsWith("[JSON]") || colorless.startsWith("<toast>") || colorless.startsWith("<title>") || colorless.startsWith("<actionbar>") || colorless.startsWith("<bossbar>");
+		final boolean foundElements = ChatUtil.isInteractive(colorless);
 
 		// Special case: Send the prefix for actionbar
 		if (colorless.startsWith("<actionbar>"))

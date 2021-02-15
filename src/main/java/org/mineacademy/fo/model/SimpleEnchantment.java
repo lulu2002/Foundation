@@ -2,12 +2,15 @@ package org.mineacademy.fo.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
@@ -175,6 +178,37 @@ public abstract class SimpleEnchantment extends Enchantment {
 	 */
 	public String getLore(int level) {
 		return name + " " + MathUtil.toRoman(level);
+	}
+
+	/**
+	 * Improved version of EnchantmentTarget with more
+	 * variety in the options.
+	 *
+	 * Select what items this enchantment may be applied to?
+	 * Defaults to BREAKABLE (all)
+	 *
+	 * @return
+	 */
+	public SimpleEnchantmentTarget getCustomItemTarget() {
+		return SimpleEnchantmentTarget.BREAKABLE;
+	}
+
+	/**
+	 * Select what material this enchantment can be
+	 * applied to.
+	 * @return
+	 */
+	public Material enchantMaterial() {
+		return null;
+	}
+
+	/**
+	 * Select what materials this enchantment can be
+	 * applied to.
+	 * @return
+	 */
+	public Set<Material> enchantMaterials() {
+		return new HashSet<>();
 	}
 
 	// ------------------------------------------------------------------------------------------

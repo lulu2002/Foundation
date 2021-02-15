@@ -92,35 +92,10 @@ public final class SimpleComponent implements ConfigSerializable {
 	 * @return
 	 */
 	public SimpleComponent onHover(String... lines) {
-
-		final List<BaseComponent> components = new ArrayList<>();
-
-		// We must compile each component separately otherwise decoration such as bold will overflow lines
-		for (int i = 0; i < lines.length; i++) {
-			final String line = lines[i];
-
-			for (final BaseComponent extra : toComponent(Common.colorize(line) + (i + 1 < lines.length ? "\n" : ""), null)) {
-
-				if (!line.contains(ChatColor.BOLD.toString()))
-					extra.setBold(false);
-
-				if (!line.contains(ChatColor.ITALIC.toString()))
-					extra.setItalic(false);
-
-				if (!line.contains(ChatColor.MAGIC.toString()))
-					extra.setObfuscated(false);
-
-				if (!line.contains(ChatColor.STRIKETHROUGH.toString()))
-					extra.setStrikethrough(false);
-
-				if (!line.contains(ChatColor.UNDERLINE.toString()))
-					extra.setUnderlined(false);
-
-				components.add(extra);
-			}
-		}
-
-		this.currentComponent.hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, components.toArray(new BaseComponent[components.size()]));
+		// I don't know why we have to wrap this inside new text component but we do this
+		// to properly reset bold and other decoration colors
+		final String joined = Common.colorize(String.join("\n", lines));
+		this.currentComponent.hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new BaseComponent[] { new TextComponent(TextComponent.fromLegacyText(joined)) });
 
 		return this;
 	}
@@ -288,6 +263,20 @@ public final class SimpleComponent implements ConfigSerializable {
 
 		if (inherit != null && inherit.getExtra() != null && !inherit.getExtra().isEmpty())
 			inherit = inherit.getExtra().get(inherit.getExtra().size() - 1);
+
+		// Center text for each line separatelly if replacing colors
+		if (colorize) {
+			final List<String> formatContents = Arrays.asList(text.split("\n"));
+
+			for (int i = 0; i < formatContents.size(); i++) {
+				final String line = formatContents.get(i);
+
+				if (Common.stripColors(line).startsWith("<center>"))
+					formatContents.set(i, ChatUtil.center(line.replace("<center>", "")));
+			}
+
+			text = String.join("\n", formatContents);
+		}
 
 		this.pastComponents.add(this.currentComponent);
 
@@ -635,10 +624,10 @@ public final class SimpleComponent implements ConfigSerializable {
 					component = new TextComponent();
 					component.setColor(format);
 
-					component.setBold(false);
+					/*component.setBold(false);
 					component.setItalic(false);
 					component.setStrikethrough(false);
-					component.setUnderlined(false);
+					component.setUnderlined(false);*/
 
 				} else {
 					component = new TextComponent();
@@ -687,7 +676,8 @@ public final class SimpleComponent implements ConfigSerializable {
 		component.setText(builder.toString());
 		components.add(component);
 
-		return components.toArray(new TextComponent[components.size()]);
+		//return components.toArray(new TextComponent[components.size()]);
+		return new TextComponent[] { new TextComponent(components.toArray(new TextComponent[components.size()])) };
 	}
 
 	/**
@@ -832,7 +822,7 @@ public final class SimpleComponent implements ConfigSerializable {
 			if (!canSendTo(receiver) || isEmpty())
 				return null;
 
-			final BaseComponent[] base = toComponent(this.text, this.inheritFormatting);
+			final List<BaseComponent> base = toComponent(this.text, this.inheritFormatting)[0].getExtra();
 
 			for (final BaseComponent part : base) {
 				if (this.hoverEvent != null)
@@ -845,7 +835,7 @@ public final class SimpleComponent implements ConfigSerializable {
 					part.setInsertion(insertion);
 			}
 
-			return new TextComponent(base);
+			return new TextComponent(base.toArray(new BaseComponent[base.size()]));
 		}
 
 		/*
@@ -868,10 +858,13 @@ public final class SimpleComponent implements ConfigSerializable {
 					return false;
 
 				final Object result = JavaScriptExecutor.run(Variables.replace(this.viewCondition, receiver), receiver);
-				Valid.checkBoolean(result instanceof Boolean, "Receiver condition must return Boolean not " + result.getClass() + " for component: " + this);
 
-				if ((boolean) result == false)
-					return false;
+				if (result != null) {
+					Valid.checkBoolean(result instanceof Boolean, "View condition must return Boolean not " + (result == null ? "null" : result.getClass()) + " for component: " + this);
+
+					if ((boolean) result == false)
+						return false;
+				}
 			}
 
 			return true;

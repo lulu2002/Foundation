@@ -85,7 +85,6 @@ import org.mineacademy.fo.ReflectionUtil.ReflectionException;
 import org.mineacademy.fo.Valid;
 import org.mineacademy.fo.collection.SerializedMap;
 import org.mineacademy.fo.collection.StrictMap;
-import org.mineacademy.fo.debug.Debugger;
 import org.mineacademy.fo.exception.FoException;
 import org.mineacademy.fo.model.UUIDToNameConverter;
 import org.mineacademy.fo.plugin.SimplePlugin;
@@ -721,10 +720,10 @@ public final class Remain {
 			if (throwable instanceof InteractiveTextFoundException)
 				throw throwable;
 
-			Debugger.saveError(throwable,
+			/*Debugger.saveError(throwable,
 					"Unable to parse JSON message.",
 					"JSON: " + json,
-					"Error: %error");
+					"Error: %error");*/
 		}
 
 		return text.toString();
@@ -905,9 +904,13 @@ public final class Remain {
 		try {
 			sendComponent(sender, ComponentSerializer.parse(json));
 
-		} catch (final RuntimeException ex) {
-			Common.error(ex,
-					"Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json);
+		} catch (final Throwable t) {
+
+			// Silence a bug in md_5's library
+			if (t.toString().contains("missing 'text' property"))
+				return;
+
+			throw new RuntimeException("Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json, t);
 		}
 	}
 
@@ -1651,10 +1654,10 @@ public final class Remain {
 
 		} catch (final NoSuchMethodError ex) {
 			/*final List<String> list = new ArrayList<>();
-
+			
 			for (final BaseComponent[] page : pages)
 				list.add(TextComponent.toLegacyText(page));
-
+			
 			meta.setPages(list);*/
 
 			try {
@@ -1801,13 +1804,16 @@ public final class Remain {
 	 * @param icon
 	 */
 	public static void sendToast(final Player receiver, final String message, final CompMaterial icon) {
-		if (hasAdvancements && message != null && !message.isEmpty()) {
+		if (message != null && !message.isEmpty()) {
 			final String colorized = Common.colorize(message);
 
 			if (!colorized.isEmpty()) {
 				Valid.checkSync("Toasts may only be sent from the main thread");
 
-				new AdvancementAccessor(colorized, icon.toString().toLowerCase()).show(receiver);
+				if (hasAdvancements)
+					new AdvancementAccessor(colorized, icon.toString().toLowerCase()).show(receiver);
+				else
+					receiver.sendMessage(colorized);
 			}
 		}
 	}
@@ -2435,7 +2441,8 @@ class BungeeChatProvider {
 		} catch (final Throwable ex) {
 
 			// This is the minimum MC version that supports interactive chat
-			if (MinecraftVersion.atLeast(V.v1_7))
+			// Ignoring Cauldron
+			if (MinecraftVersion.atLeast(V.v1_7) && !Bukkit.getName().contains("Cauldron"))
 				Common.throwError(ex, "Failed to send component: " + plainMessage.toString() + " to " + sender.getName());
 
 			tell0(sender, plainMessage.toString());

@@ -1,6 +1,7 @@
 package org.mineacademy.fo.model;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Bukkit;
@@ -26,10 +27,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class DiscordSender implements CommandSender {
 
+	private final String name;
 	private final User user;
 	private final MessageChannel channel;
 	private final Message message;
-	//private final UUID uuid;
 
 	@Override
 	public boolean isPermissionSet(String permission) {
@@ -44,17 +45,11 @@ public final class DiscordSender implements CommandSender {
 	@Override
 	public boolean hasPermission(String perm) {
 		return false;
-
-		//final OfflinePlayer offlinePlayer = Remain.getOfflinePlayerByUUID(this.uuid);
-		//return perm == null ? true : offlinePlayer == null ? false : HookManager.hasVaultPermission(offlinePlayer, perm);
 	}
 
 	@Override
 	public boolean hasPermission(Permission perm) {
 		return false;
-
-		//final OfflinePlayer offlinePlayer = Remain.getOfflinePlayerByUUID(this.uuid);
-		//return perm == null ? true : offlinePlayer == null ? false : HookManager.hasVaultPermission(offlinePlayer, perm.getName());
 	}
 
 	@Override
@@ -122,7 +117,7 @@ public final class DiscordSender implements CommandSender {
 
 	@Override
 	public String getName() {
-		return user.getName();
+		return name;
 	}
 
 	@Override
@@ -139,4 +134,21 @@ public final class DiscordSender implements CommandSender {
 		return new FoException("DiscordSender cannot invoke " + method + "()");
 	}
 
+	/**
+	 * @see org.bukkit.command.CommandSender#sendMessage(java.util.UUID, java.lang.String)
+	 */
+	//@Override - Disable to prevent errors in older MC
+	@Override
+	public void sendMessage(UUID uuid, String message) {
+		this.sendMessage(message);
+	}
+
+	/**
+	 * @see org.bukkit.command.CommandSender#sendMessage(java.util.UUID, java.lang.String[])
+	 */
+	//@Override - Disable to prevent errors in older MC
+	@Override
+	public void sendMessage(UUID uuid, String[] messages) {
+		this.sendMessage(messages);
+	}
 }
